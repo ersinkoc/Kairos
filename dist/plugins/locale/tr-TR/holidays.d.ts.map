@@ -1,0 +1,1 @@
+{"version":3,"file":"holidays.d.ts","sourceRoot":"","sources":["../../../../src/plugins/locale/tr-TR/holidays.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,WAAW,EAAE,MAAM,gCAAgC,CAAC;AAElE,eAAO,MAAM,QAAQ,EAAE,WAAW,EA0KjC,CAAC;AAGF,eAAO,MAAM,WAAW,EAAE,WAAW,EA+BpC,CAAC;AAGF,eAAO,MAAM,kBAAkB,EAAE,WAAW,EAe3C,CAAC;AAGF,eAAO,MAAM,WAAW,eAAuD,CAAC;AAGhF,eAAO,MAAM,cAAc,eAY1B,CAAC"}

@@ -1,0 +1,109 @@
+# Source files (TypeScript)
+src/
+*.ts
+!*.d.ts
+
+# Test files
+tests/
+*.test.ts
+*.spec.ts
+**/__tests__/
+**/__mocks__/
+coverage/
+.nyc_output/
+
+# Development files
+.github/
+.husky/
+.vscode/
+.idea/
+*.log
+*.tgz
+
+# Documentation source
+docs/
+!docs/generated/
+examples/
+*.md
+!README.md
+!LICENSE
+
+# Configuration files
+.eslintrc*
+.prettierrc*
+.gitignore
+.npmignore
+.editorconfig
+.npmrc
+tsconfig.json
+jest.config.js
+rollup.config.js
+playwright.config.ts
+*.config.js
+*.config.ts
+
+# Build tools
+tools/
+scripts/
+browser-test/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+*.code-workspace
+
+# Git
+.git/
+.gitattributes
+
+# CI/CD
+.travis.yml
+.circleci/
+.gitlab-ci.yml
+azure-pipelines.yml
+.github/
+
+# Development dependencies config
+renovate.json
+.dependabot/
+.snyk
+
+# Benchmarks and performance
+benchmarks/
+perf/
+
+# Assets that aren't needed in package
+assets/
+images/
+*.png
+*.jpg
+*.gif
+*.svg
+!docs/generated/**/*.svg
+
+# Lock files (controversial, but reduces package size)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build artifacts that shouldn't be in npm
+dist/**/*.map
+*.map
+.tsbuildinfo
+
+# Keep only the built files
+!dist/
+!dist/**/*.js
+!dist/**/*.mjs
+!dist/**/*.d.ts
+!dist/**/*.json

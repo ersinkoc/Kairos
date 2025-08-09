@@ -1,0 +1,64 @@
+import type { KairosPlugin } from '../../core/types/plugin.js';
+export interface DurationObject {
+    years?: number;
+    months?: number;
+    weeks?: number;
+    days?: number;
+    hours?: number;
+    minutes?: number;
+    seconds?: number;
+    milliseconds?: number;
+}
+export declare class Duration {
+    private ms;
+    private _years;
+    private _months;
+    private _weeks;
+    private _days;
+    private _hours;
+    private _minutes;
+    private _seconds;
+    private _milliseconds;
+    constructor(input: number | DurationObject | string);
+    private setFromObject;
+    private parseStringToObject;
+    private parseObject;
+    private normalizeUnit;
+    asMilliseconds(): number;
+    asSeconds(): number;
+    asMinutes(): number;
+    asHours(): number;
+    asDays(): number;
+    asWeeks(): number;
+    asMonths(): number;
+    asYears(): number;
+    get years(): number;
+    get months(): number;
+    get weeks(): number;
+    get days(): number;
+    get hours(): number;
+    get minutes(): number;
+    get seconds(): number;
+    get milliseconds(): number;
+    add(amount: number | Duration | DurationObject | string): Duration;
+    subtract(amount: number | Duration | DurationObject | string): Duration;
+    multiply(factor: number): Duration;
+    divide(divisor: number): Duration;
+    negate(): Duration;
+    abs(): Duration;
+    equals(other: Duration): boolean;
+    isGreaterThan(other: Duration): boolean;
+    isLessThan(other: Duration): boolean;
+    isZero(): boolean;
+    isNegative(): boolean;
+    isPositive(): boolean;
+    toString(): string;
+    toISOString(): string;
+    toJSON(): string;
+    humanize(largest?: number): string;
+    toObject(): DurationObject;
+    clone(): Duration;
+}
+declare const _default: KairosPlugin;
+export default _default;
+//# sourceMappingURL=duration.d.ts.map

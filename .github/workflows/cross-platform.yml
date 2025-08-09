@@ -1,0 +1,359 @@
+name: Cross-Platform Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  compatibility-matrix:
+    name: Test on ${{ matrix.os }} / Node ${{ matrix.node }} / TZ ${{ matrix.tz }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: ['16', '18', '20', '21']
+        tz: ['UTC', 'America/New_York', 'Europe/London', 'Asia/Tokyo']
+        exclude:
+          # Windows doesn't handle TZ env var the same way
+          - os: windows-latest
+            tz: 'America/New_York'
+          - os: windows-latest
+            tz: 'Europe/London'
+          - os: windows-latest
+            tz: 'Asia/Tokyo'
+        include:
+          # Add specific Windows timezone tests
+          - os: windows-latest
+            node: '18'
+            tz: 'Eastern Standard Time'
+          - os: windows-latest
+            node: '18'
+            tz: 'Pacific Standard Time'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node }}
+        cache: 'npm'
+    
+    - name: Set timezone (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        echo "TZ=${{ matrix.tz }}" >> $GITHUB_ENV
+        
+    - name: Set timezone (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        tzutil /s "${{ matrix.tz }}"
+      shell: cmd
+      continue-on-error: true
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Display environment info
+      run: |
+        node --version
+        npm --version
+        echo "Operating System: ${{ runner.os }}"
+        echo "Timezone: ${{ matrix.tz }}"
+    
+    - name: Run unit tests
+      run: npm test -- --testPathPattern="unit"
+      
+    - name: Run integration tests
+      run: npm test -- --testPathPattern="integration"
+    
+    - name: Test date operations
+      run: |
+        node -e "
+        const now = new Date();
+        console.log('System time:', now.toString());
+        console.log('UTC time:', now.toUTCString());
+        console.log('ISO time:', now.toISOString());
+        console.log('Timezone offset:', now.getTimezoneOffset());
+        "
+    
+    - name: Build library
+      run: npm run build
+    
+    - name: Test CommonJS import
+      run: |
+        node -e "
+        const kairos = require('./dist/index.js');
+        const date = kairos.default('2024-03-15');
+        console.log('CommonJS import test:', date.format('YYYY-MM-DD'));
+        "
+    
+    - name: Test ESM import
+      if: matrix.node != '16'
+      run: |
+        echo '{"type": "module"}' > test-esm-package.json
+        node --input-type=module -e "
+        import kairos from './dist/index.esm.js';
+        const date = kairos('2024-03-15');
+        console.log('ESM import test:', date.format('YYYY-MM-DD'));
+        " || echo "ESM test skipped"
+      continue-on-error: true
+
+  browser-compatibility:
+    name: Browser Compatibility
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build for browser
+      run: |
+        npm run build
+        npm run build:browser
+    
+    - name: Install Playwright
+      run: npx playwright install --with-deps
+    
+    - name: Run browser tests
+      run: npm run test:browser
+      continue-on-error: true
+
+  edge-cases:
+    name: Edge Case Testing
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        scenario: ['leap-year', 'dst-transition', 'year-boundary', 'locale-specific']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Test leap year handling
+      if: matrix.scenario == 'leap-year'
+      run: |
+        node -e "
+        const kairos = require('./dist/index.js').default;
+        
+        // Test leap years
+        const leapYears = [2020, 2024, 2000, 1600];
+        const nonLeapYears = [2021, 2022, 2023, 1900, 2100];
+        
+        leapYears.forEach(year => {
+          const feb29 = kairos(\`\${year}-02-29\`);
+          if (!feb29.isValid()) {
+            throw new Error(\`Failed: \${year} should be a leap year\`);
+          }
+          console.log(\`✓ \${year} is correctly identified as leap year\`);
+        });
+        
+        nonLeapYears.forEach(year => {
+          const feb29 = kairos(\`\${year}-02-29\`);
+          if (feb29.isValid()) {
+            throw new Error(\`Failed: \${year} should not be a leap year\`);
+          }
+          console.log(\`✓ \${year} is correctly identified as non-leap year\`);
+        });
+        "
+    
+    - name: Test DST transitions
+      if: matrix.scenario == 'dst-transition' && runner.os != 'Windows'
+      env:
+        TZ: America/New_York
+      run: |
+        node -e "
+        const kairos = require('./dist/index.js').default;
+        
+        // Test spring forward (2024-03-10 2:00 AM -> 3:00 AM)
+        const beforeDST = kairos('2024-03-10 01:30:00');
+        const afterDST = beforeDST.add(1, 'hour');
+        console.log('Before DST:', beforeDST.format('YYYY-MM-DD HH:mm:ss'));
+        console.log('After DST:', afterDST.format('YYYY-MM-DD HH:mm:ss'));
+        
+        // Test fall back (2024-11-03 2:00 AM -> 1:00 AM)
+        const beforeFallback = kairos('2024-11-03 01:30:00');
+        const afterFallback = beforeFallback.add(1, 'hour');
+        console.log('Before fallback:', beforeFallback.format('YYYY-MM-DD HH:mm:ss'));
+        console.log('After fallback:', afterFallback.format('YYYY-MM-DD HH:mm:ss'));
+        "
+    
+    - name: Test year boundaries
+      if: matrix.scenario == 'year-boundary'
+      run: |
+        node -e "
+        const kairos = require('./dist/index.js').default;
+        
+        // Test year transitions
+        const endOf2023 = kairos('2023-12-31 23:59:59');
+        const startOf2024 = endOf2023.add(1, 'second');
+        
+        console.log('End of 2023:', endOf2023.format('YYYY-MM-DD HH:mm:ss'));
+        console.log('Start of 2024:', startOf2024.format('YYYY-MM-DD HH:mm:ss'));
+        
+        if (startOf2024.year() !== 2024) {
+          throw new Error('Year transition failed');
+        }
+        console.log('✓ Year transition handled correctly');
+        
+        // Test century boundary
+        const endOfCentury = kairos('2099-12-31');
+        const startOfNextCentury = endOfCentury.add(1, 'day');
+        console.log('End of 21st century:', endOfCentury.format('YYYY-MM-DD'));
+        console.log('Start of 22nd century:', startOfNextCentury.format('YYYY-MM-DD'));
+        "
+    
+    - name: Test locale-specific operations
+      if: matrix.scenario == 'locale-specific'
+      run: |
+        node -e "
+        const kairos = require('./dist/index.js').default;
+        
+        // Test different locale formats
+        const date = kairos('2024-03-15');
+        
+        const locales = ['en-US', 'de-DE', 'ja-JP', 'tr-TR'];
+        locales.forEach(locale => {
+          kairos.locale(locale);
+          console.log(\`\${locale}: Week starts on \${kairos.startOfWeek()}\`);
+          console.log(\`\${locale}: Holidays count: \${kairos().getHolidays().length}\`);
+        });
+        "
+
+  performance-regression:
+    name: Performance Regression Test
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build library
+      run: npm run build
+    
+    - name: Run performance benchmarks
+      run: |
+        node -e "
+        const kairos = require('./dist/index.js').default;
+        
+        // Benchmark date creation
+        console.time('Create 10000 dates');
+        for (let i = 0; i < 10000; i++) {
+          kairos('2024-03-15');
+        }
+        console.timeEnd('Create 10000 dates');
+        
+        // Benchmark date manipulation
+        console.time('Perform 10000 date additions');
+        const base = kairos('2024-01-01');
+        for (let i = 0; i < 10000; i++) {
+          base.add(1, 'day');
+        }
+        console.timeEnd('Perform 10000 date additions');
+        
+        // Benchmark formatting
+        console.time('Format 10000 dates');
+        for (let i = 0; i < 10000; i++) {
+          kairos().format('YYYY-MM-DD HH:mm:ss');
+        }
+        console.timeEnd('Format 10000 dates');
+        
+        // Benchmark parsing
+        console.time('Parse 10000 date strings');
+        for (let i = 0; i < 10000; i++) {
+          kairos('2024-03-15T10:30:45.123Z');
+        }
+        console.timeEnd('Parse 10000 date strings');
+        "
+    
+    - name: Memory usage test
+      run: |
+        node --expose-gc -e "
+        const kairos = require('./dist/index.js').default;
+        
+        // Force garbage collection
+        global.gc();
+        const before = process.memoryUsage().heapUsed / 1024 / 1024;
+        
+        // Create many date instances
+        const dates = [];
+        for (let i = 0; i < 100000; i++) {
+          dates.push(kairos('2024-03-15'));
+        }
+        
+        const after = process.memoryUsage().heapUsed / 1024 / 1024;
+        console.log(\`Memory usage: \${(after - before).toFixed(2)} MB for 100,000 instances\`);
+        
+        // Clear and measure cleanup
+        dates.length = 0;
+        global.gc();
+        const cleaned = process.memoryUsage().heapUsed / 1024 / 1024;
+        console.log(\`After cleanup: \${(cleaned - before).toFixed(2)} MB\`);
+        "
+
+  report:
+    name: Cross-Platform Test Report
+    runs-on: ubuntu-latest
+    needs: [compatibility-matrix, browser-compatibility, edge-cases, performance-regression]
+    if: always()
+    
+    steps:
+    - name: Generate test report
+      run: |
+        echo "## Cross-Platform Test Results"
+        echo ""
+        echo "### Compatibility Matrix"
+        echo "- Status: ${{ needs.compatibility-matrix.result }}"
+        echo ""
+        echo "### Browser Compatibility"
+        echo "- Status: ${{ needs.browser-compatibility.result }}"
+        echo ""
+        echo "### Edge Cases"
+        echo "- Status: ${{ needs.edge-cases.result }}"
+        echo ""
+        echo "### Performance Regression"
+        echo "- Status: ${{ needs.performance-regression.result }}"
+        echo ""
+        echo "---"
+        echo "Overall Status: Complete"

@@ -1,0 +1,172 @@
+{
+  "name": "@oxog/kairos",
+  "version": "1.0.0",
+  "description": "Revolutionary zero-dependency JavaScript date/time library with modular architecture and dynamic holiday system",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./parse/*": {
+      "import": "./dist/plugins/parse/*.mjs",
+      "require": "./dist/plugins/parse/*.js",
+      "types": "./dist/plugins/parse/*.d.ts"
+    },
+    "./format/*": {
+      "import": "./dist/plugins/format/*.mjs",
+      "require": "./dist/plugins/format/*.js",
+      "types": "./dist/plugins/format/*.d.ts"
+    },
+    "./locale/*": {
+      "import": "./dist/plugins/locale/*/index.mjs",
+      "require": "./dist/plugins/locale/*/index.js",
+      "types": "./dist/plugins/locale/*/index.d.ts"
+    },
+    "./holiday/*": {
+      "import": "./dist/plugins/holiday/*.mjs",
+      "require": "./dist/plugins/holiday/*.js",
+      "types": "./dist/plugins/holiday/*.d.ts"
+    },
+    "./business/*": {
+      "import": "./dist/plugins/business/*.mjs",
+      "require": "./dist/plugins/business/*.js",
+      "types": "./dist/plugins/business/*.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "npm run clean && tsc && npm run build:browser",
+    "build:types": "tsc --emitDeclarationOnly",
+    "build:esm": "tsc --module es2020 --outDir dist",
+    "build:cjs": "tsc --module commonjs --outDir dist/cjs",
+    "build:browser": "rollup -c",
+    "clean": "rimraf dist",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:performance": "jest --testMatch='**/performance/**/*.test.ts'",
+    "docs": "npm run docs:build",
+    "docs:build": "typedoc src/core/plugin-system.ts --out docs/generated --readme README.md",
+    "docs:api": "npm run docs:build",
+    "test:integration": "jest --testMatch='**/integration/**/*.test.ts'",
+    "test:unit": "jest --testMatch='**/unit/**/*.test.ts'",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:performance",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "size": "size-limit",
+    "size:why": "size-limit --why",
+    "size:analyze": "node tools/size-analyzer.js all",
+    "size:core": "node tools/size-analyzer.js core",
+    "size:plugins": "node tools/size-analyzer.js plugins",
+    "size:build": "node tools/size-analyzer.js build",
+    "validate-holidays": "node tools/holiday-validator.js all",
+    "validate-holidays:year": "node tools/holiday-validator.js year",
+    "validate-holidays:locale": "node tools/holiday-validator.js locale",
+    "docs": "node tools/docs-generator.js",
+    "benchmark": "node tools/benchmark.js",
+    "plugin": "node tools/plugin-builder.js",
+    "test:browser": "playwright test",
+    "test:browser:setup": "playwright install",
+    "test:cross-platform": "jest --testPathPattern='cross-platform'",
+    "check": "npm run typecheck && npm run lint && npm run test:coverage && npm run size && npm run validate-holidays",
+    "prepublishOnly": "npm run check && npm run build",
+    "postinstall": "node -e \"console.log('\\n🎉 Kairos installed successfully! Visit https://github.com/ersinkoc/kairos for documentation.')\"",
+    "dev": "npm run build && npm run test:watch",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ersinkoc/kairos.git"
+  },
+  "keywords": [
+    "date",
+    "time",
+    "datetime",
+    "holiday",
+    "business-days",
+    "calendar",
+    "timezone",
+    "locale",
+    "zero-dependency",
+    "modular",
+    "typescript",
+    "tree-shake"
+  ],
+  "author": "Ersin Koc <ersinkoc@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ersinkoc/kairos/issues"
+  },
+  "homepage": "https://github.com/ersinkoc/kairos#readme",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "@size-limit/preset-small-lib": "^11.2.0",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "husky": "^9.1.7",
+    "jest": "^29.5.0",
+    "lint-staged": "^16.1.5",
+    "prettier": "^3.6.2",
+    "rimraf": "^5.0.0",
+    "rollup": "^2.79.2",
+    "rollup-plugin-terser": "^7.0.2",
+    "size-limit": "^11.2.0",
+    "ts-jest": "^29.1.0",
+    "tslib": "^2.8.1",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "sideEffects": false,
+  "lint-staged": {
+    "*.ts": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{js,json,md}": [
+      "prettier --write"
+    ]
+  },
+  "size-limit": [
+    {
+      "name": "Core Library",
+      "path": "dist/index.js",
+      "limit": "10 KB"
+    },
+    {
+      "name": "Core + Holiday Engine",
+      "path": ["dist/index.js", "dist/plugins/holiday/engine.js"],
+      "limit": "20 KB"
+    },
+    {
+      "name": "Core + All Plugins",
+      "path": "dist/**/*.js",
+      "limit": "50 KB"
+    },
+    {
+      "name": "Browser Bundle (UMD)",
+      "path": "dist/kairos.umd.min.js",
+      "limit": "60 KB"
+    }
+  ]
+}

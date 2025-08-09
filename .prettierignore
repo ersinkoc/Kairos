@@ -1,0 +1,9 @@
+dist/
+coverage/
+node_modules/
+*.min.js
+*.umd.js
+*.esm.js
+*.iife.js
+package-lock.json
+browser-test/

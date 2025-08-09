@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kairos Full Browser Test Suite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        header h1 {
+            color: #5e72e4;
+            margin-bottom: 10px;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        button {
+            background: #5e72e4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #4c63d2;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .test-category {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-category h2 {
+            color: #495057;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+            font-size: 18px;
+        }
+        
+        .test-list {
+            list-style: none;
+        }
+        
+        .test-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 5px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .test-item.pass {
+            background: #d4edda;
+            border-left: 3px solid #28a745;
+        }
+        
+        .test-item.fail {
+            background: #f8d7da;
+            border-left: 3px solid #dc3545;
+        }
+        
+        .test-item.running {
+            background: #fff3cd;
+            border-left: 3px solid #ffc107;
+        }
+        
+        .test-icon {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        .test-name {
+            flex: 1;
+        }
+        
+        .test-time {
+            color: #6c757d;
+            font-size: 12px;
+        }
+        
+        .stats {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #5e72e4;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .console-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .console-line {
+            margin-bottom: 5px;
+        }
+        
+        .console-error {
+            color: #f48771;
+        }
+        
+        .console-success {
+            color: #89d185;
+        }
+        
+        .console-info {
+            color: #75beff;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #5e72e4;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🕰️ Kairos Full Browser Test Suite</h1>
+            <p>Comprehensive testing of all Kairos features in the browser environment</p>
+            <div class="test-controls">
+                <button id="runAllBtn" onclick="runAllTests()">Run All Tests</button>
+                <button id="runCoreBtn" onclick="runCategoryTests('core')">Core Only</button>
+                <button id="runPluginsBtn" onclick="runCategoryTests('plugins')">Plugins Only</button>
+                <button id="clearBtn" onclick="clearResults()">Clear Results</button>
+            </div>
+        </header>
+        
+        <div class="stats" id="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="totalTests">0</div>
+                <div class="stat-label">Total Tests</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="passedTests">0</div>
+                <div class="stat-label">Passed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="failedTests">0</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="successRate">0%</div>
+                <div class="stat-label">Success Rate</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalTime">0ms</div>
+                <div class="stat-label">Total Time</div>
+            </div>
+        </div>
+        
+        <div id="testContainer">
+            <div class="loading">
+                <div class="spinner"></div>
+                Loading test suite...
+            </div>
+        </div>
+        
+        <div class="console-output" id="console">
+            <div class="console-line console-info">Console output will appear here...</div>
+        </div>
+    </div>
+    
+    <!-- Load Kairos UMD build -->
+    <script src="/dist/kairos.umd.min.js"></script>
+    
+    <script>
+        // Test framework
+        class TestFramework {
+            constructor() {
+                this.tests = new Map();
+                this.results = [];
+                this.startTime = null;
+                this.kairos = null;
+            }
+            
+            registerTest(category, name, testFn) {
+                if (!this.tests.has(category)) {
+                    this.tests.set(category, []);
+                }
+                this.tests.get(category).push({ name, testFn });
+            }
+            
+            async runTest(category, test) {
+                const startTime = performance.now();
+                let result = {
+                    category,
+                    name: test.name,
+                    passed: false,
+                    error: null,
+                    time: 0
+                };
+                
+                try {
+                    await test.testFn(this.kairos);
+                    result.passed = true;
+                } catch (error) {
+                    result.error = error.message;
+                }
+                
+                result.time = performance.now() - startTime;
+                return result;
+            }
+            
+            async runCategory(categoryName) {
+                const tests = this.tests.get(categoryName);
+                if (!tests) return [];
+                
+                const results = [];
+                for (const test of tests) {
+                    const result = await this.runTest(categoryName, test);
+                    results.push(result);
+                    this.updateTestUI(categoryName, test.name, result);
+                }
+                return results;
+            }
+            
+            async runAll() {
+                console.log('Running all tests, categories:', this.tests.size);
+                this.results = [];
+                this.startTime = performance.now();
+                
+                for (const [category, tests] of this.tests) {
+                    console.log(`Running category ${category} with ${tests.length} tests`);
+                    const categoryResults = await this.runCategory(category);
+                    this.results.push(...categoryResults);
+                }
+                
+                this.updateStats();
+                return this.results;
+            }
+            
+            updateTestUI(category, testName, result) {
+                const testElement = document.getElementById(`test-${category}-${testName.replace(/\s+/g, '-')}`);
+                if (testElement) {
+                    testElement.className = `test-item ${result.passed ? 'pass' : 'fail'}`;
+                    const icon = testElement.querySelector('.test-icon');
+                    icon.textContent = result.passed ? '✓' : '✗';
+                    const time = testElement.querySelector('.test-time');
+                    time.textContent = `${result.time.toFixed(2)}ms`;
+                }
+                
+                this.log(
+                    `${result.passed ? '✓' : '✗'} ${category}::${testName} (${result.time.toFixed(2)}ms)`,
+                    result.passed ? 'success' : 'error'
+                );
+                
+                if (result.error) {
+                    this.log(`  Error: ${result.error}`, 'error');
+                }
+            }
+            
+            updateStats() {
+                const total = this.results.length;
+                const passed = this.results.filter(r => r.passed).length;
+                const failed = total - passed;
+                const successRate = total > 0 ? Math.round((passed / total) * 100) : 0;
+                const totalTime = performance.now() - this.startTime;
+                
+                document.getElementById('totalTests').textContent = total;
+                document.getElementById('passedTests').textContent = passed;
+                document.getElementById('failedTests').textContent = failed;
+                document.getElementById('successRate').textContent = `${successRate}%`;
+                document.getElementById('totalTime').textContent = `${totalTime.toFixed(0)}ms`;
+                
+                this.log(`\nTest Results: ${passed}/${total} passed (${successRate}%)`, 'info');
+            }
+            
+            log(message, type = 'info') {
+                const console = document.getElementById('console');
+                const line = document.createElement('div');
+                line.className = `console-line console-${type}`;
+                line.textContent = message;
+                console.appendChild(line);
+                console.scrollTop = console.scrollHeight;
+            }
+            
+            renderTests() {
+                const container = document.getElementById('testContainer');
+                let html = '<div class="test-grid">';
+                
+                for (const [category, tests] of this.tests) {
+                    html += `
+                        <div class="test-category">
+                            <h2>${this.formatCategoryName(category)}</h2>
+                            <ul class="test-list">
+                    `;
+                    
+                    for (const test of tests) {
+                        const testId = `test-${category}-${test.name.replace(/\s+/g, '-')}`;
+                        html += `
+                            <li class="test-item" id="${testId}">
+                                <span class="test-icon">⏳</span>
+                                <span class="test-name">${test.name}</span>
+                                <span class="test-time">-</span>
+                            </li>
+                        `;
+                    }
+                    
+                    html += `
+                            </ul>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+                container.innerHTML = html;
+            }
+            
+            formatCategoryName(category) {
+                return category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, ' ');
+            }
+        }
+        
+        // Initialize test framework
+        const testFramework = new TestFramework();
+        
+        // Register all tests
+        function registerTests() {
+            // Core tests
+            testFramework.registerTest('core', 'Create instance', (kairos) => {
+                console.log('Testing kairos:', kairos);
+                const instance = kairos();
+                if (!instance) throw new Error('Failed to create instance');
+            });
+            
+            testFramework.registerTest('core', 'Parse ISO date', (kairos) => {
+                const instance = kairos('2024-01-15');
+                if (!instance) throw new Error('Failed to parse ISO date');
+            });
+            
+            testFramework.registerTest('core', 'Format date', (kairos) => {
+                const instance = kairos('2024-01-15');
+                const formatted = instance.format('YYYY-MM-DD');
+                if (formatted !== '2024-01-15') throw new Error(`Expected 2024-01-15, got ${formatted}`);
+            });
+            
+            testFramework.registerTest('core', 'Add days', (kairos) => {
+                const instance = kairos('2024-01-15');
+                const result = instance.add(5, 'days');
+                if (!result) throw new Error('Failed to add days');
+            });
+            
+            testFramework.registerTest('core', 'Subtract months', (kairos) => {
+                const instance = kairos('2024-01-15');
+                const result = instance.subtract(2, 'months');
+                if (!result) throw new Error('Failed to subtract months');
+            });
+            
+            testFramework.registerTest('core', 'Is before', (kairos) => {
+                const date1 = kairos('2024-01-15');
+                const date2 = kairos('2024-02-15');
+                if (!date1.isBefore(date2)) throw new Error('isBefore failed');
+            });
+            
+            testFramework.registerTest('core', 'Is after', (kairos) => {
+                const date1 = kairos('2024-02-15');
+                const date2 = kairos('2024-01-15');
+                if (!date1.isAfter(date2)) throw new Error('isAfter failed');
+            });
+            
+            testFramework.registerTest('core', 'Clone instance', (kairos) => {
+                const instance = kairos('2024-01-15');
+                const cloned = instance.clone();
+                if (!cloned) throw new Error('Failed to clone instance');
+            });
+            
+            testFramework.registerTest('core', 'Get year', (kairos) => {
+                const instance = kairos('2024-01-15');
+                const year = instance.year();
+                if (year !== 2024) throw new Error(`Expected 2024, got ${year}`);
+            });
+            
+            testFramework.registerTest('core', 'Set month', (kairos) => {
+                const instance = kairos('2024-01-15');
+                const result = instance.month(5);
+                if (!result) throw new Error('Failed to set month');
+            });
+            
+            // Format tests
+            testFramework.registerTest('format', 'Default format', (kairos) => {
+                const instance = kairos('2024-01-15');
+                const formatted = instance.format();
+                if (!formatted) throw new Error('Failed to format date');
+            });
+            
+            testFramework.registerTest('format', 'Complex format', (kairos) => {
+                const instance = kairos('2024-01-15');
+                const formatted = instance.format('dddd, MMMM Do YYYY');
+                if (!formatted) throw new Error('Failed complex format');
+            });
+            
+            testFramework.registerTest('format', 'Time format', (kairos) => {
+                const instance = kairos();
+                const formatted = instance.format('HH:mm:ss');
+                if (!formatted) throw new Error('Failed time format');
+            });
+            
+            // Manipulation tests
+            testFramework.registerTest('manipulation', 'Chain operations', (kairos) => {
+                const instance = kairos('2024-01-15');
+                const result = instance.add(1, 'year').subtract(2, 'months').add(3, 'days');
+                if (!result) throw new Error('Failed chain operations');
+            });
+            
+            testFramework.registerTest('manipulation', 'Start of day', (kairos) => {
+                const instance = kairos();
+                const result = instance.startOf('day');
+                if (!result) throw new Error('Failed start of day');
+            });
+            
+            testFramework.registerTest('manipulation', 'End of month', (kairos) => {
+                const instance = kairos();
+                const result = instance.endOf('month');
+                if (!result) throw new Error('Failed end of month');
+            });
+            
+            // Plugin tests (if loaded)
+            testFramework.registerTest('plugins', 'Duration creation', (kairos) => {
+                if (!kairos.duration) {
+                    console.warn('Duration plugin not loaded');
+                    return;
+                }
+                const duration = kairos.duration({ hours: 2, minutes: 30 });
+                if (!duration) throw new Error('Failed to create duration');
+            });
+            
+            testFramework.registerTest('plugins', 'Range creation', (kairos) => {
+                if (!kairos.range) {
+                    console.warn('Range plugin not loaded');
+                    return;
+                }
+                const start = kairos('2024-01-01');
+                const end = kairos('2024-01-31');
+                const range = start.range(end);
+                if (!range) throw new Error('Failed to create range');
+            });
+            
+            testFramework.registerTest('plugins', 'Holiday check', (kairos) => {
+                const instance = kairos('2024-12-25');
+                if (instance.isHoliday) {
+                    const holidays = [{ name: 'Christmas', type: 'fixed', rule: { month: 12, day: 25 } }];
+                    instance.isHoliday(holidays);
+                }
+            });
+            
+            testFramework.registerTest('plugins', 'Business day check', (kairos) => {
+                const instance = kairos('2024-01-15'); // Monday
+                if (instance.isBusinessDay) {
+                    const result = instance.isBusinessDay();
+                    if (result !== true) throw new Error('Expected business day');
+                }
+            });
+            
+            // Browser API tests
+            testFramework.registerTest('browser', 'Date API', () => {
+                if (typeof Date === 'undefined') throw new Error('Date API not available');
+            });
+            
+            testFramework.registerTest('browser', 'Intl API', () => {
+                if (typeof Intl === 'undefined') throw new Error('Intl API not available');
+            });
+            
+            testFramework.registerTest('browser', 'Performance API', () => {
+                if (typeof performance === 'undefined') throw new Error('Performance API not available');
+            });
+            
+            testFramework.registerTest('browser', 'ES6 Features', () => {
+                if (typeof Map === 'undefined') throw new Error('Map not available');
+                if (typeof Set === 'undefined') throw new Error('Set not available');
+                if (typeof Symbol === 'undefined') throw new Error('Symbol not available');
+            });
+        }
+        
+        // Test runner functions
+        async function runAllTests() {
+            document.getElementById('runAllBtn').disabled = true;
+            document.getElementById('console').innerHTML = '';
+            testFramework.log('Starting full test suite...', 'info');
+            
+            await testFramework.runAll();
+            
+            document.getElementById('runAllBtn').disabled = false;
+            testFramework.log('Test suite complete!', 'info');
+        }
+        
+        async function runCategoryTests(categoryName) {
+            document.getElementById('console').innerHTML = '';
+            testFramework.log(`Running ${categoryName} tests...`, 'info');
+            
+            const results = await testFramework.runCategory(categoryName);
+            testFramework.results = results;
+            testFramework.updateStats();
+            
+            testFramework.log(`${categoryName} tests complete!`, 'info');
+        }
+        
+        function clearResults() {
+            testFramework.results = [];
+            testFramework.renderTests();
+            testFramework.updateStats();
+            document.getElementById('console').innerHTML = '<div class="console-line console-info">Console cleared</div>';
+        }
+        
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, checking for kairos...');
+            console.log('window.kairos:', window.kairos);
+            
+            // Check if Kairos is loaded
+            if (typeof window.kairos !== 'undefined') {
+                // Named exports: use the default export
+                testFramework.kairos = window.kairos.default || window.kairos;
+                console.log('Using kairos:', testFramework.kairos);
+                testFramework.log('Kairos library loaded successfully', 'success');
+                
+                // Register tests
+                console.log('Registering tests...');
+                registerTests();
+                console.log('Tests registered:', testFramework.tests);
+                
+                // Render test UI
+                testFramework.renderTests();
+                
+                testFramework.log(`Registered ${testFramework.tests.size} test categories`, 'info');
+                let totalTests = 0;
+                for (const tests of testFramework.tests.values()) {
+                    totalTests += tests.length;
+                }
+                testFramework.log(`Total ${totalTests} tests ready to run`, 'info');
+            } else {
+                testFramework.log('Failed to load Kairos library!', 'error');
+                document.getElementById('testContainer').innerHTML = '<div class="loading">Failed to load Kairos library</div>';
+            }
+        });
+    </script>
+</body>
+</html>

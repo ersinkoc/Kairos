@@ -1,0 +1,29 @@
+{
+  "name": "kairos-nodejs-example",
+  "version": "1.0.0",
+  "description": "Node.js example applications demonstrating Kairos date library",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "cli": "node src/cli.js",
+    "server": "node src/server.js",
+    "financial": "node src/examples/financial-calculator.js",
+    "payroll": "node src/examples/payroll-system.js",
+    "scheduler": "node src/examples/task-scheduler.js",
+    "report": "node src/examples/report-generator.js"
+  },
+  "dependencies": {
+    "@oxog/kairos": "file:../../",
+    "express": "^4.18.2",
+    "commander": "^11.1.0",
+    "chalk": "^5.3.0",
+    "table": "^6.8.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.5"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
