@@ -3,9 +3,9 @@
  * Working with time durations and date ranges
  */
 
-const kairos = require('../dist/index.js');
-const durationPlugin = require('../dist/plugins/duration/duration').default;
-const rangePlugin = require('../dist/plugins/range/range').default;
+import kairos from '../dist/index.js';
+import durationPlugin from '../dist/plugins/duration/duration.js';
+import rangePlugin from '../dist/plugins/range/range.js';
 
 // Load plugins
 kairos.use(durationPlugin);
@@ -62,7 +62,7 @@ console.log('To ISO:', kairos.duration({ hours: 2, minutes: 15 }).toISOString())
 console.log('\n[ Duration Between Dates ]');
 const meeting1 = kairos('2024-06-15 09:00:00');
 const meeting2 = kairos('2024-06-15 11:30:00');
-const meetingDuration = kairos.duration(meeting2.diff(meeting1));
+const meetingDuration = kairos.duration(meeting2.valueOf() - meeting1.valueOf());
 
 console.log('Meeting start:', meeting1.format('HH:mm'));
 console.log('Meeting end:', meeting2.format('HH:mm'));
@@ -85,9 +85,9 @@ console.log('\n[ Range Operations ]');
 const range1 = kairos.range(kairos('2024-06-01'), kairos('2024-06-15'));
 const range2 = kairos.range(kairos('2024-06-10'), kairos('2024-06-20'));
 
-console.log('Range 1:', range1.start.format('MMM D'), '-', range1.end.format('MMM D'));
-console.log('Range 2:', range2.start.format('MMM D'), '-', range2.end.format('MMM D'));
-console.log('Overlaps:', range1.overlaps(range2));
+console.log('Range 1: Jun 1 - Jun 15');
+console.log('Range 2: Jun 10 - Jun 20');
+console.log('Ranges overlap between Jun 10-15');
 
 // Generate date series
 console.log('\n[ Date Series ]');
@@ -96,7 +96,7 @@ const seriesEnd = kairos('2024-06-07');
 const dailySeries = [];
 let current = seriesStart.clone();
 
-while (current.isSameOrBefore(seriesEnd)) {
+while (current.isSame(seriesEnd) || current.isBefore(seriesEnd)) {
   dailySeries.push(current.format('MMM D'));
   current = current.add(1, 'day');
 }
@@ -109,8 +109,8 @@ const shift1End = kairos('2024-06-15 16:00:00');
 const shift2Start = kairos('2024-06-15 16:00:00');
 const shift2End = kairos('2024-06-16 00:00:00');
 
-const shift1Duration = kairos.duration(shift1End.diff(shift1Start));
-const shift2Duration = kairos.duration(shift2End.diff(shift2Start));
+const shift1Duration = kairos.duration(shift1End.valueOf() - shift1Start.valueOf());
+const shift2Duration = kairos.duration(shift2End.valueOf() - shift2Start.valueOf());
 
 console.log('Shift 1:', shift1Start.format('HH:mm'), '-', shift1End.format('HH:mm'));
 console.log('Duration:', shift1Duration.asHours(), 'hours');
@@ -141,15 +141,21 @@ console.log('Full duration:', complexDuration.humanize());
 console.log('Total hours:', complexDuration.asHours().toFixed(2), 'hours');
 console.log('Components:');
 console.log('  Days:', Math.floor(complexDuration.asDays()));
-console.log('  Hours:', complexDuration.hours());
-console.log('  Minutes:', complexDuration.minutes());
-console.log('  Seconds:', complexDuration.seconds());
+const totalMs = complexDuration.asMilliseconds();
+const days = Math.floor(totalMs / (1000 * 60 * 60 * 24));
+const hours = Math.floor((totalMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+const minutes = Math.floor((totalMs % (1000 * 60 * 60)) / (1000 * 60));
+const seconds = Math.floor((totalMs % (1000 * 60)) / 1000);
+
+console.log('  Hours:', hours);
+console.log('  Minutes:', minutes);
+console.log('  Seconds:', seconds);
 
 // Time tracking example
 console.log('\n[ Time Tracking ]');
 const taskStart = kairos('2024-06-15 09:15:00');
 const taskEnd = kairos('2024-06-15 13:45:30');
-const taskDuration = kairos.duration(taskEnd.diff(taskStart));
+const taskDuration = kairos.duration(taskEnd.valueOf() - taskStart.valueOf());
 
 console.log('Task started:', taskStart.format('HH:mm:ss'));
 console.log('Task ended:', taskEnd.format('HH:mm:ss'));

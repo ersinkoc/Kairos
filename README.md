@@ -1,5 +1,13 @@
 # Kairos
 
+[![npm version](https://img.shields.io/npm/v/@oxog/kairos.svg)](https://www.npmjs.com/package/@oxog/kairos)
+[![Build Status](https://github.com/ersinkoc/kairos/workflows/CI/badge.svg)](https://github.com/ersinkoc/kairos/actions)
+[![Coverage Status](https://codecov.io/gh/ersinkoc/kairos/branch/main/graph/badge.svg)](https://codecov.io/gh/ersinkoc/kairos)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@oxog/kairos)](https://bundlephobia.com/package/@oxog/kairos)
+[![License](https://img.shields.io/npm/l/@oxog/kairos.svg)](https://github.com/ersinkoc/kairos/blob/main/LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
+[![Tree-Shaking](https://img.shields.io/badge/Tree%20Shaking-Supported-green.svg)](https://webpack.js.org/guides/tree-shaking/)
+
 A lightweight, zero-dependency JavaScript library for date and time manipulation with a powerful plugin architecture.
 
 ## Features

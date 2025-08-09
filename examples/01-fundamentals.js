@@ -3,7 +3,7 @@
  * Core concepts and basic operations
  */
 
-const kairos = require('../dist/index.js');
+import kairos from '../dist/index.js';
 
 console.log('=== KAIROS FUNDAMENTALS ===\n');
 

@@ -41,7 +41,6 @@ export class RFC2822Parser {
         if (weekday) {
             const expectedWeekday = RFC2822Parser.WEEKDAYS[weekday];
             if (date.getDay() !== expectedWeekday) {
-                console.warn(`RFC2822: Weekday mismatch. Expected ${weekday}, got ${date.getDay()}`);
             }
         }
         return date;

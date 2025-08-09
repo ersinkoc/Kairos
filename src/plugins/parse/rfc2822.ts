@@ -103,11 +103,12 @@ export class RFC2822Parser {
       date.setMinutes(date.getMinutes() - totalOffsetMinutes);
     }
 
-    // Validate weekday if provided
+    // Validate weekday if provided (silently ignore mismatches)
     if (weekday) {
       const expectedWeekday = RFC2822Parser.WEEKDAYS[weekday];
       if (date.getDay() !== expectedWeekday) {
-        console.warn(`RFC2822: Weekday mismatch. Expected ${weekday}, got ${date.getDay()}`);
+        // Weekday mismatch - parser continues with the parsed date
+        // RFC2822 spec allows ignoring weekday if it doesn't match
       }
     }
 

@@ -35,5 +35,7 @@ module.exports = {
     '^(.*)\\.js$': '$1'
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
-  testTimeout: 10000
+  testTimeout: 10000,
+  // Suppress console output in tests
+  silent: process.env.NODE_ENV === 'production' || process.env.JEST_SILENT === 'true'
 };

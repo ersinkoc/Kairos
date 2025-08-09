@@ -3,7 +3,7 @@
  * Checking relationships between dates
  */
 
-const kairos = require('../dist/index.js');
+import kairos from '../dist/index.js';
 
 console.log('=== COMPARISON & QUERIES ===\n');
 
@@ -32,16 +32,16 @@ console.log('Same day:', date1.isSame(date2, 'day'));
 console.log('Same month:', date1.isSame(date2, 'month'));
 console.log('Same year:', date1.isSame(date2, 'year'));
 
-// Inclusive comparisons
+// Inclusive comparisons (using basic methods)
 console.log('\n[ Inclusive Comparisons ]');
 const ref = kairos('2024-06-01');
 const exact = kairos('2024-06-01');
 const after = kairos('2024-06-02');
 
 console.log('Reference:', ref.format('YYYY-MM-DD'));
-console.log('Same date is same-or-before:', exact.isSameOrBefore(ref));
-console.log('Same date is same-or-after:', exact.isSameOrAfter(ref));
-console.log('Later date is same-or-after:', after.isSameOrAfter(ref));
+console.log('Same date is same-or-before:', exact.isSame(ref) || exact.isBefore(ref));
+console.log('Same date is same-or-after:', exact.isSame(ref) || exact.isAfter(ref));
+console.log('Later date is same-or-after:', after.isSame(ref) || after.isAfter(ref));
 
 // Range checking
 console.log('\n[ Range Checking ]');
@@ -52,10 +52,10 @@ const outside = kairos('2025-01-15');
 const boundary = kairos('2024-12-31');
 
 console.log('Range:', rangeStart.format('YYYY-MM-DD'), 'to', rangeEnd.format('YYYY-MM-DD'));
-console.log('June 15 in range:', inside.isBetween(rangeStart, rangeEnd));
-console.log('Jan 2025 in range:', outside.isBetween(rangeStart, rangeEnd));
-console.log('Dec 31 in range (exclusive):', boundary.isBetween(rangeStart, rangeEnd));
-console.log('Dec 31 in range (inclusive):', boundary.isBetween(rangeStart, rangeEnd, null, '[]'));
+console.log('June 15 in range:', inside.isAfter(rangeStart) && inside.isBefore(rangeEnd));
+console.log('Jan 2025 in range:', outside.isAfter(rangeStart) && outside.isBefore(rangeEnd));
+console.log('Dec 31 in range (exclusive):', boundary.isAfter(rangeStart) && boundary.isBefore(rangeEnd));
+console.log('Dec 31 in range (inclusive):', (boundary.isAfter(rangeStart) || boundary.isSame(rangeStart)) && (boundary.isBefore(rangeEnd) || boundary.isSame(rangeEnd)));
 
 // Time differences
 console.log('\n[ Time Differences ]');
@@ -64,12 +64,13 @@ const event2 = kairos('2024-01-15 17:30:00');
 
 console.log('Event 1:', event1.format('YYYY-MM-DD HH:mm'));
 console.log('Event 2:', event2.format('YYYY-MM-DD HH:mm'));
-console.log('Difference in milliseconds:', event1.diff(event2));
-console.log('Difference in seconds:', event1.diff(event2, 'seconds'));
-console.log('Difference in minutes:', event1.diff(event2, 'minutes'));
-console.log('Difference in hours:', event1.diff(event2, 'hours'));
-console.log('Difference in days:', event1.diff(event2, 'days'));
-console.log('Difference in weeks:', event1.diff(event2, 'weeks'));
+const diffMs = event2.valueOf() - event1.valueOf();
+console.log('Difference in milliseconds:', diffMs);
+console.log('Difference in seconds:', Math.floor(diffMs / 1000));
+console.log('Difference in minutes:', Math.floor(diffMs / (1000 * 60)));
+console.log('Difference in hours:', Math.floor(diffMs / (1000 * 60 * 60)));
+console.log('Difference in days:', Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+console.log('Difference in weeks:', Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7)));
 
 // Precise differences
 console.log('\n[ Precise Differences ]');
@@ -78,10 +79,10 @@ const precise2 = kairos('2024-03-10 16:45:15');
 
 console.log('Time 1:', precise1.format('HH:mm:ss'));
 console.log('Time 2:', precise2.format('HH:mm:ss'));
-const diffMs = precise1.diff(precise2);
-const hours = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60));
-const minutes = Math.floor((Math.abs(diffMs) % (1000 * 60 * 60)) / (1000 * 60));
-const seconds = Math.floor((Math.abs(diffMs) % (1000 * 60)) / 1000);
+const preciseDiffMs = precise2.valueOf() - precise1.valueOf();
+const hours = Math.floor(Math.abs(preciseDiffMs) / (1000 * 60 * 60));
+const minutes = Math.floor((Math.abs(preciseDiffMs) % (1000 * 60 * 60)) / (1000 * 60));
+const seconds = Math.floor((Math.abs(preciseDiffMs) % (1000 * 60)) / 1000);
 console.log(`Precise difference: ${hours}h ${minutes}m ${seconds}s`);
 
 // Period boundaries

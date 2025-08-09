@@ -3,13 +3,13 @@
  * Various parsing strategies and date validation
  */
 
-const kairos = require('../dist/index.js');
+import kairos from '../dist/index.js';
 
 // Load parsing plugins
-const isoParser = require('../dist/plugins/parse/iso').default;
-const rfcParser = require('../dist/plugins/parse/rfc2822').default;
-const unixParser = require('../dist/plugins/parse/unix').default;
-const flexibleParser = require('../dist/plugins/parse/flexible').default;
+import isoParser from '../dist/plugins/parse/iso.js';
+import rfcParser from '../dist/plugins/parse/rfc2822.js';
+import unixParser from '../dist/plugins/parse/unix.js';
+import flexibleParser from '../dist/plugins/parse/flexible.js';
 
 kairos.use(isoParser);
 kairos.use(rfcParser);

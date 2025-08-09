@@ -3,7 +3,7 @@
  * Various ways to format and display dates
  */
 
-const kairos = require('../dist/index.js');
+import kairos from '../dist/index.js';
 
 console.log('=== FORMATTING & DISPLAY ===\n');
 

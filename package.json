@@ -2,39 +2,71 @@
   "name": "@oxog/kairos",
   "version": "1.0.0",
   "description": "Revolutionary zero-dependency JavaScript date/time library with modular architecture and dynamic holiday system",
+  "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts",
       "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/index.js",
+      "browser": "./dist/kairos.umd.min.js"
     },
-    "./parse/*": {
-      "import": "./dist/plugins/parse/*.mjs",
-      "require": "./dist/plugins/parse/*.js",
-      "types": "./dist/plugins/parse/*.d.ts"
+    "./plugins/*": {
+      "types": "./dist/plugins/*.d.ts",
+      "require": "./dist/plugins/*.js",
+      "import": "./dist/plugins/*.js"
     },
-    "./format/*": {
-      "import": "./dist/plugins/format/*.mjs",
-      "require": "./dist/plugins/format/*.js",
-      "types": "./dist/plugins/format/*.d.ts"
-    },
-    "./locale/*": {
-      "import": "./dist/plugins/locale/*/index.mjs",
-      "require": "./dist/plugins/locale/*/index.js",
-      "types": "./dist/plugins/locale/*/index.d.ts"
-    },
-    "./holiday/*": {
-      "import": "./dist/plugins/holiday/*.mjs",
-      "require": "./dist/plugins/holiday/*.js",
-      "types": "./dist/plugins/holiday/*.d.ts"
-    },
-    "./business/*": {
-      "import": "./dist/plugins/business/*.mjs",
+    "./plugins/business/*": {
+      "types": "./dist/plugins/business/*.d.ts",
       "require": "./dist/plugins/business/*.js",
-      "types": "./dist/plugins/business/*.d.ts"
+      "import": "./dist/plugins/business/*.js"
+    },
+    "./plugins/locale/*": {
+      "types": "./dist/plugins/locale/*/index.d.ts",
+      "require": "./dist/plugins/locale/*/index.js",
+      "import": "./dist/plugins/locale/*/index.js"
+    },
+    "./plugins/parse/*": {
+      "types": "./dist/plugins/parse/*.d.ts",
+      "require": "./dist/plugins/parse/*.js",
+      "import": "./dist/plugins/parse/*.js"
+    },
+    "./plugins/holiday/*": {
+      "types": "./dist/plugins/holiday/*.d.ts",
+      "require": "./dist/plugins/holiday/*.js",
+      "import": "./dist/plugins/holiday/*.js"
+    },
+    "./plugins/calendar/*": {
+      "types": "./dist/plugins/calendar/*.d.ts",
+      "require": "./dist/plugins/calendar/*.js",
+      "import": "./dist/plugins/calendar/*.js"
+    },
+    "./plugins/duration/*": {
+      "types": "./dist/plugins/duration/*.d.ts",
+      "require": "./dist/plugins/duration/*.js",
+      "import": "./dist/plugins/duration/*.js"
+    },
+    "./plugins/relative/*": {
+      "types": "./dist/plugins/relative/*.d.ts",
+      "require": "./dist/plugins/relative/*.js",
+      "import": "./dist/plugins/relative/*.js"
+    },
+    "./plugins/timezone/*": {
+      "types": "./dist/plugins/timezone/*.d.ts",
+      "require": "./dist/plugins/timezone/*.js",
+      "import": "./dist/plugins/timezone/*.js"
+    },
+    "./plugins/range/*": {
+      "types": "./dist/plugins/range/*.d.ts",
+      "require": "./dist/plugins/range/*.js",
+      "import": "./dist/plugins/range/*.js"
+    },
+    "./plugins/fiscal/*": {
+      "types": "./dist/plugins/fiscal/*.d.ts",
+      "require": "./dist/plugins/fiscal/*.js",
+      "import": "./dist/plugins/fiscal/*.js"
     }
   },
   "files": [
@@ -43,17 +75,21 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "npm run clean && tsc && npm run build:browser",
+    "build": "npm run clean && npm run build:lib && npm run build:browser",
+    "build:lib": "tsc",
     "build:types": "tsc --emitDeclarationOnly",
     "build:esm": "tsc --module es2020 --outDir dist",
     "build:cjs": "tsc --module commonjs --outDir dist/cjs",
     "build:browser": "rollup -c",
+    "build:prod": "npm run clean && npm run build:lib && npm run build:browser && npm run build:minify",
+    "build:minify": "terser dist/index.js -o dist/index.min.js --compress --mangle",
     "clean": "rimraf dist",
-    "test": "jest",
+    "test": "cross-env JEST_SILENT=true jest --testPathPattern=\".*\" --silent --verbose=false",
+    "test:verbose": "jest --testPathPattern=\".*\"",
+    "test:silent": "cross-env JEST_SILENT=true jest --silent --verbose=false",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:performance": "jest --testMatch='**/performance/**/*.test.ts'",
-    "docs": "npm run docs:build",
     "docs:build": "typedoc src/core/plugin-system.ts --out docs/generated --readme README.md",
     "docs:api": "npm run docs:build",
     "test:integration": "jest --testMatch='**/integration/**/*.test.ts'",
@@ -73,7 +109,6 @@
     "validate-holidays": "node tools/holiday-validator.js all",
     "validate-holidays:year": "node tools/holiday-validator.js year",
     "validate-holidays:locale": "node tools/holiday-validator.js locale",
-    "docs": "node tools/docs-generator.js",
     "benchmark": "node tools/benchmark.js",
     "plugin": "node tools/plugin-builder.js",
     "test:browser": "playwright test",
@@ -119,6 +154,7 @@
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "cross-env": "^10.0.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
@@ -155,7 +191,10 @@
     },
     {
       "name": "Core + Holiday Engine",
-      "path": ["dist/index.js", "dist/plugins/holiday/engine.js"],
+      "path": [
+        "dist/index.js",
+        "dist/plugins/holiday/engine.js"
+      ],
       "limit": "20 KB"
     },
     {

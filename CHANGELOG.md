@@ -2,7 +2,7 @@
 
 All significant changes to Kairos are documented here.
 
-## [1.0.0] - 2024-12-20
+## [1.0.0] - 2025-08-09
 
 ### Initial Release
 
