@@ -228,6 +228,27 @@ export default {
         if (!this.isValid()) {
           return 'Invalid Date';
         }
+        
+        // If this is a UTC instance and we're using basic template, use core format method
+        if ((this as any)._isUTC && /^[YMDHmsS\-: ]+$/.test(template)) {
+          // Use core format method for UTC instances with basic templates
+          const date = this.toDate();
+          const year = date.getUTCFullYear();
+          const month = date.getUTCMonth() + 1;
+          const day = date.getUTCDate();
+          const hours = date.getUTCHours();
+          const minutes = date.getUTCMinutes();
+          const seconds = date.getUTCSeconds();
+          
+          return template
+            .replace(/YYYY/g, year.toString())
+            .replace(/MM/g, month.toString().padStart(2, '0'))
+            .replace(/DD/g, day.toString().padStart(2, '0'))
+            .replace(/HH/g, hours.toString().padStart(2, '0'))
+            .replace(/mm/g, minutes.toString().padStart(2, '0'))
+            .replace(/ss/g, seconds.toString().padStart(2, '0'));
+        }
+        
         const currentLocale = kairos.locales?.[kairos.currentLocale || 'en'];
         return formatter.format(this.toDate(), template, currentLocale);
       },

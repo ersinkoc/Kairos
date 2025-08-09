@@ -202,6 +202,25 @@
                     }
                     return date;
                 }
+                const europeanPattern = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/;
+                if (europeanPattern.test(input)) {
+                    const match = input.match(europeanPattern);
+                    if (match) {
+                        const day = parseInt(match[1], 10);
+                        const month = parseInt(match[2], 10);
+                        const year = parseInt(match[3], 10);
+                        if (month < 1 || month > 12 || day < 1 || day > 31) {
+                            return new Date(NaN);
+                        }
+                        const date = new Date(year, month - 1, day, 0, 0, 0, 0);
+                        if (date.getFullYear() !== year ||
+                            date.getMonth() !== month - 1 ||
+                            date.getDate() !== day) {
+                            return new Date(NaN);
+                        }
+                        return date;
+                    }
+                }
                 const parsed = new Date(input);
                 if (isNaN(parsed.getTime())) {
                     if (KairosCore.config.strict) {
@@ -254,6 +273,9 @@
             return this._date.toISOString();
         }
         offset() {
+            if (this._isUTC) {
+                return 0;
+            }
             return -this._date.getTimezoneOffset();
         }
         toDate() {
@@ -466,12 +488,13 @@
             if (!this.isValid()) {
                 return 'Invalid Date';
             }
-            const year = this._date.getFullYear();
-            const month = this._date.getMonth() + 1;
-            const date = this._date.getDate();
-            const hours = this._date.getHours();
-            const minutes = this._date.getMinutes();
-            const seconds = this._date.getSeconds();
+            const isUtc = this._isUTC;
+            const year = isUtc ? this._date.getUTCFullYear() : this._date.getFullYear();
+            const month = isUtc ? this._date.getUTCMonth() + 1 : this._date.getMonth() + 1;
+            const date = isUtc ? this._date.getUTCDate() : this._date.getDate();
+            const hours = isUtc ? this._date.getUTCHours() : this._date.getHours();
+            const minutes = isUtc ? this._date.getUTCMinutes() : this._date.getMinutes();
+            const seconds = isUtc ? this._date.getUTCSeconds() : this._date.getSeconds();
             if (isNaN(year) || isNaN(month) || isNaN(date)) {
                 return 'Invalid Date';
             }
@@ -589,7 +612,33 @@
     kairos.extend = PluginSystem.extend.bind(PluginSystem);
     kairos.addStatic = PluginSystem.addStatic.bind(PluginSystem);
     kairos.plugins = PluginSystem.plugins;
-    kairos.utc = (input) => new KairosCore(input);
+    kairos.utc = (input) => {
+        let utcDate;
+        if (typeof input === 'string' && !input.endsWith('Z') && !input.includes('+') && !/[+-]\d{2}:?\d{2}$/.test(input)) {
+            const dateTimePattern = /^(\d{4})-(\d{2})-(\d{2})(?:\s+|T)(\d{2}):(\d{2})(?::(\d{2}))?$/;
+            const dateOnlyPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+            const match = input.match(dateTimePattern) || input.match(dateOnlyPattern);
+            if (match) {
+                const year = parseInt(match[1], 10);
+                const month = parseInt(match[2], 10) - 1;
+                const day = parseInt(match[3], 10);
+                const hour = match[4] ? parseInt(match[4], 10) : 0;
+                const minute = match[5] ? parseInt(match[5], 10) : 0;
+                const second = match[6] ? parseInt(match[6], 10) : 0;
+                utcDate = new Date(Date.UTC(year, month, day, hour, minute, second));
+            }
+            else {
+                input = input.replace(' ', 'T') + 'Z';
+                utcDate = new Date(input);
+            }
+        }
+        else {
+            utcDate = new Date(input);
+        }
+        const instance = new KairosCore(utcDate);
+        instance._isUTC = true;
+        return instance;
+    };
     kairos.unix = (timestamp) => new KairosCore(new Date(timestamp * 1000));
 
     class LocaleManager {

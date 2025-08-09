@@ -1,415 +1,260 @@
-# Kairos 🕰️
+# Kairos
 
-[![npm version](https://badge.fury.io/js/@oxog%2Fkairos.svg)](https://www.npmjs.com/package/@oxog/kairos)
-[![CI Status](https://github.com/ersinkoc/kairos/workflows/CI/badge.svg)](https://github.com/ersinkoc/kairos/actions)
-[![Coverage Status](https://codecov.io/gh/ersinkoc/kairos/branch/main/graph/badge.svg)](https://codecov.io/gh/ersinkoc/kairos)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@oxog/kairos)](https://bundlephobia.com/package/@oxog/kairos)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+A lightweight, zero-dependency JavaScript library for date and time manipulation with a powerful plugin architecture.
 
-> Revolutionary zero-dependency JavaScript date/time library with modular architecture and dynamic holiday system
+## Features
 
-## ✨ Features
+- **Zero Dependencies** - Completely self-contained with no external requirements
+- **Plugin Architecture** - Load only what you need, tree-shaking friendly
+- **Immutable API** - All operations return new instances
+- **TypeScript Support** - Full type definitions included
+- **Cross-Platform** - Works in Node.js 14+ and modern browsers
+- **Lightweight** - Core ~14KB, all plugins ~112KB minified + gzipped
 
-- 🚀 **Zero Runtime Dependencies** - Truly standalone library
-- 📦 **Modular Plugin System** - Load only what you need
-- 🌍 **Comprehensive Locale Support** - Multiple languages and regions (US, DE, TR, JP)
-- 🎉 **Advanced Holiday Engine** - Dynamic holiday calculations with multiple rule types
-- 💼 **Business Day Calculations** - Handle workdays, settlements, and fiscal years
-- 🕰️ **Relative Time** - Human-readable time differences ("2 hours ago", "in 3 days")
-- 📅 **Calendar Operations** - Week numbers, quarters, ISO weeks, and more
-- 🔧 **Tree-Shakeable** - Optimize your bundle size (~15KB min+gzip for core)
-- 📝 **Full TypeScript Support** - First-class TypeScript experience
-- ⚡ **High Performance** - Optimized with intelligent caching
-- 🧩 **Extensible** - Easy to add custom functionality
-- ✅ **Well Tested** - 67% test coverage with comprehensive test suite
-- 🎯 **Browser Ready** - UMD, ESM, and IIFE builds available
-
-## 📦 Installation
+## Quick Start
 
 ```bash
 npm install @oxog/kairos
 ```
 
-```bash
-yarn add @oxog/kairos
-```
-
-```bash
-pnpm add @oxog/kairos
-```
-
-### CDN Usage
-
-```html
-<!-- UMD build for browsers -->
-<script src="https://unpkg.com/@oxog/kairos/dist/kairos.umd.min.js"></script>
-<script>
-  const date = kairos('2024-01-15');
-  console.log(date.format('YYYY-MM-DD'));
-</script>
-
-<!-- ESM build for modern browsers -->
-<script type="module">
-  import kairos from 'https://unpkg.com/@oxog/kairos/dist/kairos.esm.min.js';
-  const date = kairos('2024-01-15');
-  console.log(date.format('YYYY-MM-DD'));
-</script>
-```
-
-## 🚀 Quick Start
-
 ```javascript
-import kairos from '@oxog/kairos';
+const kairos = require('@oxog/kairos');
 
-// Basic usage
+// Current date/time
 const now = kairos();
-const tomorrow = kairos().add(1, 'day');
-const formatted = kairos().format('YYYY-MM-DD HH:mm:ss');
 
-// With plugins
-import holidayEngine from '@oxog/kairos/holiday/engine';
-import businessWorkday from '@oxog/kairos/business/workday';
-import localeUS from '@oxog/kairos/locale/en-US';
+// Parse dates
+const date = kairos('2024-06-15');
 
-kairos.use([holidayEngine, businessWorkday, localeUS]);
+// Format dates
+console.log(date.format('MMMM D, YYYY')); // June 15, 2024
 
-// Check holidays
-const isHoliday = kairos('2024-12-25').isHoliday();
-const nextBusinessDay = kairos().nextBusinessDay();
+// Date arithmetic
+const tomorrow = date.add(1, 'day');
+const lastWeek = date.subtract(1, 'week');
+
+// Comparisons
+console.log(date.isBefore(tomorrow)); // true
+console.log(date.isAfter(lastWeek)); // true
 ```
 
-## 🎯 Core Features
+## Core API
 
-### Date Manipulation
+### Creating Instances
 
 ```javascript
-const date = kairos('2024-01-15');
-
-// Add/subtract time
-date.add(1, 'month');
-date.subtract(3, 'days');
-date.add(2, 'hours');
-
-// Chaining
-date
-  .add(1, 'year')
-  .subtract(2, 'months')
-  .add(3, 'days');
-
-// Immutable operations
-const original = kairos('2024-01-01');
-const modified = original.add(1, 'day');
-console.log(original.format()); // 2024-01-01
-console.log(modified.format()); // 2024-01-02
+kairos()                           // Current date/time
+kairos('2024-06-15')              // ISO string
+kairos(1718460600000)             // Unix timestamp (ms)
+kairos([2024, 5, 15])             // Array [year, month, day]
+kairos({ year: 2024, month: 6 })  // Object
 ```
 
-### Formatting
+### Manipulation
 
 ```javascript
-const date = kairos('2024-03-15T14:30:45.123Z');
+const date = kairos('2024-06-15');
 
-date.format('YYYY-MM-DD');           // 2024-03-15
-date.format('DD/MM/YYYY HH:mm');     // 15/03/2024 14:30
-date.format('MMMM Do, YYYY');        // March 15th, 2024
-date.format('dddd, MMMM D, YYYY');   // Friday, March 15, 2024
-date.format('HH:mm:ss.SSS');         // 14:30:45.123
+date.add(1, 'day')        // Add time
+date.subtract(2, 'hours') // Subtract time
+date.startOf('month')     // Beginning of month
+date.endOf('year')        // End of year
+date.clone()              // Create copy
 ```
 
 ### Comparison
 
 ```javascript
-const date1 = kairos('2024-01-01');
-const date2 = kairos('2024-01-15');
+const date1 = kairos('2024-06-15');
+const date2 = kairos('2024-06-20');
 
-date1.isBefore(date2);  // true
-date1.isAfter(date2);   // false
-date1.isSame(date2);    // false
-
-// With granularity
-date1.isSame(date2, 'month'); // true
-date1.isSame(date2, 'year');  // true
+date1.isBefore(date2)              // true
+date1.isAfter(date2)               // false
+date1.isSame(date2, 'month')       // true
+date1.isBetween(start, end)        // Check if between
+date1.diff(date2, 'days')          // -5
 ```
 
-## 🔌 Plugin System
-
-### Holiday Engine
+### Display
 
 ```javascript
-import kairos from '@oxog/kairos';
-import holidayEngine from '@oxog/kairos/holiday/engine';
-import fixedCalculator from '@oxog/kairos/holiday/calculators/fixed';
-import nthWeekdayCalculator from '@oxog/kairos/holiday/calculators/nth-weekday';
-import easterCalculator from '@oxog/kairos/holiday/calculators/easter';
+const date = kairos('2024-06-15 14:30:00');
 
-kairos.use([
-  holidayEngine,
-  fixedCalculator,
-  nthWeekdayCalculator,
-  easterCalculator
-]);
-
-// Define holidays
-const holidays = [
-  {
-    name: 'New Year',
-    type: 'fixed',
-    rule: { month: 1, day: 1 }
-  },
-  {
-    name: 'Thanksgiving',
-    type: 'nth-weekday',
-    rule: { month: 11, weekday: 4, nth: 4 }
-  },
-  {
-    name: 'Good Friday',
-    type: 'easter-based',
-    rule: { offset: -2 }
-  }
-];
-
-// Check holidays
-const date = kairos('2024-11-28');
-const holidayInfo = date.getHolidayInfo(holidays);
-console.log(holidayInfo); // { name: 'Thanksgiving', ... }
-
-// Get all holidays in a year
-const yearHolidays = kairos().getHolidaysInYear(2024, holidays);
+date.format('YYYY-MM-DD')          // 2024-06-15
+date.format('MMM D, YYYY h:mm A')  // Jun 15, 2024 2:30 PM
+date.toISOString()                  // 2024-06-15T14:30:00.000Z
+date.valueOf()                      // Unix timestamp (ms)
+date.toDate()                       // JavaScript Date object
 ```
+
+## Plugins
 
 ### Business Days
 
 ```javascript
-import kairos from '@oxog/kairos';
-import businessWorkday from '@oxog/kairos/business/workday';
+const businessPlugin = require('@oxog/kairos/plugins/business/workday');
+kairos.use(businessPlugin);
 
-kairos.use(businessWorkday);
-
-const date = kairos('2024-01-15');
-
-// Business day operations
-date.isBusinessDay();              // Check if business day
-date.nextBusinessDay();             // Get next business day
-date.previousBusinessDay();         // Get previous business day
-date.addBusinessDays(5);           // Add 5 business days
-
-// Settlement calculations (T+N)
-date.settlementDate(2);            // T+2 settlement
-date.settlementDate(3, holidays);  // T+3 with holiday consideration
-
-// Business day counting
-const start = kairos('2024-01-01');
-const end = kairos('2024-01-31');
-const businessDays = start.businessDaysBetween(end);
-```
-
-### Locales
-
-```javascript
-import kairos from '@oxog/kairos';
-import localeUS from '@oxog/kairos/locale/en-US';
-import localeDE from '@oxog/kairos/locale/de-DE';
-import localeTR from '@oxog/kairos/locale/tr-TR';
-import localeJP from '@oxog/kairos/locale/ja-JP';
-
-// Load multiple locales
-kairos.use([localeUS, localeDE, localeTR, localeJP]);
-
-// Switch locale
-kairos.locale('de-DE');
-const date = kairos('2024-03-15');
-date.format('MMMM'); // März
-
-// Locale-specific holidays
-const usHolidays = date.getHolidays('texas'); // Get Texas state holidays
-const germanHolidays = date.getHolidays('bavaria'); // Get Bavarian holidays
+const date = kairos('2024-06-14');
+date.isBusinessDay()               // true/false
+date.nextBusinessDay()              // Next working day
+date.addBusinessDays(5)             // Add 5 working days
+date.businessDaysBetween(end)      // Count working days
 ```
 
 ### Duration
 
 ```javascript
-import kairos from '@oxog/kairos';
-import duration from '@oxog/kairos/duration';
+const durationPlugin = require('@oxog/kairos/plugins/duration/duration');
+kairos.use(durationPlugin);
 
-kairos.use(duration);
-
-// Create durations
-const dur1 = kairos.duration(2, 'hours');
-const dur2 = kairos.duration({ hours: 1, minutes: 30 });
-const dur3 = kairos.duration('P1DT12H'); // ISO 8601
-
-// Duration arithmetic
-const total = dur1.add(dur2);
-const diff = dur1.subtract(dur2);
-
-// Apply to dates
-const date = kairos();
-const future = date.add(dur1);
-
-// Human-readable format
-dur2.humanize(); // "1 hour 30 minutes"
+const duration = kairos.duration({ hours: 2, minutes: 30 });
+duration.asMinutes()                // 150
+duration.humanize()                  // "3 hours"
+duration.toISOString()               // "PT2H30M"
 ```
 
 ### Range
 
 ```javascript
-import kairos from '@oxog/kairos';
-import range from '@oxog/kairos/range';
+const rangePlugin = require('@oxog/kairos/plugins/range/range');
+kairos.use(rangePlugin);
 
-kairos.use(range);
-
-const start = kairos('2024-01-01');
-const end = kairos('2024-01-31');
-
-// Create range
-const january = start.range(end);
-
-// Iterate over range
-january.forEach(date => {
-  console.log(date.format('YYYY-MM-DD'));
-});
-
-// Filter business days
-const businessDays = january.filter(date => date.isBusinessDay());
-
-// Get specific days
-const mondays = january.filterByWeekday(1);
-const weekends = january.weekends();
+const range = kairos.range(start, end);
+range.contains(date)                // Check if date in range
+range.overlaps(otherRange)          // Check overlap
+range.duration()                     // Get duration
 ```
 
-## 🌍 Supported Locales
-
-- 🇺🇸 **English (US)** - Federal and state holidays
-- 🇩🇪 **German (DE)** - Federal and state holidays
-- 🇹🇷 **Turkish (TR)** - Public holidays and observances
-- 🇯🇵 **Japanese (JP)** - Public holidays with era support
-
-## 📊 Performance
-
-Kairos is designed for high performance with:
-- Intelligent LRU caching
-- Memoized calculations
-- Lazy evaluation
-- Minimal memory footprint
+### Relative Time
 
 ```javascript
-// Benchmark example
-import kairos from '@oxog/kairos';
+const relativePlugin = require('@oxog/kairos/plugins/relative/relative');
+kairos.use(relativePlugin);
 
-const iterations = 100000;
-const start = performance.now();
-
-for (let i = 0; i < iterations; i++) {
-  kairos().add(1, 'day').format('YYYY-MM-DD');
-}
-
-const end = performance.now();
-console.log(`${iterations} operations in ${end - start}ms`);
+const past = kairos().subtract(2, 'hours');
+past.fromNow()                      // "2 hours ago"
+past.from(reference)                // Relative to reference
+past.calendar()                     // "Today at 2:30 PM"
 ```
 
-## 🧩 Custom Plugins
-
-Create your own plugins:
+### Timezone
 
 ```javascript
-const myPlugin = {
-  name: 'my-plugin',
-  version: '1.0.0',
-  install(kairos, utils) {
-    // Add instance methods
-    kairos.extend({
-      myMethod() {
-        return this.format('YYYY');
-      }
-    });
-    
-    // Add static methods
-    kairos.myStaticMethod = () => {
-      return 'Hello from plugin';
-    };
-  }
-};
+const timezonePlugin = require('@oxog/kairos/plugins/timezone/timezone');
+kairos.use(timezonePlugin);
 
-kairos.use(myPlugin);
+const local = kairos();
+const utc = local.utc();            // Convert to UTC
+utc.local()                         // Back to local
+local.utcOffset()                   // Offset in minutes
 ```
 
-## 📚 API Reference
+### Localization
 
-### Core Methods
+```javascript
+const enUS = require('@oxog/kairos/plugins/locale/en-US');
+const deDE = require('@oxog/kairos/plugins/locale/de-DE');
 
-| Method | Description |
-|--------|-------------|
-| `kairos()` | Create instance from current date/time |
-| `kairos(input)` | Create instance from string, Date, or timestamp |
-| `.add(amount, unit)` | Add time |
-| `.subtract(amount, unit)` | Subtract time |
-| `.format(template)` | Format date |
-| `.isBefore(other)` | Check if before another date |
-| `.isAfter(other)` | Check if after another date |
-| `.isSame(other)` | Check if same as another date |
-| `.clone()` | Create a copy |
-| `.toDate()` | Convert to JavaScript Date |
-| `.toISOString()` | Convert to ISO string |
-| `.valueOf()` | Get timestamp |
+kairos.locale('en-US', enUS);
+kairos.locale('de-DE', deDE);
 
-### Plugin Methods
+kairos.setLocale('de-DE');
+const date = kairos('2024-06-15');
+date.format('LLLL');                // Localized format
+```
 
-See individual plugin documentation for additional methods.
+## Format Tokens
 
-## 🛠️ Development
+| Token | Output | Description |
+|-------|--------|-------------|
+| `YYYY` | 2024 | 4-digit year |
+| `YY` | 24 | 2-digit year |
+| `MM` | 01-12 | Month (padded) |
+| `M` | 1-12 | Month |
+| `MMMM` | January | Month name |
+| `MMM` | Jan | Month short |
+| `DD` | 01-31 | Day (padded) |
+| `D` | 1-31 | Day |
+| `dddd` | Monday | Weekday name |
+| `ddd` | Mon | Weekday short |
+| `HH` | 00-23 | Hour (24h, padded) |
+| `H` | 0-23 | Hour (24h) |
+| `hh` | 01-12 | Hour (12h, padded) |
+| `h` | 1-12 | Hour (12h) |
+| `mm` | 00-59 | Minutes (padded) |
+| `m` | 0-59 | Minutes |
+| `ss` | 00-59 | Seconds (padded) |
+| `s` | 0-59 | Seconds |
+| `SSS` | 000-999 | Milliseconds |
+| `A` | AM/PM | Meridiem |
+| `a` | am/pm | Meridiem (lowercase) |
+| `Z` | +00:00 | Timezone offset |
+
+## TypeScript
+
+Kairos includes full TypeScript definitions:
+
+```typescript
+import kairos, { Kairos } from '@oxog/kairos';
+
+const date: Kairos = kairos('2024-06-15');
+const year: number = date.year();
+const formatted: string = date.format('YYYY-MM-DD');
+```
+
+## Browser Usage
+
+```html
+<script src="https://unpkg.com/@oxog/kairos/dist/kairos.min.js"></script>
+<script>
+  const date = kairos('2024-06-15');
+  console.log(date.format('MMMM D, YYYY'));
+</script>
+```
+
+## Examples
+
+See the `examples/` directory for detailed usage examples:
+
+- `01-fundamentals.js` - Core concepts and basic operations
+- `02-comparison-queries.js` - Date comparisons and queries
+- `03-formatting-display.js` - Formatting options
+- `04-business-calendar.js` - Business day calculations
+- `05-durations-ranges.js` - Duration and range operations
+- `06-localization.js` - Multi-locale support
+- `07-timezone-utc.js` - Timezone handling
+- `08-parsing-validation.js` - Parsing strategies
+- `09-relative-time.js` - Human-readable time
+- `10-advanced-plugins.js` - Complex scenarios
+
+## Performance
+
+Kairos is optimized for performance:
+
+- Intelligent caching for repeated operations
+- Minimal object creation
+- Efficient algorithms
+- Tree-shaking support for smaller bundles
+
+## Testing
 
 ```bash
-# Clone repository
-git clone https://github.com/ersinkoc/kairos.git
-cd kairos
-
-# Install dependencies
-npm install
-
-# Run tests
-npm test
-
-# Build project
-npm run build
-
-# Run benchmarks
-npm run test:performance
-
-# Check bundle size
-npm run size
+npm test           # Run all tests
+npm run test:unit  # Unit tests only
+npm run test:perf  # Performance tests
+npm run coverage   # Coverage report
 ```
 
-## 📈 Bundle Size
+## License
 
-Kairos is designed to be lightweight:
+MIT
 
-| Package | Size (minified + gzipped) |
-|---------|---------------------------|
-| Core only | ~4KB |
-| Core + Holiday Engine | ~12KB |
-| Core + Business Days | ~8KB |
-| Core + All Locales | ~20KB |
-| Everything | ~35KB |
+## Contributing
 
-## 🤝 Contributing
+See CONTRIBUTING.md for guidelines.
 
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details.
+## Support
 
-## 📝 License
-
-MIT © [Ersin Koç](https://github.com/ersinkoc)
-
-## 🙏 Acknowledgments
-
-Special thanks to all contributors and the JavaScript date/time community for inspiration.
-
----
-
-<div align="center">
-  <p>If you find Kairos useful, please consider giving it a ⭐ on GitHub!</p>
-  <p>
-    <a href="https://github.com/ersinkoc/kairos">GitHub</a> •
-    <a href="https://www.npmjs.com/package/@oxog/kairos">NPM</a> •
-    <a href="https://kairos.dev">Documentation</a> •
-    <a href="https://github.com/ersinkoc/kairos/issues">Issues</a>
-  </p>
-</div>
+- Issues: [GitHub Issues](https://github.com/ersinkoc/kairos/issues)
+- Documentation: [GitHub Wiki](https://github.com/ersinkoc/kairos/wiki)

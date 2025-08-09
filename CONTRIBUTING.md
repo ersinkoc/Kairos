@@ -1,330 +1,270 @@
 # Contributing to Kairos
 
-We welcome contributions to the Kairos date/time library! This document provides guidelines for contributing to the project.
+We appreciate your interest in contributing to Kairos! This guide will help you get started.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 14.0.0 or higher
-- npm 6.0.0 or higher
+- Node.js 14 or higher
+- npm 6 or higher
 - Git
 
-### Development Setup
+### Setup
 
-1. **Fork the repository**
+1. Fork the repository on GitHub
+2. Clone your fork locally:
    ```bash
-   git clone https://github.com/yourusername/kairos.git
+   git clone https://github.com/YOUR_USERNAME/kairos.git
    cd kairos
    ```
-
-2. **Install dependencies**
+3. Install dependencies:
    ```bash
    npm install
    ```
-
-3. **Run tests**
+4. Create a branch for your changes:
    ```bash
-   npm test
+   git checkout -b feature/your-feature-name
    ```
 
-4. **Build the project**
-   ```bash
-   npm run build
-   ```
+## Development Workflow
 
-## 📋 Development Workflow
+### Running Tests
 
-### Branch Naming
+```bash
+npm test              # All tests
+npm run test:unit     # Unit tests
+npm run test:watch    # Watch mode
+npm run test:perf     # Performance tests
+npm run coverage      # Coverage report
+```
 
-- `feature/description` - New features
-- `fix/description` - Bug fixes
-- `docs/description` - Documentation updates
-- `refactor/description` - Code refactoring
-- `test/description` - Test improvements
+### Building
+
+```bash
+npm run build         # Build all formats
+npm run build:dev     # Development build
+npm run build:prod    # Production build
+```
+
+### Code Quality
+
+```bash
+npm run lint          # Run ESLint
+npm run lint:fix      # Auto-fix issues
+npm run format        # Format code with Prettier
+npm run typecheck     # TypeScript validation
+```
+
+## Contribution Guidelines
+
+### Code Style
+
+- Use TypeScript for all new code
+- Follow existing patterns and conventions
+- Use meaningful variable and function names
+- Keep functions small and focused
+- Add JSDoc comments for public APIs
+
+### Testing Requirements
+
+- Write tests for all new features
+- Maintain or improve code coverage
+- Test edge cases and error conditions
+- Ensure all tests pass before submitting
 
 ### Commit Messages
 
-Follow the [Conventional Commits](https://conventionalcommits.org/) specification:
+We follow conventional commits:
 
 ```
 type(scope): description
 
-feat(holiday): add support for lunar calendar holidays
-fix(business): correct weekend calculation for custom configs
-docs(readme): update API documentation
-test(holiday): add property-based tests for Easter calculation
-refactor(core): improve plugin loading performance
+[optional body]
+
+[optional footer]
 ```
 
-## 🔧 Code Guidelines
+Types:
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation
+- `style`: Code style
+- `refactor`: Code refactoring
+- `test`: Test changes
+- `chore`: Build/tooling
+- `perf`: Performance
 
-### TypeScript
+Examples:
+```
+feat(plugin): add lunar calendar support
+fix(parser): handle leap year edge case
+docs(api): update format token reference
+test(business): add holiday calculation tests
+```
 
-- Use strict TypeScript configuration
-- Provide complete type definitions
-- Avoid `any` type unless absolutely necessary
-- Use meaningful interface and type names
+### Pull Request Process
 
-### Code Style
-
-- Use 2 spaces for indentation
-- Maximum line length: 100 characters
-- Use semicolons
-- Prefer const over let
-- Use arrow functions for inline functions
-- Use template literals for string interpolation
-
-### Plugin Development
-
-When creating new plugins, follow these guidelines:
-
-1. **Plugin Structure**
-   ```typescript
-   export default {
-     name: 'plugin-name',
-     version: '1.0.0',
-     size: 512, // Estimated size in bytes
-     dependencies: ['required-plugin'], // Optional
-     install(kairos, utils) {
-       // Plugin implementation
-     }
-   } as KairosPlugin;
+1. **Update your fork**
+   ```bash
+   git fetch upstream
+   git rebase upstream/main
    ```
 
-2. **Naming Conventions**
-   - Use kebab-case for plugin names
-   - Use descriptive names that indicate functionality
-   - Prefix with category (e.g., `holiday-`, `business-`, `locale-`)
+2. **Make your changes**
+   - Write clean, documented code
+   - Add/update tests
+   - Update documentation if needed
 
-3. **Size Optimization**
-   - Keep plugins small and focused
-   - Avoid large dependencies
-   - Use tree-shaking friendly imports
-   - Estimate and document plugin size
+3. **Validate your changes**
+   ```bash
+   npm run lint
+   npm test
+   npm run build
+   ```
 
-### Testing
+4. **Submit PR**
+   - Use a clear, descriptive title
+   - Reference any related issues
+   - Describe what changes you made and why
+   - Include screenshots for UI changes
 
-- Write tests for all new functionality
-- Maintain high test coverage (>80%)
-- Use descriptive test names
-- Include edge cases and error scenarios
-- Add property-based tests for complex logic
+5. **Code Review**
+   - Respond to feedback promptly
+   - Make requested changes
+   - Keep discussion professional
 
-#### Test Structure
+## Creating Plugins
+
+### Plugin Structure
 
 ```typescript
-describe('Feature Name', () => {
-  describe('Specific Functionality', () => {
-    test('should handle normal case', () => {
-      // Test implementation
+// src/plugins/my-plugin/index.ts
+import type { KairosPlugin } from '../../core/types/plugin';
+
+const myPlugin: KairosPlugin = {
+  name: 'my-plugin',
+  install(kairos, utils) {
+    // Add instance methods
+    kairos.extend({
+      myMethod() {
+        return this.clone();
+      }
     });
     
-    test('should handle edge cases', () => {
-      // Edge case tests
+    // Add static methods
+    kairos.addStatic({
+      myStatic() {
+        return 'static value';
+      }
     });
-    
-    test('should throw error for invalid input', () => {
-      // Error case tests
-    });
+  }
+};
+
+export default myPlugin;
+```
+
+### Plugin Guidelines
+
+1. Keep plugins focused on a single responsibility
+2. Document all public methods
+3. Include TypeScript definitions
+4. Write comprehensive tests
+5. Provide usage examples
+6. Avoid dependencies when possible
+7. Consider performance impact
+
+### Plugin Testing
+
+```typescript
+// tests/unit/plugins/my-plugin.test.ts
+import kairos from '../../../src';
+import myPlugin from '../../../src/plugins/my-plugin';
+
+describe('My Plugin', () => {
+  beforeAll(() => {
+    kairos.use(myPlugin);
+  });
+
+  test('should add myMethod', () => {
+    const date = kairos();
+    expect(date.myMethod).toBeDefined();
   });
 });
 ```
 
-## 🗓️ Holiday Contributions
+## Project Structure
 
-### Adding New Holidays
+```
+kairos/
+├── src/                 # Source code
+│   ├── core/           # Core functionality
+│   ├── plugins/        # Plugin modules
+│   └── index.ts        # Main entry
+├── tests/              # Test suites
+│   ├── unit/          # Unit tests
+│   ├── integration/   # Integration tests
+│   └── performance/   # Performance tests
+├── examples/           # Usage examples
+├── docs/              # Documentation
+└── tools/             # Build tools
+```
 
-1. **Research thoroughly**
-   - Verify official sources
-   - Check historical accuracy
-   - Understand regional variations
+## Reporting Issues
 
-2. **Holiday Rule Types**
-   - `fixed`: Same date every year
-   - `nth-weekday`: Nth occurrence of weekday in month
-   - `relative`: Relative to another holiday
-   - `lunar`: Based on lunar calendar
-   - `easter-based`: Offset from Easter
-   - `custom`: Custom calculation function
+### Bug Reports
 
-3. **Validation**
-   - Use the holiday validator tool
-   - Test calculations for multiple years
-   - Verify against official calendars
+Include:
+- Clear description of the problem
+- Steps to reproduce
+- Expected vs actual behavior
+- Environment details (OS, Node version)
+- Minimal code example
+- Error messages/stack traces
 
-### Adding New Locales
+### Feature Requests
 
-1. **Locale Structure**
-   ```typescript
-   const locale = {
-     name: 'Language (Country)',
-     code: 'xx-YY',
-     months: ['Jan', 'Feb', ...],
-     weekdays: ['Sun', 'Mon', ...],
-     formats: { ... },
-     ordinal: (n) => `${n}th`,
-     meridiem: (h, m, lower) => lower ? 'am' : 'AM'
-   };
-   ```
+Include:
+- Use case description
+- Proposed API design
+- Code examples
+- Alternative solutions considered
+- Potential breaking changes
 
-2. **Holiday Definitions**
-   - Include all major national holidays
-   - Add regional/state holidays where applicable
-   - Document sources and calculation methods
+## Community
 
-3. **Cultural Considerations**
-   - Use native language names
-   - Respect cultural and religious sensitivities
-   - Include relevant observances
+### Code of Conduct
 
-## 🏢 Business Day Contributions
+- Be respectful and professional
+- Welcome newcomers
+- Help others learn
+- Focus on constructive feedback
+- Respect differing opinions
 
-### Custom Business Calendars
+### Getting Help
 
-1. **Industry-Specific Calendars**
-   - Financial markets
-   - Academic institutions
-   - Government offices
-   - Religious organizations
+- Check existing issues first
+- Read the documentation
+- Look at examples
+- Ask clear, specific questions
+- Provide context and code samples
 
-2. **Regional Variations**
-   - Different weekend patterns
-   - Local holidays
-   - Cultural observances
+## Release Process
 
-## 📊 Performance Guidelines
+1. Version bump in package.json
+2. Update CHANGELOG.md
+3. Run full test suite
+4. Build distribution files
+5. Create git tag
+6. Push to repository
+7. Publish to npm
+8. Create GitHub release
 
-### Optimization Principles
+## Recognition
 
-1. **Lazy Loading**
-   - Load plugins only when needed
-   - Defer heavy calculations
-
-2. **Caching**
-   - Cache expensive calculations
-   - Use LRU cache for memory management
-   - Cache holiday calculations per year
-
-3. **Tree Shaking**
-   - Use ES modules
-   - Avoid circular dependencies
-   - Export only necessary functions
-
-### Performance Testing
-
-- Add performance benchmarks for new features
-- Ensure operations complete within reasonable time limits
-- Test memory usage with large datasets
-
-## 🔍 Code Review Process
-
-### Before Submitting
-
-1. **Self Review**
-   - Run all tests locally
-   - Check code formatting
-   - Review for typos and clarity
-
-2. **Documentation**
-   - Update API documentation
-   - Add JSDoc comments
-   - Update README if needed
-
-3. **Testing**
-   - Add comprehensive tests
-   - Test edge cases
-   - Verify performance impact
-
-### Review Checklist
-
-- [ ] Code follows style guidelines
-- [ ] Tests are comprehensive
-- [ ] Documentation is updated
-- [ ] Performance is acceptable
-- [ ] No breaking changes (or properly documented)
-- [ ] Holiday calculations are accurate
-
-## 📚 Documentation
-
-### API Documentation
-
-- Use JSDoc for all public APIs
-- Provide usage examples
-- Document parameters and return types
-- Include error conditions
-
-### Examples
-
-- Create practical examples
-- Show real-world usage
-- Cover edge cases
-- Include performance considerations
-
-## 🚀 Release Process
-
-### Versioning
-
-We follow [Semantic Versioning](https://semver.org/):
-
-- **MAJOR**: Breaking changes
-- **MINOR**: New features (backward compatible)
-- **PATCH**: Bug fixes (backward compatible)
-
-### Changelog
-
-- Document all changes
-- Categorize by type (Added, Changed, Fixed, Removed)
-- Include migration notes for breaking changes
-
-## 🎯 Contribution Types
-
-### Code Contributions
-
-- New features
-- Bug fixes
-- Performance improvements
-- Refactoring
-
-### Documentation
-
-- API documentation
-- Examples
-- Tutorials
-- Translation
-
-### Testing
-
-- Unit tests
-- Integration tests
-- Performance tests
-- Property-based tests
-
-### Tooling
-
-- Development tools
-- Build improvements
-- CI/CD enhancements
-
-## 📞 Getting Help
-
-- **GitHub Issues**: Report bugs or request features
-- **Discussions**: Ask questions or share ideas
-- **Discord**: Join our community chat
-- **Email**: Contact maintainers directly
-
-## 📝 License
-
-By contributing to Kairos, you agree that your contributions will be licensed under the MIT License.
-
-## 🙏 Recognition
-
-Contributors are recognized in:
-- README contributors section
+Contributors are acknowledged in:
+- README.md contributors section
 - Release notes
-- Project documentation
-- Annual contributor highlights
+- GitHub contributors page
 
----
-
-Thank you for contributing to Kairos! Your help makes this library better for everyone. 🎉
+Thank you for helping make Kairos better!

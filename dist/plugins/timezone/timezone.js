@@ -136,10 +136,16 @@ export default {
             },
             tz(timezone) {
                 const converted = TimezoneManager.convertToTimezone(this.toDate(), timezone);
-                return kairos(converted);
+                const instance = kairos(converted);
+                if (timezone === 'UTC') {
+                    instance._isUTC = true;
+                }
+                return instance;
             },
             utc() {
-                return this.tz('UTC');
+                const instance = this.tz('UTC');
+                instance._isUTC = true;
+                return instance;
             },
             utcOffset(offset) {
                 if (offset === undefined) {
@@ -160,7 +166,9 @@ export default {
                     return this.clone();
                 }
                 const localDate = new Date(this.toDate().getTime());
-                return kairos(localDate);
+                const instance = kairos(localDate);
+                delete instance._isUTC;
+                return instance;
             },
         });
         kairos.addStatic?.({
