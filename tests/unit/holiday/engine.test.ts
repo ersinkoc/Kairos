@@ -75,7 +75,7 @@ describe('Holiday Engine', () => {
 
       testCases.forEach(({ year, expectedDate }) => {
         const thanksgiving = kairos(expectedDate);
-        const holidays = usHolidays;;
+        const holidays = usHolidays;
 
         expect(thanksgiving.isHoliday(holidays)).toBe(true);
 

@@ -83,7 +83,7 @@ export function validateHolidayRule(rule: any): string[] {
       }
       break;
 
-    case 'lunar':
+    case 'lunar': {
       const validCalendars = ['islamic', 'chinese', 'hebrew', 'persian'];
       if (!validCalendars.includes(rule.rule.calendar)) {
         errors.push(`Lunar rule calendar must be one of: ${validCalendars.join(', ')}`);
@@ -95,6 +95,7 @@ export function validateHolidayRule(rule: any): string[] {
         errors.push('Lunar rule day must be 1-31');
       }
       break;
+    }
 
     case 'easter-based':
       if (!isValidNumber(rule.rule.offset)) {

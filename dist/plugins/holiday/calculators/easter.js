@@ -43,9 +43,9 @@ export class EasterCalculator {
         const year = date.getFullYear();
         const month = date.getMonth() + 1;
         const day = date.getDate();
-        let a = Math.floor((14 - month) / 12);
-        let y = year + 4800 - a;
-        let m = month + 12 * a - 3;
+        const a = Math.floor((14 - month) / 12);
+        const y = year + 4800 - a;
+        const m = month + 12 * a - 3;
         return (day +
             Math.floor((153 * m + 2) / 5) +
             365 * y +
@@ -55,15 +55,15 @@ export class EasterCalculator {
             32045);
     }
     julianDayToDate(jdn) {
-        let a = jdn + 32044;
-        let b = (4 * a + 3) / 146097;
-        let c = a - Math.floor((146097 * b) / 4);
-        let d = (4 * c + 3) / 1461;
-        let e = c - Math.floor((1461 * d) / 4);
-        let m = (5 * e + 2) / 153;
-        let day = e - Math.floor((153 * m + 2) / 5) + 1;
-        let month = m + 3 - 12 * Math.floor(m / 10);
-        let year = 100 * b + d - 4800 + Math.floor(m / 10);
+        const a = jdn + 32044;
+        const b = (4 * a + 3) / 146097;
+        const c = a - Math.floor((146097 * b) / 4);
+        const d = (4 * c + 3) / 1461;
+        const e = c - Math.floor((1461 * d) / 4);
+        const m = (5 * e + 2) / 153;
+        const day = e - Math.floor((153 * m + 2) / 5) + 1;
+        const month = m + 3 - 12 * Math.floor(m / 10);
+        const year = 100 * b + d - 4800 + Math.floor(m / 10);
         return new Date(year, month - 1, day);
     }
     calculateOrthodoxEaster(year) {

@@ -13,7 +13,7 @@ const fiscalPlugin: KairosPlugin = {
         const startMonth = config?.startMonth || 1;
         const currentMonth = this.month();
         const currentYear = this.year();
-        
+
         if (currentMonth >= startMonth) {
           return currentYear;
         } else {
@@ -24,82 +24,68 @@ const fiscalPlugin: KairosPlugin = {
       fiscalQuarter(config?: FiscalConfig): number {
         const startMonth = config?.startMonth || 1;
         const currentMonth = this.month();
-        
+
         // Adjust month relative to fiscal year start
         let adjustedMonth = currentMonth - startMonth + 1;
         if (adjustedMonth <= 0) {
           adjustedMonth += 12;
         }
-        
+
         return Math.ceil(adjustedMonth / 3);
       },
 
       fiscalMonth(config?: FiscalConfig): number {
         const startMonth = config?.startMonth || 1;
         const currentMonth = this.month();
-        
+
         let adjustedMonth = currentMonth - startMonth + 1;
         if (adjustedMonth <= 0) {
           adjustedMonth += 12;
         }
-        
+
         return adjustedMonth;
       },
 
       startOfFiscalYear(config?: FiscalConfig): any {
         const startMonth = config?.startMonth || 1;
         const fiscalYear = this.fiscalYear(config);
-        
-        return kairos()
-          .year(fiscalYear)
-          .month(startMonth)
-          .date(1)
-          .startOf('day');
+
+        return kairos().year(fiscalYear).month(startMonth).date(1).startOf('day');
       },
 
       endOfFiscalYear(config?: FiscalConfig): any {
         const startMonth = config?.startMonth || 1;
         const fiscalYear = this.fiscalYear(config);
-        
+
         const endYear = startMonth === 1 ? fiscalYear : fiscalYear + 1;
         const endMonth = startMonth === 1 ? 12 : startMonth - 1;
-        
-        return kairos()
-          .year(endYear)
-          .month(endMonth)
-          .endOf('month');
+
+        return kairos().year(endYear).month(endMonth).endOf('month');
       },
 
       startOfFiscalQuarter(config?: FiscalConfig): any {
         const startMonth = config?.startMonth || 1;
         const quarter = this.fiscalQuarter(config);
         const fiscalYear = this.fiscalYear(config);
-        
+
         const quarterStartMonth = startMonth + (quarter - 1) * 3;
         const year = quarterStartMonth > 12 ? fiscalYear + 1 : fiscalYear;
         const month = quarterStartMonth > 12 ? quarterStartMonth - 12 : quarterStartMonth;
-        
-        return kairos()
-          .year(year)
-          .month(month)
-          .date(1)
-          .startOf('day');
+
+        return kairos().year(year).month(month).date(1).startOf('day');
       },
 
       endOfFiscalQuarter(config?: FiscalConfig): any {
         const startMonth = config?.startMonth || 1;
         const quarter = this.fiscalQuarter(config);
         const fiscalYear = this.fiscalYear(config);
-        
+
         const quarterEndMonth = startMonth + quarter * 3 - 1;
         const year = quarterEndMonth > 12 ? fiscalYear + 1 : fiscalYear;
         const month = quarterEndMonth > 12 ? quarterEndMonth - 12 : quarterEndMonth;
-        
-        return kairos()
-          .year(year)
-          .month(month)
-          .endOf('month');
-      }
+
+        return kairos().year(year).month(month).endOf('month');
+      },
     });
 
     // Add static methods
@@ -117,11 +103,11 @@ const fiscalPlugin: KairosPlugin = {
           startMonth: config?.startMonth || 1,
           getYear: (date: any) => kairos(date).fiscalYear(config),
           getQuarter: (date: any) => kairos(date).fiscalQuarter(config),
-          getMonth: (date: any) => kairos(date).fiscalMonth(config)
+          getMonth: (date: any) => kairos(date).fiscalMonth(config),
         };
-      }
+      },
     });
-  }
+  },
 };
 
 export default fiscalPlugin;

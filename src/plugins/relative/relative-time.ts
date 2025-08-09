@@ -231,7 +231,7 @@ class RelativeTimeCalculator {
 
 const relativeTimePlugin: KairosPlugin = {
   name: 'relativeTime',
-  
+
   install(kairos: KairosStatic) {
     // Add instance methods
     kairos.extend({
@@ -245,7 +245,7 @@ const relativeTimePlugin: KairosPlugin = {
 
       from(other: KairosInstance, withoutSuffix = false): string {
         const thisTime = this.valueOf() as number;
-        const otherTime = other.valueOf() as number;
+        const otherTime = other.valueOf();
         const diff = thisTime - otherTime;
         const calculator = new RelativeTimeCalculator();
         return calculator.format(diff, withoutSuffix);
@@ -261,7 +261,7 @@ const relativeTimePlugin: KairosPlugin = {
 
       to(other: KairosInstance, withoutSuffix = false): string {
         const thisTime = this.valueOf() as number;
-        const otherTime = other.valueOf() as number;
+        const otherTime = other.valueOf();
         const diff = otherTime - thisTime;
         const calculator = new RelativeTimeCalculator();
         return calculator.format(diff, withoutSuffix);

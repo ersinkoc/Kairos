@@ -144,14 +144,12 @@ const calendarPlugin = {
             startOfQuarter() {
                 const quarter = this.quarter();
                 const month = (quarter - 1) * 3;
-                return kairos(new Date(this.year(), month, 1))
-                    .startOf('day');
+                return kairos(new Date(this.year(), month, 1)).startOf('day');
             },
             endOfQuarter() {
                 const quarter = this.quarter();
                 const month = quarter * 3;
-                return kairos(new Date(this.year(), month, 0))
-                    .endOf('day');
+                return kairos(new Date(this.year(), month, 0)).endOf('day');
             },
             startOfWeek(startDay = 0) {
                 const clone = this.clone();
@@ -179,8 +177,7 @@ const calendarPlugin = {
                 return !this.isWeekend();
             },
             isSameQuarter(other) {
-                return this.quarter() === other.quarter() &&
-                    this.year() === other.year();
+                return this.quarter() === other.quarter() && this.year() === other.year();
             },
             isSameWeek(other, startDay = 0) {
                 const thisStart = this.startOfWeek(startDay);
@@ -188,8 +185,7 @@ const calendarPlugin = {
                 return thisStart.format('YYYY-MM-DD') === otherStart.format('YYYY-MM-DD');
             },
             isSameISOWeek(other) {
-                return this.isoWeek() === other.isoWeek() &&
-                    this.isoWeekYear() === other.isoWeekYear();
+                return this.isoWeek() === other.isoWeek() && this.isoWeekYear() === other.isoWeekYear();
             },
             weeksInYear() {
                 const lastDay = kairos(new Date(this.year(), 11, 31));

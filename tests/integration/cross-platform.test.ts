@@ -53,7 +53,7 @@ describe('Cross-Platform Compatibility', () => {
       expect(date.toISOString()).toBe(isoString);
       expect(date.year()).toBe(2024);
       expect(date.month()).toBe(3);
-      expect(date.date()).toBe(15);  // date() returns day of month, day() returns day of week
+      expect(date.date()).toBe(15); // date() returns day of month, day() returns day of week
     });
 
     test('should handle timestamps consistently', () => {
@@ -74,7 +74,7 @@ describe('Cross-Platform Compatibility', () => {
 
     test('should handle UTC consistently', () => {
       const date = kairos.utc('2024-03-15 12:00:00');
-      
+
       expect(date.format('YYYY-MM-DD HH:mm:ss')).toBe('2024-03-15 12:00:00');
       expect(date.isUTC()).toBe(true);
       expect(date.offset()).toBe(0);
@@ -83,10 +83,10 @@ describe('Cross-Platform Compatibility', () => {
     test('should convert between UTC and local time', () => {
       const utcDate = kairos.utc('2024-03-15 12:00:00');
       const localDate = utcDate.local();
-      
+
       // The dates represent the same moment in time
       expect(utcDate.valueOf()).toBe(localDate.valueOf());
-      
+
       // But may have different string representations
       if (localDate.offset() !== 0) {
         expect(localDate.format('HH:mm:ss')).not.toBe('12:00:00');
@@ -96,20 +96,20 @@ describe('Cross-Platform Compatibility', () => {
     skipOnWindows(() => {
       test('should respect TZ environment variable', () => {
         const originalTZ = process.env.TZ;
-        
+
         process.env.TZ = 'America/New_York';
         const nyDate = kairos('2024-03-15 12:00:00');
-        
+
         process.env.TZ = 'Europe/London';
         const londonDate = kairos('2024-03-15 12:00:00');
-        
+
         // Restore original
         if (originalTZ) {
           process.env.TZ = originalTZ;
         } else {
           delete process.env.TZ;
         }
-        
+
         // Different TZ should result in different UTC times
         expect(nyDate.utc().format('HH')).not.toBe(londonDate.utc().format('HH'));
       });
@@ -119,30 +119,30 @@ describe('Cross-Platform Compatibility', () => {
   describe('Locale Handling', () => {
     test('should handle different locales', () => {
       const date = kairos('2024-03-15');
-      
+
       // Test different locales
       kairos.locale('en-US');
       expect(kairos.locale()).toBe('en-US');
-      
+
       kairos.locale('de-DE');
       expect(kairos.locale()).toBe('de-DE');
-      
+
       kairos.locale('ja-JP');
       expect(kairos.locale()).toBe('ja-JP');
-      
+
       // Reset to default
       kairos.locale('en-US');
     });
 
     test('should have locale-specific holidays', () => {
       const date = kairos('2024-07-04'); // US Independence Day
-      
+
       kairos.locale('en-US');
       expect(date.isHoliday()).toBe(true);
-      
+
       kairos.locale('de-DE');
       expect(date.isHoliday()).toBe(false);
-      
+
       // Reset
       kairos.locale('en-US');
     });
@@ -152,9 +152,9 @@ describe('Cross-Platform Compatibility', () => {
     test('should normalize paths correctly', () => {
       const unixPath = '/usr/local/bin/kairos';
       const windowsPath = 'C:\\Users\\Test\\kairos';
-      
+
       const normalized = normalizePath(unixPath);
-      
+
       if (isWindows()) {
         expect(normalized).toContain('\\');
       } else {
@@ -168,11 +168,11 @@ describe('Cross-Platform Compatibility', () => {
       const windowsText = 'Line 1\r\nLine 2\r\nLine 3';
       const unixText = 'Line 1\nLine 2\nLine 3';
       const macText = 'Line 1\rLine 2\rLine 3';
-      
+
       const normalized1 = normalizeLineEndings(windowsText);
       const normalized2 = normalizeLineEndings(unixText);
       const normalized3 = normalizeLineEndings(macText);
-      
+
       expect(normalized1).toBe('Line 1\nLine 2\nLine 3');
       expect(normalized2).toBe('Line 1\nLine 2\nLine 3');
       expect(normalized3).toBe('Line 1\nLine 2\nLine 3');
@@ -193,13 +193,13 @@ describe('Cross-Platform Compatibility', () => {
         '2024-03-15T10:30:45Z',
         '2024-03-15T10:30:45+00:00',
       ];
-      
-      formats.forEach(format => {
+
+      formats.forEach((format) => {
         const date = kairos(format);
         expect(date.isValid()).toBe(true);
         expect(date.year()).toBe(2024);
         expect(date.month()).toBe(3);
-        expect(date.date()).toBe(15);  // date() returns day of month, day() returns day of week
+        expect(date.date()).toBe(15); // date() returns day of month, day() returns day of week
       });
     });
   });
@@ -207,21 +207,21 @@ describe('Cross-Platform Compatibility', () => {
   describe('Number Precision', () => {
     test('should handle floating point precision', () => {
       const date = kairos('2024-03-15 10:30:45.123');
-      
+
       expect(date.millisecond()).toBe(123);
-      
+
       // Add fractional days
       const added = date.add(0.5, 'days');
       expect(added.hour()).toBe(22); // 10 + 12 hours
     });
-    
+
     test('should handle large numbers', () => {
       const maxTimestamp = 8640000000000000; // Max JS date
       const minTimestamp = -8640000000000000; // Min JS date
-      
+
       const maxDate = kairos(maxTimestamp);
       const minDate = kairos(minTimestamp);
-      
+
       expect(maxDate.isValid()).toBe(true);
       expect(minDate.isValid()).toBe(true);
     });
@@ -232,23 +232,23 @@ describe('Cross-Platform Compatibility', () => {
       const invalid1 = kairos('invalid');
       const invalid2 = kairos('2024-13-45'); // Invalid month/day
       const invalid3 = kairos(NaN);
-      
+
       expect(invalid1.isValid()).toBe(false);
       expect(invalid2.isValid()).toBe(false);
       expect(invalid3.isValid()).toBe(false);
-      
+
       // Invalid operations should return invalid dates
       expect(invalid1.add(1, 'day').isValid()).toBe(false);
       expect(invalid1.format()).toBe('Invalid Date');
     });
-    
+
     test('should normalize error messages', () => {
       const error1 = 'Error on line 1\r\nDetails here';
       const error2 = 'Error on line 1\nDetails here';
-      
+
       const normalized1 = normalizeErrorMessage(error1);
       const normalized2 = normalizeErrorMessage(error2);
-      
+
       expect(normalized1).toBe(normalized2);
     });
   });
@@ -257,21 +257,21 @@ describe('Cross-Platform Compatibility', () => {
     test('should not leak memory with many instances', () => {
       const initialMemory = process.memoryUsage().heapUsed;
       const dates: any[] = [];
-      
+
       // Create many instances
       for (let i = 0; i < 10000; i++) {
         dates.push(kairos('2024-03-15'));
       }
-      
+
       const afterCreation = process.memoryUsage().heapUsed;
       const memoryUsed = (afterCreation - initialMemory) / 1024 / 1024;
-      
+
       // Should use reasonable amount of memory (< 50MB for 10k instances)
       expect(memoryUsed).toBeLessThan(50);
-      
+
       // Clear references
       dates.length = 0;
-      
+
       // Force garbage collection if available
       if (global.gc) {
         global.gc();
@@ -293,9 +293,9 @@ describe('Cross-Platform Compatibility', () => {
           return Math.floor((now.valueOf() - start.valueOf()) / (1000 * 60 * 60 * 24));
         },
       };
-      
+
       const timings: Record<string, number> = {};
-      
+
       Object.entries(operations).forEach(([name, operation]) => {
         const start = performance.now();
         for (let i = 0; i < iterations; i++) {
@@ -303,11 +303,11 @@ describe('Cross-Platform Compatibility', () => {
         }
         const end = performance.now();
         timings[name] = end - start;
-        
+
         // All operations should complete in reasonable time
         expect(timings[name]).toBeLessThan(1000); // < 1 second for 1000 ops
       });
-      
+
       console.log('Performance timings (ms):', timings);
     });
   });
@@ -319,14 +319,14 @@ describe('Cross-Platform Compatibility', () => {
         expect(date.format('MM/DD/YYYY')).toBe('03/15/2024');
       });
     });
-    
+
     runOnlyOn('macos', () => {
       test('should handle macOS-specific features', () => {
         const date = kairos('2024-03-15');
         expect(date.isValid()).toBe(true);
       });
     });
-    
+
     runOnlyOn('linux', () => {
       test('should handle Linux-specific features', () => {
         const date = kairos('2024-03-15');
@@ -339,12 +339,12 @@ describe('Cross-Platform Compatibility', () => {
     test('should handle binary data correctly', () => {
       const date = kairos('2024-03-15');
       const timestamp = date.valueOf();
-      
+
       // Convert to buffer and back
       const buffer = Buffer.allocUnsafe(8);
       buffer.writeBigInt64BE(BigInt(timestamp), 0);
       const recovered = Number(buffer.readBigInt64BE(0));
-      
+
       expect(recovered).toBe(timestamp);
     });
   });
@@ -352,7 +352,7 @@ describe('Cross-Platform Compatibility', () => {
   describe('Concurrent Operations', () => {
     test('should handle concurrent date operations', async () => {
       const promises = [];
-      
+
       for (let i = 0; i < 100; i++) {
         promises.push(
           new Promise((resolve) => {
@@ -361,7 +361,7 @@ describe('Cross-Platform Compatibility', () => {
           })
         );
       }
-      
+
       const results = await Promise.all(promises);
       expect(results).toHaveLength(100);
       expect(results[0]).toBe('2024-03-15');
@@ -373,26 +373,26 @@ describe('Cross-Platform Compatibility', () => {
     test('should handle year boundaries', () => {
       const endOfYear = kairos('2024-12-31 23:59:59');
       const nextYear = endOfYear.add(1, 'second');
-      
+
       expect(nextYear.format('YYYY-MM-DD HH:mm:ss')).toBe('2025-01-01 00:00:00');
       expect(nextYear.year()).toBe(2025);
     });
-    
+
     test('should handle leap years', () => {
       const leapDay2024 = kairos('2024-02-29');
       const leapDay2020 = kairos('2020-02-29');
       const notLeap2023 = kairos('2023-02-29');
-      
+
       expect(leapDay2024.isValid()).toBe(true);
       expect(leapDay2020.isValid()).toBe(true);
       expect(notLeap2023.isValid()).toBe(false);
     });
-    
+
     test('should handle century boundaries', () => {
       const year2000 = kairos('2000-02-29'); // Leap year
       const year1900 = kairos('1900-02-29'); // Not a leap year
       const year2100 = kairos('2100-02-29'); // Not a leap year
-      
+
       expect(year2000.isValid()).toBe(true);
       expect(year1900.isValid()).toBe(false);
       expect(year2100.isValid()).toBe(false);

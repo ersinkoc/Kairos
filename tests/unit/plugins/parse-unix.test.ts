@@ -9,13 +9,13 @@ describe('Unix Timestamp Parser Plugin', () => {
   describe('UnixTimestampParser', () => {
     test('should parse valid Unix timestamps in seconds', () => {
       const parser = new UnixTimestampParser();
-      
+
       const testCases = [
         { input: '1640995200', expected: new Date('2022-01-01T00:00:00Z') }, // Jan 1, 2022
         { input: '1609459200', expected: new Date('2021-01-01T00:00:00Z') }, // Jan 1, 2021
         { input: '946684800', expected: new Date('2000-01-01T00:00:00Z') }, // Y2K
         { input: '0', expected: new Date('1970-01-01T00:00:00Z') }, // Unix epoch
-        { input: 1640995200, expected: new Date('2022-01-01T00:00:00Z') } // Number input
+        { input: 1640995200, expected: new Date('2022-01-01T00:00:00Z') }, // Number input
       ];
 
       testCases.forEach(({ input, expected }) => {
@@ -27,11 +27,11 @@ describe('Unix Timestamp Parser Plugin', () => {
 
     test('should parse valid Unix timestamps in milliseconds', () => {
       const parser = new UnixTimestampParser();
-      
+
       const testCases = [
         { input: '1640995200000', expected: new Date('2022-01-01T00:00:00Z') },
         { input: '1609459200500', expected: new Date('2021-01-01T00:00:00.500Z') },
-        { input: 1640995200000, expected: new Date('2022-01-01T00:00:00Z') }
+        { input: 1640995200000, expected: new Date('2022-01-01T00:00:00Z') },
       ];
 
       testCases.forEach(({ input, expected }) => {
@@ -43,10 +43,10 @@ describe('Unix Timestamp Parser Plugin', () => {
 
     test('should parse valid Unix timestamps in microseconds', () => {
       const parser = new UnixTimestampParser();
-      
+
       const testCases = [
         { input: '1640995200000000', expected: new Date('2022-01-01T00:00:00Z') },
-        { input: '1640995200500000', expected: new Date('2022-01-01T00:00:00.500Z') }
+        { input: '1640995200500000', expected: new Date('2022-01-01T00:00:00.500Z') },
       ];
 
       testCases.forEach(({ input, expected }) => {
@@ -58,10 +58,10 @@ describe('Unix Timestamp Parser Plugin', () => {
 
     test('should parse valid Unix timestamps in nanoseconds', () => {
       const parser = new UnixTimestampParser();
-      
+
       const testCases = [
         { input: '1640995200000000000', expected: new Date('2022-01-01T00:00:00Z') },
-        { input: '1640995200500000000', expected: new Date('2022-01-01T00:00:00.500Z') }
+        { input: '1640995200500000000', expected: new Date('2022-01-01T00:00:00.500Z') },
       ];
 
       testCases.forEach(({ input, expected }) => {
@@ -73,7 +73,7 @@ describe('Unix Timestamp Parser Plugin', () => {
 
     test('should return null for invalid inputs', () => {
       const parser = new UnixTimestampParser();
-      
+
       const invalidInputs = [
         null,
         undefined,
@@ -84,10 +84,10 @@ describe('Unix Timestamp Parser Plugin', () => {
         'not-a-number',
         '12.34', // Decimal not supported
         '-1640995200', // Negative timestamps
-        '99999999999999999999' // Too large
+        '99999999999999999999', // Too large
       ];
 
-      invalidInputs.forEach(input => {
+      invalidInputs.forEach((input) => {
         const result = parser.parse(input as any);
         expect(result).toBeNull();
       });
@@ -95,7 +95,7 @@ describe('Unix Timestamp Parser Plugin', () => {
 
     test('should handle edge case timestamps', () => {
       const parser = new UnixTimestampParser();
-      
+
       // Year 2038 problem boundary (32-bit signed integer limit)
       const year2038 = parser.parse('2147483647'); // Jan 19, 2038
       expect(year2038).not.toBeNull();
@@ -109,7 +109,7 @@ describe('Unix Timestamp Parser Plugin', () => {
 
     test('should reject unreasonable dates', () => {
       const parser = new UnixTimestampParser();
-      
+
       // Dates too far in the past or future
       const tooEarly = parser.parse('0'); // 1970 is valid
       expect(tooEarly).not.toBeNull();
@@ -179,7 +179,7 @@ describe('Unix Timestamp Parser Plugin', () => {
   describe('Instance Methods', () => {
     test('should convert instances to Unix timestamps', () => {
       const date = kairos('2022-01-01T00:00:00Z');
-      
+
       expect(date.unix()).toBe(1640995200); // Default to seconds
       expect(date.unix('seconds')).toBe(1640995200);
       expect(date.unix('milliseconds')).toBe(1640995200000);
@@ -189,7 +189,7 @@ describe('Unix Timestamp Parser Plugin', () => {
 
     test('should use toUnix alias', () => {
       const date = kairos('2022-01-01T00:00:00Z');
-      
+
       expect(date.toUnix()).toBe(1640995200);
       expect(date.toUnix('milliseconds')).toBe(1640995200000);
     });
@@ -232,7 +232,7 @@ describe('Unix Timestamp Parser Plugin', () => {
     test('should automatically parse Unix timestamps', () => {
       const unixTimestamp = '1640995200';
       const parsed = kairos.parse(unixTimestamp);
-      
+
       expect(parsed).not.toBeNull();
       expect(parsed.format).toBeDefined();
       expect(parsed.year()).toBe(2022);
@@ -243,7 +243,7 @@ describe('Unix Timestamp Parser Plugin', () => {
     test('should handle millisecond Unix timestamps in parse', () => {
       const unixTimestamp = '1640995200000';
       const parsed = kairos.parse(unixTimestamp);
-      
+
       expect(parsed).not.toBeNull();
       expect(parsed.year()).toBe(2022);
     });
@@ -251,7 +251,7 @@ describe('Unix Timestamp Parser Plugin', () => {
     test('should fallback to other parsers for non-Unix formats', () => {
       const isoString = '2022-01-01T00:00:00Z';
       const parsed = kairos.parse(isoString);
-      
+
       expect(parsed).not.toBeNull();
       expect(parsed.format).toBeDefined();
     });
@@ -259,7 +259,7 @@ describe('Unix Timestamp Parser Plugin', () => {
     test('should not interfere with other valid date formats', () => {
       const regularDate = '2022-01-01';
       const parsed = kairos.parse(regularDate);
-      
+
       expect(parsed).not.toBeNull();
       expect(parsed.year()).toBe(2022);
     });
@@ -277,7 +277,7 @@ describe('Unix Timestamp Parser Plugin', () => {
     test('should handle leap years in Unix timestamps', () => {
       const leapYearTimestamp = '1582934400'; // 2020-02-29 00:00:00
       const leapDate = kairos.unix(leapYearTimestamp);
-      
+
       expect(leapDate).not.toBeNull();
       expect(leapDate.year()).toBe(2020);
       expect(leapDate.month()).toBe(2);
@@ -288,7 +288,7 @@ describe('Unix Timestamp Parser Plugin', () => {
       // Spring forward date
       const springTimestamp = '1647669600'; // 2022-03-19 12:00:00 UTC
       const springDate = kairos.unix(springTimestamp);
-      
+
       expect(springDate).not.toBeNull();
       expect(springDate.year()).toBe(2022);
       expect(springDate.month()).toBe(3);
@@ -297,7 +297,7 @@ describe('Unix Timestamp Parser Plugin', () => {
     test('should maintain precision for millisecond timestamps', () => {
       const timestampWithMs = 1640995200500; // .500 seconds
       const dateWithMs = kairos.unix(timestampWithMs);
-      
+
       expect(dateWithMs).not.toBeNull();
       expect(dateWithMs.toDate().getMilliseconds()).toBe(500);
     });
@@ -319,11 +319,11 @@ describe('Unix Timestamp Parser Plugin', () => {
     test('should parse Unix timestamps efficiently', () => {
       const timestamp = '1640995200';
       const start = performance.now();
-      
+
       for (let i = 0; i < 1000; i++) {
         kairos.unix(timestamp);
       }
-      
+
       const duration = performance.now() - start;
       expect(duration).toBeLessThan(100); // Should complete in under 100ms
     });
@@ -331,23 +331,23 @@ describe('Unix Timestamp Parser Plugin', () => {
     test('should convert to Unix timestamps efficiently', () => {
       const date = kairos('2022-01-01T00:00:00Z');
       const start = performance.now();
-      
+
       for (let i = 0; i < 1000; i++) {
         date.unix();
       }
-      
+
       const duration = performance.now() - start;
       expect(duration).toBeLessThan(50); // Should complete in under 50ms
     });
 
     test('should validate Unix format efficiently', () => {
       const start = performance.now();
-      
+
       for (let i = 0; i < 1000; i++) {
         kairos.isUnixTimestamp('1640995200');
         kairos.isUnixTimestamp('invalid');
       }
-      
+
       const duration = performance.now() - start;
       expect(duration).toBeLessThan(50); // Should complete in under 50ms
     });

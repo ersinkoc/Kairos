@@ -68,7 +68,7 @@ export class HolidayEngine {
     findSubstituteDate(date, observedRule) {
         const direction = observedRule.direction || 'forward';
         const weekends = observedRule.weekends || [0, 6];
-        let current = new Date(date);
+        const current = new Date(date);
         const increment = direction === 'forward' ? 1 : -1;
         while (weekends.includes(current.getDay())) {
             current.setDate(current.getDate() + increment);

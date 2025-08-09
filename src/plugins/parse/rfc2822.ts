@@ -42,8 +42,30 @@ export class RFC2822Parser {
     PST: -8,
     PDT: -7,
     // Military time zones
-    A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, I: 9, K: 10, L: 11, M: 12,
-    N: -1, O: -2, P: -3, Q: -4, R: -5, S: -6, T: -7, U: -8, V: -9, W: -10, X: -11, Y: -12,
+    A: 1,
+    B: 2,
+    C: 3,
+    D: 4,
+    E: 5,
+    F: 6,
+    G: 7,
+    H: 8,
+    I: 9,
+    K: 10,
+    L: 11,
+    M: 12,
+    N: -1,
+    O: -2,
+    P: -3,
+    Q: -4,
+    R: -5,
+    S: -6,
+    T: -7,
+    U: -8,
+    V: -9,
+    W: -10,
+    X: -11,
+    Y: -12,
     Z: 0, // Zulu time (UTC)
   };
 
@@ -87,7 +109,11 @@ export class RFC2822Parser {
     );
 
     // Check if date was adjusted (e.g., day 32 became Feb 1)
-    if (date.getDate() !== parsedDay || date.getMonth() !== RFC2822Parser.MONTHS[month] || date.getFullYear() !== fullYear) {
+    if (
+      date.getDate() !== parsedDay ||
+      date.getMonth() !== RFC2822Parser.MONTHS[month] ||
+      date.getFullYear() !== fullYear
+    ) {
       return null;
     }
 
@@ -188,7 +214,7 @@ export default {
         .replace(/\s+/g, ' ')
         .replace(/,\s*/g, ', ')
         .replace(/\s*([+-]\d{4})/, ' $1');
-      
+
       const parsed = parser.parse(normalized);
       if (parsed) {
         const instance = kairos(parsed);

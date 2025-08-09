@@ -45,7 +45,7 @@ export class BusinessDayCalculator {
         return true;
     }
     nextBusinessDay(date) {
-        let next = new Date(date);
+        const next = new Date(date);
         next.setDate(next.getDate() + 1);
         while (!this.isBusinessDay(next)) {
             next.setDate(next.getDate() + 1);
@@ -53,7 +53,7 @@ export class BusinessDayCalculator {
         return next;
     }
     previousBusinessDay(date) {
-        let prev = new Date(date);
+        const prev = new Date(date);
         prev.setDate(prev.getDate() - 1);
         while (!this.isBusinessDay(prev)) {
             prev.setDate(prev.getDate() - 1);
@@ -63,7 +63,7 @@ export class BusinessDayCalculator {
     addBusinessDays(date, days) {
         if (days === 0)
             return new Date(date);
-        let current = new Date(date);
+        const current = new Date(date);
         let count = 0;
         const direction = days > 0 ? 1 : -1;
         const target = Math.abs(days);
@@ -84,7 +84,7 @@ export class BusinessDayCalculator {
         const isForward = startDate < endDate;
         const direction = isForward ? 1 : -1;
         let count = 0;
-        let current = new Date(startDate);
+        const current = new Date(startDate);
         while (current.getTime() !== endDate.getTime()) {
             current.setDate(current.getDate() + direction);
             if (this.isBusinessDay(current)) {
@@ -110,7 +110,7 @@ export class BusinessDayCalculator {
         const result = [];
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
-        let current = new Date(firstDay);
+        const current = new Date(firstDay);
         while (current <= lastDay) {
             if (this.isBusinessDay(current)) {
                 result.push(new Date(current));
@@ -121,7 +121,7 @@ export class BusinessDayCalculator {
     }
     getBusinessDaysInRange(start, end) {
         const result = [];
-        let current = new Date(start);
+        const current = new Date(start);
         while (current <= end) {
             if (this.isBusinessDay(current)) {
                 result.push(new Date(current));
@@ -133,7 +133,7 @@ export class BusinessDayCalculator {
     getNthBusinessDay(year, month, nth) {
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
-        let current = new Date(firstDay);
+        const current = new Date(firstDay);
         let count = 0;
         while (current <= lastDay) {
             if (this.isBusinessDay(current)) {
@@ -148,7 +148,7 @@ export class BusinessDayCalculator {
     }
     getLastBusinessDay(year, month) {
         const lastDay = new Date(year, month + 1, 0);
-        let current = new Date(lastDay);
+        const current = new Date(lastDay);
         while (current.getMonth() === month) {
             if (this.isBusinessDay(current)) {
                 return new Date(current);

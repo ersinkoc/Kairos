@@ -22,10 +22,11 @@ export class FlexibleParser {
                         if (year < 1900 || year > 2100) {
                             continue;
                         }
-                        if (match.length >= 4 && /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(trimmed)) {
-                            const parts = trimmed.split(/[\/\-]/).map(p => parseInt(p, 10));
+                        if (match.length >= 4 && /^\d{1,2}[/-]\d{1,2}[/-]\d{4}$/.test(trimmed)) {
+                            const parts = trimmed.split(/[/-]/).map((p) => parseInt(p, 10));
                             if ((parts[0] > 31 || parts[1] > 31) &&
-                                (parts[0] > 12 && parts[1] > 12)) {
+                                parts[0] > 12 &&
+                                parts[1] > 12) {
                                 continue;
                             }
                         }
@@ -49,7 +50,9 @@ export class FlexibleParser {
             if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/.test(trimmed) ||
                 /^\d{4}-\d{2}-\d{2}(\s\d{2}:\d{2}:\d{2})?$/.test(trimmed)) {
                 const nativeDate = new Date(trimmed);
-                if (!isNaN(nativeDate.getTime()) && nativeDate.getFullYear() > 1900 && nativeDate.getFullYear() < 2200) {
+                if (!isNaN(nativeDate.getTime()) &&
+                    nativeDate.getFullYear() > 1900 &&
+                    nativeDate.getFullYear() < 2200) {
                     return nativeDate;
                 }
             }

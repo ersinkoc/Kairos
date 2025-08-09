@@ -11,7 +11,7 @@ describe('RelativeTime Plugin', () => {
       const future = kairos().add(1, 'hour');
       expect(future.fromNow()).toContain('in');
       expect(future.fromNow()).toContain('hour');
-      
+
       const past = kairos().subtract(1, 'hour');
       expect(past.fromNow()).toContain('ago');
       expect(past.fromNow()).toContain('hour');
@@ -20,7 +20,7 @@ describe('RelativeTime Plugin', () => {
     it('should work without suffix', () => {
       const future = kairos().add(1, 'hour');
       expect(future.fromNow(true)).toBe('an hour');
-      
+
       const past = kairos().subtract(2, 'hours');
       expect(past.fromNow(true)).toBe('2 hours');
     });
@@ -40,7 +40,7 @@ describe('RelativeTime Plugin', () => {
         { add: 2, unit: 'years', expected: '2 years' },
       ];
 
-      tests.forEach(test => {
+      tests.forEach((test) => {
         const result = kairos().add(test.add, test.unit).fromNow(true);
         expect(result).toContain(test.expected);
       });
@@ -50,11 +50,11 @@ describe('RelativeTime Plugin', () => {
   describe('toNow', () => {
     it('should return relative time to now', () => {
       const future = kairos().add(1, 'hour');
-      expect(future.toNow()).toContain('ago');  // toNow means "from this time to now", so future is ago
+      expect(future.toNow()).toContain('ago'); // toNow means "from this time to now", so future is ago
       expect(future.toNow()).toContain('hour');
-      
+
       const past = kairos().subtract(1, 'hour');
-      expect(past.toNow()).toContain('in');  // past to now is "in"
+      expect(past.toNow()).toContain('in'); // past to now is "in"
       expect(past.toNow()).toContain('hour');
     });
   });
@@ -63,10 +63,10 @@ describe('RelativeTime Plugin', () => {
     it('should return relative time from another date', () => {
       const date1 = kairos('2024-01-01');
       const date2 = kairos('2024-01-02');
-      
+
       expect(date2.from(date1)).toContain('in');
       expect(date2.from(date1)).toContain('day');
-      
+
       expect(date1.from(date2)).toContain('ago');
       expect(date1.from(date2)).toContain('day');
     });
@@ -74,7 +74,7 @@ describe('RelativeTime Plugin', () => {
     it('should work without suffix', () => {
       const date1 = kairos('2024-01-01');
       const date2 = kairos('2024-01-08');
-      
+
       expect(date2.from(date1, true)).toBe('7 days');
       expect(date1.from(date2, true)).toBe('7 days');
     });
@@ -84,10 +84,10 @@ describe('RelativeTime Plugin', () => {
     it('should return relative time to another date', () => {
       const date1 = kairos('2024-01-01');
       const date2 = kairos('2024-01-02');
-      
+
       expect(date1.to(date2)).toContain('in');
       expect(date1.to(date2)).toContain('day');
-      
+
       expect(date2.to(date1)).toContain('ago');
       expect(date2.to(date1)).toContain('day');
     });
@@ -97,7 +97,7 @@ describe('RelativeTime Plugin', () => {
     it('should humanize durations', () => {
       const duration = kairos(3600000); // 1 hour in milliseconds
       expect(duration.humanize()).toBe('an hour');
-      
+
       const duration2 = kairos(7200000); // 2 hours
       expect(duration2.humanize()).toBe('2 hours');
     });
@@ -122,11 +122,11 @@ describe('RelativeTime Plugin', () => {
 
       it('should support different locales', () => {
         const future = kairos().add(1, 'day');
-        
+
         const resultEn = future.fromNowNative('en');
         expect(resultEn).toBeTruthy();
         expect(typeof resultEn).toBe('string');
-        
+
         const resultDe = future.fromNowNative('de');
         expect(resultDe).toBeTruthy();
         expect(typeof resultDe).toBe('string');
@@ -135,11 +135,11 @@ describe('RelativeTime Plugin', () => {
 
       it('should support formatting options', () => {
         const future = kairos().add(1, 'day');
-        
+
         const resultLong = future.fromNowNative('en', { style: 'long' });
         const resultShort = future.fromNowNative('en', { style: 'short' });
         const resultNarrow = future.fromNowNative('en', { style: 'narrow' });
-        
+
         expect(resultLong).toBeTruthy();
         expect(resultShort).toBeTruthy();
         expect(resultNarrow).toBeTruthy();
@@ -173,7 +173,7 @@ describe('RelativeTime Plugin', () => {
     it('should create calculator instances', () => {
       const calculator = kairos.relativeTime.calculator('en');
       expect(calculator).toBeDefined();
-      
+
       const result = calculator.format(3600000); // 1 hour in future
       expect(result).toContain('in');
       expect(result).toContain('hour');
@@ -184,14 +184,14 @@ describe('RelativeTime Plugin', () => {
     it('should handle very small time differences', () => {
       const now = kairos();
       const almostNow = kairos().add(5, 'seconds');
-      
+
       expect(almostNow.fromNow(true)).toContain('few seconds');
     });
 
     it('should handle very large time differences', () => {
       const now = kairos();
       const farFuture = kairos().add(100, 'years');
-      
+
       expect(farFuture.fromNow(true)).toContain('100 years');
     });
 

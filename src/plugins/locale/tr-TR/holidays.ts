@@ -53,20 +53,20 @@ export const holidays: HolidayRule[] = [
     rule: {
       calculate: (year: number): Date[] => {
         // Approximate dates for Ramadan Feast (Eid al-Fitr)
-        const dates: Record<number, { month: number, day: number }> = {
+        const dates: Record<number, { month: number; day: number }> = {
           2024: { month: 4, day: 10 }, // April 10, 2024
           2025: { month: 3, day: 30 }, // March 30, 2025 (approximate)
           2023: { month: 4, day: 21 }, // April 21, 2023
         };
-        
+
         const dateInfo = dates[year] || { month: 4, day: 15 }; // Default fallback
         const startDate = new Date(year, dateInfo.month - 1, dateInfo.day);
-        
+
         // Return 3 days for the feast
         return [
           startDate,
           new Date(year, dateInfo.month - 1, dateInfo.day + 1),
-          new Date(year, dateInfo.month - 1, dateInfo.day + 2)
+          new Date(year, dateInfo.month - 1, dateInfo.day + 2),
         ];
       },
     },
@@ -79,21 +79,21 @@ export const holidays: HolidayRule[] = [
     rule: {
       calculate: (year: number): Date[] => {
         // Approximate dates for Sacrifice Feast (Eid al-Adha)
-        const dates: Record<number, { month: number, day: number }> = {
+        const dates: Record<number, { month: number; day: number }> = {
           2024: { month: 6, day: 16 }, // June 16, 2024
-          2025: { month: 6, day: 6 },  // June 6, 2025 (approximate)
+          2025: { month: 6, day: 6 }, // June 6, 2025 (approximate)
           2023: { month: 6, day: 28 }, // June 28, 2023
         };
-        
+
         const dateInfo = dates[year] || { month: 6, day: 20 }; // Default fallback
         const startDate = new Date(year, dateInfo.month - 1, dateInfo.day);
-        
+
         // Return 4 days for the feast
         return [
           startDate,
           new Date(year, dateInfo.month - 1, dateInfo.day + 1),
           new Date(year, dateInfo.month - 1, dateInfo.day + 2),
-          new Date(year, dateInfo.month - 1, dateInfo.day + 3)
+          new Date(year, dateInfo.month - 1, dateInfo.day + 3),
         ];
       },
     },
@@ -121,7 +121,7 @@ export const holidays: HolidayRule[] = [
         const rajabStart = new Date(year, 1, 15); // Approximate
 
         // Find first Thursday
-        let current = new Date(rajabStart);
+        const current = new Date(rajabStart);
         while (current.getDay() !== 4) {
           current.setDate(current.getDate() + 1);
         }

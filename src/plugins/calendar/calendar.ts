@@ -24,17 +24,17 @@ class CalendarCalculator {
   static getISOWeek(date: Date): number {
     const d = new Date(date.getTime());
     d.setHours(0, 0, 0, 0);
-    
+
     // Set to nearest Thursday: current date + 4 - current day number
     // Make Sunday's day number 7
     d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-    
+
     // Get first day of year
     const yearStart = new Date(d.getFullYear(), 0, 1);
-    
+
     // Calculate full weeks to nearest Thursday
     const weekNumber = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-    
+
     return weekNumber;
   }
 
@@ -53,33 +53,33 @@ class CalendarCalculator {
   static getWeek(date: Date, startDay = 0): number {
     const d = new Date(date.getTime());
     d.setHours(0, 0, 0, 0);
-    
+
     // Get the first day of the year
     const yearStart = new Date(d.getFullYear(), 0, 1);
     yearStart.setHours(0, 0, 0, 0);
-    
+
     // Find the first week start day of the year
     const yearStartDay = yearStart.getDay();
     const daysToWeekStart = (startDay - yearStartDay + 7) % 7;
     const firstWeekStart = new Date(yearStart);
-    
+
     if (daysToWeekStart > 0) {
       firstWeekStart.setDate(yearStart.getDate() + daysToWeekStart - 7);
     }
-    
+
     // Calculate the number of days from the first week start
     const daysDiff = Math.floor((d.getTime() - firstWeekStart.getTime()) / 86400000);
-    
+
     // Calculate week number
     const weekNumber = Math.floor(daysDiff / 7) + 1;
-    
+
     // If the week number is less than 1, it belongs to the previous year
     if (weekNumber < 1) {
       // Calculate week number for the previous year
       const prevYearEnd = new Date(d.getFullYear() - 1, 11, 31);
       return this.getWeek(prevYearEnd, startDay);
     }
-    
+
     return weekNumber;
   }
 
@@ -128,7 +128,7 @@ class CalendarCalculator {
     const firstDayOfWeek = firstDay.getDay();
     const offsetDays = (firstDayOfWeek - startDay + 7) % 7;
     const dayOfMonth = date.getDate();
-    
+
     return Math.ceil((dayOfMonth + offsetDays) / 7);
   }
 
@@ -137,7 +137,7 @@ class CalendarCalculator {
    */
   static getCalendarInfo(date: Date): CalendarInfo {
     const year = date.getFullYear();
-    
+
     return {
       year,
       quarter: this.getQuarter(date),
@@ -158,21 +158,21 @@ class CalendarCalculator {
 
 const calendarPlugin: KairosPlugin = {
   name: 'calendar',
-  
+
   install(kairos: KairosStatic) {
     // Add instance methods
     kairos.extend({
       quarter(value?: number): number | KairosInstance {
         const current = CalendarCalculator.getQuarter(this.toDate());
-        
+
         if (value === undefined) {
           return current;
         }
-        
+
         if (value < 1 || value > 4) {
           throw new Error('Quarter must be between 1 and 4');
         }
-        
+
         const clone = this.clone();
         const month = (value - 1) * 3 + 1; // First month of the quarter (1-based)
         return clone.month(month);
@@ -180,11 +180,11 @@ const calendarPlugin: KairosPlugin = {
 
       week(value?: number): number | KairosInstance {
         const current = CalendarCalculator.getWeek(this.toDate());
-        
+
         if (value === undefined) {
           return current;
         }
-        
+
         const clone = this.clone();
         const currentWeek = current;
         const weekDiff = value - currentWeek;
@@ -193,11 +193,11 @@ const calendarPlugin: KairosPlugin = {
 
       isoWeek(value?: number): number | KairosInstance {
         const current = CalendarCalculator.getISOWeek(this.toDate());
-        
+
         if (value === undefined) {
           return current;
         }
-        
+
         const clone = this.clone();
         const currentWeek = current;
         const weekDiff = value - currentWeek;
@@ -214,11 +214,11 @@ const calendarPlugin: KairosPlugin = {
 
       dayOfYear(value?: number): number | KairosInstance {
         const current = CalendarCalculator.getDayOfYear(this.toDate());
-        
+
         if (value === undefined) {
           return current;
         }
-        
+
         const clone = this.clone();
         const yearStart = new Date(clone.year() as number, 0, 1);
         yearStart.setDate(value);
@@ -248,15 +248,13 @@ const calendarPlugin: KairosPlugin = {
       startOfQuarter(): KairosInstance {
         const quarter = this.quarter() as number;
         const month = (quarter - 1) * 3;
-        return kairos(new Date(this.year() as number, month, 1))
-          .startOf('day');
+        return kairos(new Date(this.year() as number, month, 1)).startOf('day');
       },
 
       endOfQuarter(): KairosInstance {
         const quarter = this.quarter() as number;
         const month = quarter * 3;
-        return kairos(new Date(this.year() as number, month, 0))
-          .endOf('day');
+        return kairos(new Date(this.year() as number, month, 0)).endOf('day');
       },
 
       startOfWeek(startDay = 0): KairosInstance {
@@ -291,8 +289,7 @@ const calendarPlugin: KairosPlugin = {
       },
 
       isSameQuarter(other: KairosInstance): boolean {
-        return this.quarter() === other.quarter() && 
-               this.year() === other.year();
+        return this.quarter() === other.quarter() && this.year() === other.year();
       },
 
       isSameWeek(other: KairosInstance, startDay = 0): boolean {
@@ -303,8 +300,7 @@ const calendarPlugin: KairosPlugin = {
       },
 
       isSameISOWeek(other: KairosInstance): boolean {
-        return this.isoWeek() === other.isoWeek() && 
-               this.isoWeekYear() === other.isoWeekYear();
+        return this.isoWeek() === other.isoWeek() && this.isoWeekYear() === other.isoWeekYear();
       },
 
       weeksInYear(): number {
@@ -315,12 +311,12 @@ const calendarPlugin: KairosPlugin = {
       isoWeeksInYear(): number {
         const year = this.year() as number;
         const lastWeek = CalendarCalculator.getISOWeek(new Date(year, 11, 31));
-        
+
         // If last week is 1, then the year has 52 weeks
         if (lastWeek === 1) {
           return CalendarCalculator.getISOWeek(new Date(year, 11, 24));
         }
-        
+
         return lastWeek;
       },
     });

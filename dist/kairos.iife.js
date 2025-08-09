@@ -130,7 +130,7 @@ var kairos = (function (exports) {
                     errors.push('Relative rule offset must be a number');
                 }
                 break;
-            case 'lunar':
+            case 'lunar': {
                 const validCalendars = ['islamic', 'chinese', 'hebrew', 'persian'];
                 if (!validCalendars.includes(rule.rule.calendar)) {
                     errors.push(`Lunar rule calendar must be one of: ${validCalendars.join(', ')}`);
@@ -142,6 +142,7 @@ var kairos = (function (exports) {
                     errors.push('Lunar rule day must be 1-31');
                 }
                 break;
+            }
             case 'easter-based':
                 if (!isValidNumber(rule.rule.offset)) {
                     errors.push('Easter-based rule offset must be a number');
@@ -163,6 +164,17 @@ var kairos = (function (exports) {
         throw error;
     }
 
+    const isKairosInstance = (obj) => {
+        return obj !== null && typeof obj === 'object' && '_date' in obj && obj._date instanceof Date;
+    };
+    const hasToDateMethod = (obj) => {
+        return (obj !== null && typeof obj === 'object' && 'toDate' in obj && typeof obj.toDate === 'function');
+    };
+    const isDateLike = (obj) => {
+        return (obj !== null &&
+            typeof obj === 'object' &&
+            (('year' in obj && 'month' in obj && 'day' in obj) || 'date' in obj));
+    };
     const globalCache = new LRUCache(1000);
     class KairosCore {
         constructor(input) {
@@ -228,34 +240,31 @@ var kairos = (function (exports) {
                 return parsed;
             }
             if (input && typeof input === 'object') {
-                if ('_date' in input && input._date instanceof Date) {
+                if (isKairosInstance(input)) {
                     return new Date(input._date.getTime());
                 }
-                if (typeof input.toDate === 'function') {
+                if (hasToDateMethod(input)) {
                     return input.toDate();
                 }
-                if ('year' in input && 'month' in input && 'day' in input) {
-                    const obj = input;
-                    const year = obj.year;
-                    const month = obj.month - 1;
-                    const day = obj.day;
-                    const hour = obj.hour || 0;
-                    const minute = obj.minute || 0;
-                    const second = obj.second || 0;
-                    const millisecond = obj.millisecond || 0;
+                if (isDateLike(input) &&
+                    input.year !== undefined &&
+                    input.month !== undefined &&
+                    input.day !== undefined) {
+                    const year = input.year;
+                    const month = input.month - 1;
+                    const day = input.day;
+                    const hour = input.hour || 0;
+                    const minute = input.minute || 0;
+                    const second = input.second || 0;
+                    const millisecond = input.millisecond || 0;
                     const date = new Date(year, month, day, hour, minute, second, millisecond);
-                    if (date.getFullYear() !== year ||
-                        date.getMonth() !== month ||
-                        date.getDate() !== day) {
+                    if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
                         return new Date(NaN);
                     }
                     return date;
                 }
-                if ('date' in input) {
-                    const dateValue = input.date;
-                    if (dateValue instanceof Date) {
-                        return new Date(dateValue.getTime());
-                    }
+                if (isDateLike(input) && input.date instanceof Date) {
+                    return new Date(input.date.getTime());
                 }
             }
             return new Date(NaN);
@@ -417,11 +426,12 @@ var kairos = (function (exports) {
                     clone._date.setDate(1);
                     clone._date.setHours(0, 0, 0, 0);
                     break;
-                case 'week':
+                case 'week': {
                     const day = clone._date.getDay();
                     clone._date.setDate(clone._date.getDate() - day);
                     clone._date.setHours(0, 0, 0, 0);
                     break;
+                }
                 case 'day':
                     clone._date.setHours(0, 0, 0, 0);
                     break;
@@ -449,11 +459,12 @@ var kairos = (function (exports) {
                     clone._date.setMonth(clone._date.getMonth() + 1, 0);
                     clone._date.setHours(23, 59, 59, 999);
                     break;
-                case 'week':
+                case 'week': {
                     const day = clone._date.getDay();
                     clone._date.setDate(clone._date.getDate() + (6 - day));
                     clone._date.setHours(23, 59, 59, 999);
                     break;
+                }
                 case 'day':
                     clone._date.setHours(23, 59, 59, 999);
                     break;
@@ -611,7 +622,10 @@ var kairos = (function (exports) {
     kairos.plugins = PluginSystem.plugins;
     kairos.utc = (input) => {
         let utcDate;
-        if (typeof input === 'string' && !input.endsWith('Z') && !input.includes('+') && !/[+-]\d{2}:?\d{2}$/.test(input)) {
+        if (typeof input === 'string' &&
+            !input.endsWith('Z') &&
+            !input.includes('+') &&
+            !/[+-]\d{2}:?\d{2}$/.test(input)) {
             const dateTimePattern = /^(\d{4})-(\d{2})-(\d{2})(?:\s+|T)(\d{2}):(\d{2})(?::(\d{2}))?$/;
             const dateOnlyPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
             const match = input.match(dateTimePattern) || input.match(dateOnlyPattern);
@@ -824,7 +838,7 @@ var kairos = (function (exports) {
         findSubstituteDate(date, observedRule) {
             const direction = observedRule.direction || 'forward';
             const weekends = observedRule.weekends || [0, 6];
-            let current = new Date(date);
+            const current = new Date(date);
             const increment = direction === 'forward' ? 1 : -1;
             while (weekends.includes(current.getDay())) {
                 current.setDate(current.getDate() + increment);
@@ -1171,9 +1185,9 @@ var kairos = (function (exports) {
             const year = date.getFullYear();
             const month = date.getMonth() + 1;
             const day = date.getDate();
-            let a = Math.floor((14 - month) / 12);
-            let y = year + 4800 - a;
-            let m = month + 12 * a - 3;
+            const a = Math.floor((14 - month) / 12);
+            const y = year + 4800 - a;
+            const m = month + 12 * a - 3;
             return (day +
                 Math.floor((153 * m + 2) / 5) +
                 365 * y +
@@ -1183,15 +1197,15 @@ var kairos = (function (exports) {
                 32045);
         }
         julianDayToDate(jdn) {
-            let a = jdn + 32044;
-            let b = (4 * a + 3) / 146097;
-            let c = a - Math.floor((146097 * b) / 4);
-            let d = (4 * c + 3) / 1461;
-            let e = c - Math.floor((1461 * d) / 4);
-            let m = (5 * e + 2) / 153;
-            let day = e - Math.floor((153 * m + 2) / 5) + 1;
-            let month = m + 3 - 12 * Math.floor(m / 10);
-            let year = 100 * b + d - 4800 + Math.floor(m / 10);
+            const a = jdn + 32044;
+            const b = (4 * a + 3) / 146097;
+            const c = a - Math.floor((146097 * b) / 4);
+            const d = (4 * c + 3) / 1461;
+            const e = c - Math.floor((1461 * d) / 4);
+            const m = (5 * e + 2) / 153;
+            const day = e - Math.floor((153 * m + 2) / 5) + 1;
+            const month = m + 3 - 12 * Math.floor(m / 10);
+            const year = 100 * b + d - 4800 + Math.floor(m / 10);
             return new Date(year, month - 1, day);
         }
         calculateOrthodoxEaster(year) {
@@ -1751,7 +1765,7 @@ var kairos = (function (exports) {
             return true;
         }
         nextBusinessDay(date) {
-            let next = new Date(date);
+            const next = new Date(date);
             next.setDate(next.getDate() + 1);
             while (!this.isBusinessDay(next)) {
                 next.setDate(next.getDate() + 1);
@@ -1759,7 +1773,7 @@ var kairos = (function (exports) {
             return next;
         }
         previousBusinessDay(date) {
-            let prev = new Date(date);
+            const prev = new Date(date);
             prev.setDate(prev.getDate() - 1);
             while (!this.isBusinessDay(prev)) {
                 prev.setDate(prev.getDate() - 1);
@@ -1769,7 +1783,7 @@ var kairos = (function (exports) {
         addBusinessDays(date, days) {
             if (days === 0)
                 return new Date(date);
-            let current = new Date(date);
+            const current = new Date(date);
             let count = 0;
             const direction = days > 0 ? 1 : -1;
             const target = Math.abs(days);
@@ -1790,7 +1804,7 @@ var kairos = (function (exports) {
             const isForward = startDate < endDate;
             const direction = isForward ? 1 : -1;
             let count = 0;
-            let current = new Date(startDate);
+            const current = new Date(startDate);
             while (current.getTime() !== endDate.getTime()) {
                 current.setDate(current.getDate() + direction);
                 if (this.isBusinessDay(current)) {
@@ -1816,7 +1830,7 @@ var kairos = (function (exports) {
             const result = [];
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
-            let current = new Date(firstDay);
+            const current = new Date(firstDay);
             while (current <= lastDay) {
                 if (this.isBusinessDay(current)) {
                     result.push(new Date(current));
@@ -1827,7 +1841,7 @@ var kairos = (function (exports) {
         }
         getBusinessDaysInRange(start, end) {
             const result = [];
-            let current = new Date(start);
+            const current = new Date(start);
             while (current <= end) {
                 if (this.isBusinessDay(current)) {
                     result.push(new Date(current));
@@ -1839,7 +1853,7 @@ var kairos = (function (exports) {
         getNthBusinessDay(year, month, nth) {
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
-            let current = new Date(firstDay);
+            const current = new Date(firstDay);
             let count = 0;
             while (current <= lastDay) {
                 if (this.isBusinessDay(current)) {
@@ -1854,7 +1868,7 @@ var kairos = (function (exports) {
         }
         getLastBusinessDay(year, month) {
             const lastDay = new Date(year, month + 1, 0);
-            let current = new Date(lastDay);
+            const current = new Date(lastDay);
             while (current.getMonth() === month) {
                 if (this.isBusinessDay(current)) {
                     return new Date(current);
@@ -2643,14 +2657,12 @@ var kairos = (function (exports) {
                 startOfQuarter() {
                     const quarter = this.quarter();
                     const month = (quarter - 1) * 3;
-                    return kairos(new Date(this.year(), month, 1))
-                        .startOf('day');
+                    return kairos(new Date(this.year(), month, 1)).startOf('day');
                 },
                 endOfQuarter() {
                     const quarter = this.quarter();
                     const month = quarter * 3;
-                    return kairos(new Date(this.year(), month, 0))
-                        .endOf('day');
+                    return kairos(new Date(this.year(), month, 0)).endOf('day');
                 },
                 startOfWeek(startDay = 0) {
                     const clone = this.clone();
@@ -2678,8 +2690,7 @@ var kairos = (function (exports) {
                     return !this.isWeekend();
                 },
                 isSameQuarter(other) {
-                    return this.quarter() === other.quarter() &&
-                        this.year() === other.year();
+                    return this.quarter() === other.quarter() && this.year() === other.year();
                 },
                 isSameWeek(other, startDay = 0) {
                     const thisStart = this.startOfWeek(startDay);
@@ -2687,8 +2698,7 @@ var kairos = (function (exports) {
                     return thisStart.format('YYYY-MM-DD') === otherStart.format('YYYY-MM-DD');
                 },
                 isSameISOWeek(other) {
-                    return this.isoWeek() === other.isoWeek() &&
-                        this.isoWeekYear() === other.isoWeekYear();
+                    return this.isoWeek() === other.isoWeek() && this.isoWeekYear() === other.isoWeekYear();
                 },
                 weeksInYear() {
                     const lastDay = kairos(new Date(this.year(), 11, 31));
@@ -3090,7 +3100,7 @@ var kairos = (function (exports) {
                     return [
                         startDate,
                         new Date(year, dateInfo.month - 1, dateInfo.day + 1),
-                        new Date(year, dateInfo.month - 1, dateInfo.day + 2)
+                        new Date(year, dateInfo.month - 1, dateInfo.day + 2),
                     ];
                 },
             },
@@ -3113,7 +3123,7 @@ var kairos = (function (exports) {
                         startDate,
                         new Date(year, dateInfo.month - 1, dateInfo.day + 1),
                         new Date(year, dateInfo.month - 1, dateInfo.day + 2),
-                        new Date(year, dateInfo.month - 1, dateInfo.day + 3)
+                        new Date(year, dateInfo.month - 1, dateInfo.day + 3),
                     ];
                 },
             },
@@ -3136,7 +3146,7 @@ var kairos = (function (exports) {
             rule: {
                 calculate: (year) => {
                     const rajabStart = new Date(year, 1, 15);
-                    let current = new Date(rajabStart);
+                    const current = new Date(rajabStart);
                     while (current.getDay() !== 4) {
                         current.setDate(current.getDate() + 1);
                     }
@@ -4100,6 +4110,29 @@ var kairos = (function (exports) {
         ...holidays.filter((h) => h.id !== 'emperors-birthday'),
         ...historicalHolidays.filter((h) => h.id === 'emperors-birthday-heisei'),
     ];
+    const olympics2020Holidays = [
+        {
+            id: 'marine-day-2020',
+            name: '海の日（2020年特別）',
+            type: 'fixed',
+            rule: { month: 7, day: 23 },
+            active: false,
+        },
+        {
+            id: 'sports-day-2020',
+            name: 'スポーツの日（2020年特別）',
+            type: 'fixed',
+            rule: { month: 7, day: 24 },
+            active: false,
+        },
+        {
+            id: 'mountain-day-2020',
+            name: '山の日（2020年特別）',
+            type: 'fixed',
+            rule: { month: 8, day: 10 },
+            active: false,
+        },
+    ];
 
     const locale = {
         name: '日本語 (日本)',
@@ -4172,6 +4205,8 @@ var kairos = (function (exports) {
                             return reiwaHolidays;
                         case 'heisei':
                             return heiseiHolidays;
+                        case 'olympics2020':
+                            return olympics2020Holidays;
                         case 'all':
                             return allHolidays;
                         default:

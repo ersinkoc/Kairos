@@ -193,7 +193,7 @@ export default {
       // Convert to UTC
       utc(): any {
         const instance = this.tz('UTC');
-        (instance as any)._isUTC = true;
+        instance._isUTC = true;
         return instance;
       },
 
@@ -213,13 +213,13 @@ export default {
       },
 
       // Get timezone abbreviation
-      
+
       // Check if in UTC
       isUTC(): boolean {
         // Check if this instance was created with UTC flag
         return !!(this as any)._isUTC || this.offset() === 0;
       },
-      
+
       // Convert to local time
       local(): any {
         // If already in local time, return clone

@@ -8,7 +8,7 @@ import {
   allHolidays,
   reiwaHolidays,
   heiseiHolidays,
-  olympics2020Holidays as _olympics2020Holidays,
+  olympics2020Holidays,
 } from './holidays.js';
 import { localeManager } from '../../../core/locale-manager.js';
 
@@ -76,7 +76,15 @@ export default {
     // Add Japanese-specific holiday methods
     kairos.extend({
       getJapaneseHolidays(
-        type?: 'public' | 'observances' | 'historical' | 'golden-week' | 'all' | 'reiwa' | 'heisei'
+        type?:
+          | 'public'
+          | 'observances'
+          | 'historical'
+          | 'golden-week'
+          | 'all'
+          | 'reiwa'
+          | 'heisei'
+          | 'olympics2020'
       ): any[] {
         switch (type) {
           case 'public':
@@ -91,6 +99,8 @@ export default {
             return reiwaHolidays;
           case 'heisei':
             return heiseiHolidays;
+          case 'olympics2020':
+            return olympics2020Holidays;
           case 'all':
             return allHolidays;
           default:

@@ -100,6 +100,7 @@ export class DateRange {
 
   count(): number {
     let count = 0;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const _ of this) {
       count++;
     }
@@ -169,7 +170,7 @@ export class DateRange {
     return new Date(this.start);
   }
 
-  // Get end date  
+  // Get end date
   getEnd(): Date {
     return new Date(this.end);
   }

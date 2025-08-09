@@ -117,11 +117,10 @@ export default {
       return parsed ? kairos(parsed) : null;
     };
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     kairos.fromUnix = kairos.unix;
 
-    kairos.isUnixTimestamp = (input: string | number) => {
-      return parser.isUnixTimestamp(input);
-    };
+    kairos.isUnixTimestamp = (input: string | number) => parser.isUnixTimestamp(input);
 
     // Instance methods
     kairos.extend({

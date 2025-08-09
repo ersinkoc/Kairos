@@ -25,19 +25,19 @@ export interface DurationObject {
 /**
  * Duration class for representing and manipulating time spans.
  * Supports ISO 8601 duration format parsing and human-readable output.
- * 
+ *
  * @example
  * ```typescript
  * import kairos from 'kairos';
  * import durationPlugin from 'kairos/plugins/duration';
- * 
+ *
  * kairos.use(durationPlugin);
- * 
+ *
  * // Create durations
  * const dur1 = kairos.duration(5000); // 5 seconds
  * const dur2 = kairos.duration('P1Y2M3DT4H5M6S'); // ISO 8601
  * const dur3 = kairos.duration({ hours: 2, minutes: 30 }); // Object
- * 
+ *
  * // Use with dates
  * const date = kairos('2024-01-01');
  * const later = date.addDuration(dur3);
@@ -56,12 +56,12 @@ export class Duration {
 
   /**
    * Creates a new Duration instance.
-   * 
+   *
    * @param input - Duration input, can be:
    *   - `number`: Milliseconds
    *   - `string`: ISO 8601 duration (P1Y2M3DT4H5M6S) or simple format ("2 hours")
    *   - `DurationObject`: Object with component properties
-   * 
+   *
    * @example
    * ```typescript
    * new Duration(5000);                      // 5 seconds from milliseconds

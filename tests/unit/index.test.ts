@@ -200,7 +200,7 @@ describe('Kairos Index Module', () => {
       cache.set('key1', 'value1');
       expect(cache.get('key1')).toBe('value1');
       expect(cache.has('key1')).toBe(true);
-      
+
       cache.clear();
       expect(cache.has('key1')).toBe(false);
     });
@@ -241,7 +241,7 @@ describe('Kairos Index Module', () => {
     it('should validate holiday rules', () => {
       const errors = validators.validateHolidayRule({ type: 'fixed', month: 1, day: 1 });
       expect(errors.length).toBeGreaterThanOrEqual(0);
-      
+
       const invalidErrors = validators.validateHolidayRule(null);
       expect(invalidErrors.length).toBeGreaterThan(0);
     });
@@ -253,7 +253,6 @@ describe('Kairos Index Module', () => {
       expect(validators.isValidNth(0)).toBe(false);
       expect(validators.isValidNth(6)).toBe(false);
     });
-
   });
 
   describe('Type Exports', () => {
@@ -264,7 +263,7 @@ describe('Kairos Index Module', () => {
         const instance: KairosInstance = kairos();
         const input: KairosInput = '2024-01-01';
         const unit: TimeUnit = 'day';
-        
+
         // Plugin types
         const plugin: KairosPlugin = {
           name: 'test',
@@ -328,24 +327,24 @@ describe('Kairos Index Module', () => {
 
     it('should work with multiple plugins simultaneously', () => {
       const date = kairos('2024-01-01');
-      
+
       // Format plugin
       expect(date.format('YYYY-MM-DD')).toBe('2024-01-01');
-      
+
       // Calendar plugin
       expect(date.week()).toBe(1);
       expect(date.quarter()).toBe(1);
-      
+
       // Business plugin
       expect(date.isBusinessDay()).toBe(false); // New Year's Day
-      
+
       // Holiday plugin
       expect(date.isHoliday()).toBe(true);
-      
+
       // Duration plugin - use static method to create duration
       const duration = kairos.duration({ days: 1 });
       expect(duration.asDays()).toBe(1);
-      
+
       // Relative time plugin
       expect(typeof date.fromNow()).toBe('string');
     });
@@ -353,11 +352,11 @@ describe('Kairos Index Module', () => {
     it('should handle complex date operations', () => {
       const start = kairos('2024-01-01');
       const end = start.add(1, 'year').subtract(1, 'day');
-      
+
       expect(end.year()).toBe(2024);
       expect(end.month()).toBe(12); // December (1-indexed in Kairos API)
       expect(end.date()).toBe(31);
-      
+
       const formatted = end.format('YYYY-MM-DD');
       expect(formatted).toBe('2024-12-31');
     });
@@ -365,10 +364,10 @@ describe('Kairos Index Module', () => {
     it('should handle UTC operations', () => {
       const utc = kairos.utc('2024-01-01 12:00:00');
       expect(utc.isUTC()).toBe(true);
-      
+
       const local = utc.local();
       expect(local.isUTC()).toBe(false);
-      
+
       const backToUtc = local.utc();
       expect(backToUtc.isUTC()).toBe(true);
     });
@@ -378,17 +377,17 @@ describe('Kairos Index Module', () => {
       kairos.locale('en-US');
       const usNewYear = kairos('2024-01-01');
       expect(usNewYear.isHoliday()).toBe(true);
-      
+
       // German holidays
       kairos.locale('de-DE');
       const germanUnity = kairos('2024-10-03');
       expect(germanUnity.isHoliday()).toBe(true);
-      
+
       // Turkish holidays
       kairos.locale('tr-TR');
       const turkishRepublic = kairos('2024-10-29');
       expect(turkishRepublic.isHoliday()).toBe(true);
-      
+
       // Japanese holidays
       kairos.locale('ja-JP');
       const japaneseNewYear = kairos('2024-01-01');
@@ -399,7 +398,7 @@ describe('Kairos Index Module', () => {
       const start = kairos('2024-01-01');
       const end = kairos('2024-01-31');
       const range = kairos.range(start, end);
-      
+
       expect(range.contains(kairos('2024-01-15'))).toBe(true);
       expect(range.contains(kairos('2024-02-01'))).toBe(false);
       expect(range.overlaps(kairos.range(kairos('2024-01-15'), kairos('2024-02-15')))).toBe(true);
@@ -408,9 +407,9 @@ describe('Kairos Index Module', () => {
     it('should handle business day calculations', () => {
       const date = kairos('2024-01-02'); // Tuesday
       const nextBusinessDay = date.nextBusinessDay();
-      
+
       expect(nextBusinessDay.format('YYYY-MM-DD')).toBe('2024-01-03');
-      
+
       const added = date.addBusinessDays(5);
       expect(added.format('YYYY-MM-DD')).toBe('2024-01-09');
     });
@@ -418,11 +417,11 @@ describe('Kairos Index Module', () => {
     it('should handle fiscal year calculations', () => {
       // Fiscal year starts in April
       const config = { start: 4 };
-      
+
       const q1 = kairos('2024-04-01');
       expect(q1.fiscalYear(config)).toBe(2024);
       expect(q1.fiscalQuarter(config)).toBe(1);
-      
+
       const q4 = kairos('2024-03-31');
       expect(q4.fiscalYear(config)).toBe(2023);
       expect(q4.fiscalQuarter(config)).toBe(4);
@@ -439,7 +438,7 @@ describe('Kairos Index Module', () => {
     it('should handle null and undefined inputs', () => {
       const nullDate = kairos(null);
       expect(nullDate.isValid()).toBe(false); // Null creates invalid date
-      
+
       const undefinedDate = kairos(undefined);
       expect(undefinedDate.isValid()).toBe(true); // Undefined creates current date
     });
@@ -448,7 +447,7 @@ describe('Kairos Index Module', () => {
       const leapDay = kairos('2024-02-29');
       const nextYear = leapDay.add(1, 'year');
       expect(nextYear.format('YYYY-MM-DD')).toBe('2025-03-01'); // Leap day + 1 year = March 1st
-      
+
       const endOfMonth = kairos('2024-01-31');
       const nextMonth = endOfMonth.add(1, 'month');
       expect(nextMonth.format('YYYY-MM-DD')).toBe('2024-02-29');
@@ -462,7 +461,7 @@ describe('Kairos Index Module', () => {
         kairos('2024-01-01');
       }
       const end = performance.now();
-      
+
       expect(end - start).toBeLessThan(500); // Should take less than 500ms (increased for slower systems)
     });
 
@@ -473,7 +472,7 @@ describe('Kairos Index Module', () => {
         date.format('YYYY-MM-DD HH:mm:ss');
       }
       const end = performance.now();
-      
+
       expect(end - start).toBeLessThan(500); // Should take less than 500ms (increased for slower systems)
     });
   });

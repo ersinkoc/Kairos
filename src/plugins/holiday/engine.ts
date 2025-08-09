@@ -32,7 +32,6 @@ export class HolidayEngine implements IHolidayEngine {
       throw new Error(`Invalid holiday rule: ${errors.join(', ')}`);
     }
 
-
     if (!this.ruleCache.has(rule.name || 'unnamed')) {
       this.ruleCache.set(rule.name || 'unnamed', new Map());
     }
@@ -100,7 +99,7 @@ export class HolidayEngine implements IHolidayEngine {
     const direction = observedRule.direction || 'forward';
     const weekends = observedRule.weekends || [0, 6];
 
-    let current = new Date(date);
+    const current = new Date(date);
     const increment = direction === 'forward' ? 1 : -1;
 
     while (weekends.includes(current.getDay())) {
@@ -193,12 +192,15 @@ export class HolidayEngine implements IHolidayEngine {
     return result.sort((a, b) => a.date.getTime() - b.date.getTime());
   }
 
-  private calculateWithContext(rule: HolidayRule, year: number, allHolidays: HolidayRule[]): Date[] {
+  private calculateWithContext(
+    rule: HolidayRule,
+    year: number,
+    allHolidays: HolidayRule[]
+  ): Date[] {
     const errors = validateHolidayRule(rule);
     if (errors.length > 0) {
       throw new Error(`Invalid holiday rule: ${errors.join(', ')}`);
     }
-
 
     if (!this.ruleCache.has(rule.name || 'unnamed')) {
       this.ruleCache.set(rule.name || 'unnamed', new Map());

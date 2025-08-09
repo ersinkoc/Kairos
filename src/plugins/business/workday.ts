@@ -5,18 +5,18 @@ import type { KairosPlugin } from '../../core/types/plugin.js';
 /**
  * Calculator for business day operations with configurable weekends and holidays.
  * Provides efficient caching for repeated calculations.
- * 
+ *
  * @example
  * ```typescript
  * import { BusinessDayCalculator } from 'kairos/plugins/business';
- * 
+ *
  * const calculator = new BusinessDayCalculator({
  *   weekends: [0, 6],  // Sunday, Saturday
  *   holidays: [
  *     { id: 'new-year', name: 'New Year', type: 'fixed', rule: { month: 1, day: 1 } }
  *   ]
  * });
- * 
+ *
  * const isBusinessDay = calculator.isBusinessDay(new Date());
  * const nextBusinessDay = calculator.nextBusinessDay(new Date());
  * ```
@@ -27,7 +27,7 @@ export class BusinessDayCalculator {
 
   /**
    * Creates a new BusinessDayCalculator.
-   * 
+   *
    * @param config - Configuration object for business day rules
    * @param config.weekends - Array of weekend days (0=Sunday, 1=Monday, etc.)
    * @param config.holidays - Array of holiday rules
@@ -51,14 +51,14 @@ export class BusinessDayCalculator {
    * Checks if a given date is a business day.
    * Business days exclude weekends, holidays, and any custom rules.
    * Results are cached for performance.
-   * 
+   *
    * @param date - The date to check
    * @returns True if the date is a business day
-   * 
+   *
    * @example
    * ```typescript
    * const calc = new BusinessDayCalculator();
-   * 
+   *
    * console.log(calc.isBusinessDay(new Date('2024-01-01'))); // false (New Year)
    * console.log(calc.isBusinessDay(new Date('2024-01-02'))); // true (Tuesday)
    * console.log(calc.isBusinessDay(new Date('2024-01-06'))); // false (Saturday)
@@ -106,7 +106,7 @@ export class BusinessDayCalculator {
   }
 
   nextBusinessDay(date: Date): Date {
-    let next = new Date(date);
+    const next = new Date(date);
     next.setDate(next.getDate() + 1);
 
     while (!this.isBusinessDay(next)) {
@@ -117,7 +117,7 @@ export class BusinessDayCalculator {
   }
 
   previousBusinessDay(date: Date): Date {
-    let prev = new Date(date);
+    const prev = new Date(date);
     prev.setDate(prev.getDate() - 1);
 
     while (!this.isBusinessDay(prev)) {
@@ -130,7 +130,7 @@ export class BusinessDayCalculator {
   addBusinessDays(date: Date, days: number): Date {
     if (days === 0) return new Date(date);
 
-    let current = new Date(date);
+    const current = new Date(date);
     let count = 0;
     const direction = days > 0 ? 1 : -1;
     const target = Math.abs(days);
@@ -157,7 +157,7 @@ export class BusinessDayCalculator {
     const isForward = startDate < endDate;
     const direction = isForward ? 1 : -1;
     let count = 0;
-    let current = new Date(startDate);
+    const current = new Date(startDate);
 
     while (current.getTime() !== endDate.getTime()) {
       current.setDate(current.getDate() + direction);
@@ -195,7 +195,7 @@ export class BusinessDayCalculator {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
 
-    let current = new Date(firstDay);
+    const current = new Date(firstDay);
 
     while (current <= lastDay) {
       if (this.isBusinessDay(current)) {
@@ -210,7 +210,7 @@ export class BusinessDayCalculator {
   // Get all business days in a date range
   getBusinessDaysInRange(start: Date, end: Date): Date[] {
     const result: Date[] = [];
-    let current = new Date(start);
+    const current = new Date(start);
 
     while (current <= end) {
       if (this.isBusinessDay(current)) {
@@ -227,7 +227,7 @@ export class BusinessDayCalculator {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
 
-    let current = new Date(firstDay);
+    const current = new Date(firstDay);
     let count = 0;
 
     while (current <= lastDay) {
@@ -246,7 +246,7 @@ export class BusinessDayCalculator {
   // Get last business day of month
   getLastBusinessDay(year: number, month: number): Date | null {
     const lastDay = new Date(year, month + 1, 0);
-    let current = new Date(lastDay);
+    const current = new Date(lastDay);
 
     while (current.getMonth() === month) {
       if (this.isBusinessDay(current)) {

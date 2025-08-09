@@ -402,7 +402,8 @@ describe('Business Day Calculations', () => {
 
         // Due to holidays, the reverse operation might not return to exact same date
         // But the difference should be small (within a few days due to holidays)
-        const daysDiff = Math.abs(randomDate.valueOf() - subtracted.valueOf()) / (24 * 60 * 60 * 1000);
+        const daysDiff =
+          Math.abs(randomDate.valueOf() - subtracted.valueOf()) / (24 * 60 * 60 * 1000);
         expect(daysDiff).toBeLessThan(7); // Within a week due to potential holiday adjustments
       }
     });

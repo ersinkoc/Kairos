@@ -1,5 +1,16 @@
 import { LRUCache, memoize } from './utils/cache.js';
 import { throwError } from './utils/validators.js';
+const isKairosInstance = (obj) => {
+    return obj !== null && typeof obj === 'object' && '_date' in obj && obj._date instanceof Date;
+};
+const hasToDateMethod = (obj) => {
+    return (obj !== null && typeof obj === 'object' && 'toDate' in obj && typeof obj.toDate === 'function');
+};
+const isDateLike = (obj) => {
+    return (obj !== null &&
+        typeof obj === 'object' &&
+        (('year' in obj && 'month' in obj && 'day' in obj) || 'date' in obj));
+};
 const globalCache = new LRUCache(1000);
 export class KairosCore {
     constructor(input) {
@@ -65,34 +76,31 @@ export class KairosCore {
             return parsed;
         }
         if (input && typeof input === 'object') {
-            if ('_date' in input && input._date instanceof Date) {
+            if (isKairosInstance(input)) {
                 return new Date(input._date.getTime());
             }
-            if (typeof input.toDate === 'function') {
+            if (hasToDateMethod(input)) {
                 return input.toDate();
             }
-            if ('year' in input && 'month' in input && 'day' in input) {
-                const obj = input;
-                const year = obj.year;
-                const month = obj.month - 1;
-                const day = obj.day;
-                const hour = obj.hour || 0;
-                const minute = obj.minute || 0;
-                const second = obj.second || 0;
-                const millisecond = obj.millisecond || 0;
+            if (isDateLike(input) &&
+                input.year !== undefined &&
+                input.month !== undefined &&
+                input.day !== undefined) {
+                const year = input.year;
+                const month = input.month - 1;
+                const day = input.day;
+                const hour = input.hour || 0;
+                const minute = input.minute || 0;
+                const second = input.second || 0;
+                const millisecond = input.millisecond || 0;
                 const date = new Date(year, month, day, hour, minute, second, millisecond);
-                if (date.getFullYear() !== year ||
-                    date.getMonth() !== month ||
-                    date.getDate() !== day) {
+                if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
                     return new Date(NaN);
                 }
                 return date;
             }
-            if ('date' in input) {
-                const dateValue = input.date;
-                if (dateValue instanceof Date) {
-                    return new Date(dateValue.getTime());
-                }
+            if (isDateLike(input) && input.date instanceof Date) {
+                return new Date(input.date.getTime());
             }
         }
         return new Date(NaN);
@@ -254,11 +262,12 @@ export class KairosCore {
                 clone._date.setDate(1);
                 clone._date.setHours(0, 0, 0, 0);
                 break;
-            case 'week':
+            case 'week': {
                 const day = clone._date.getDay();
                 clone._date.setDate(clone._date.getDate() - day);
                 clone._date.setHours(0, 0, 0, 0);
                 break;
+            }
             case 'day':
                 clone._date.setHours(0, 0, 0, 0);
                 break;
@@ -286,11 +295,12 @@ export class KairosCore {
                 clone._date.setMonth(clone._date.getMonth() + 1, 0);
                 clone._date.setHours(23, 59, 59, 999);
                 break;
-            case 'week':
+            case 'week': {
                 const day = clone._date.getDay();
                 clone._date.setDate(clone._date.getDate() + (6 - day));
                 clone._date.setHours(23, 59, 59, 999);
                 break;
+            }
             case 'day':
                 clone._date.setHours(23, 59, 59, 999);
                 break;
@@ -448,7 +458,10 @@ kairos.addStatic = PluginSystem.addStatic.bind(PluginSystem);
 kairos.plugins = PluginSystem.plugins;
 kairos.utc = (input) => {
     let utcDate;
-    if (typeof input === 'string' && !input.endsWith('Z') && !input.includes('+') && !/[+-]\d{2}:?\d{2}$/.test(input)) {
+    if (typeof input === 'string' &&
+        !input.endsWith('Z') &&
+        !input.includes('+') &&
+        !/[+-]\d{2}:?\d{2}$/.test(input)) {
         const dateTimePattern = /^(\d{4})-(\d{2})-(\d{2})(?:\s+|T)(\d{2}):(\d{2})(?::(\d{2}))?$/;
         const dateOnlyPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
         const match = input.match(dateTimePattern) || input.match(dateOnlyPattern);

@@ -1,4 +1,4 @@
-import { holidays, observances, historicalHolidays, goldenWeekHolidays, publicHolidays, allHolidays, reiwaHolidays, heiseiHolidays, } from './holidays.js';
+import { holidays, observances, historicalHolidays, goldenWeekHolidays, publicHolidays, allHolidays, reiwaHolidays, heiseiHolidays, olympics2020Holidays, } from './holidays.js';
 import { localeManager } from '../../../core/locale-manager.js';
 const locale = {
     name: '日本語 (日本)',
@@ -71,6 +71,8 @@ export default {
                         return reiwaHolidays;
                     case 'heisei':
                         return heiseiHolidays;
+                    case 'olympics2020':
+                        return olympics2020Holidays;
                     case 'all':
                         return allHolidays;
                     default:

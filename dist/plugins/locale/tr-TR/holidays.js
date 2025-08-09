@@ -57,7 +57,7 @@ export const holidays = [
                 return [
                     startDate,
                     new Date(year, dateInfo.month - 1, dateInfo.day + 1),
-                    new Date(year, dateInfo.month - 1, dateInfo.day + 2)
+                    new Date(year, dateInfo.month - 1, dateInfo.day + 2),
                 ];
             },
         },
@@ -80,7 +80,7 @@ export const holidays = [
                     startDate,
                     new Date(year, dateInfo.month - 1, dateInfo.day + 1),
                     new Date(year, dateInfo.month - 1, dateInfo.day + 2),
-                    new Date(year, dateInfo.month - 1, dateInfo.day + 3)
+                    new Date(year, dateInfo.month - 1, dateInfo.day + 3),
                 ];
             },
         },
@@ -103,7 +103,7 @@ export const holidays = [
         rule: {
             calculate: (year) => {
                 const rajabStart = new Date(year, 1, 15);
-                let current = new Date(rajabStart);
+                const current = new Date(rajabStart);
                 while (current.getDay() !== 4) {
                     current.setDate(current.getDate() + 1);
                 }

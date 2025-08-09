@@ -138,24 +138,28 @@ export const DESCRIPTION =
 
 // Convenience setup functions
 export function setupBasic() {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const kairos = require('./core/plugin-system.js').default;
   // Use individual plugins as needed
   return kairos;
 }
 
 export function setupWithBusiness() {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const kairos = require('./core/plugin-system.js').default;
   // Use individual plugins as needed
   return kairos;
 }
 
 export function setupWithLocales() {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const kairos = require('./core/plugin-system.js').default;
   // Use individual plugins as needed
   return kairos;
 }
 
 export function setupFull() {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const kairos = require('./core/plugin-system.js').default;
   // Use individual plugins as needed
   return kairos;

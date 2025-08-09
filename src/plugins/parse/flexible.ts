@@ -60,7 +60,7 @@ export class FlexibleParser {
       regex: /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/,
       parse: (m: RegExpMatchArray) => new Date(+m[3], +m[1] - 1, +m[2], +m[4], +m[5], +m[6]),
     },
-    
+
     // European date format DD.MM.YYYY
     {
       regex: /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/,
@@ -260,12 +260,16 @@ export class FlexibleParser {
             }
 
             // Reject dates that were clearly adjusted by Date constructor (invalid dates that rolled over)
-            if (match.length >= 4 && /^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(trimmed)) {
-              const parts = trimmed.split(/[\/\-]/).map(p => parseInt(p, 10));
-              
+            if (match.length >= 4 && /^\d{1,2}[/-]\d{1,2}[/-]\d{4}$/.test(trimmed)) {
+              const parts = trimmed.split(/[/-]/).map((p) => parseInt(p, 10));
+
               // Check for obviously invalid month/day values that would cause rollover
-              if ((parts[0] > 31 || parts[1] > 31) && // At least one part is > 31 (invalid day)
-                  (parts[0] > 12 && parts[1] > 12)) {  // Both parts > 12 (both can't be months)
+              if (
+                (parts[0] > 31 || parts[1] > 31) && // At least one part is > 31 (invalid day)
+                parts[0] > 12 &&
+                parts[1] > 12
+              ) {
+                // Both parts > 12 (both can't be months)
                 continue;
               }
             }
@@ -292,10 +296,16 @@ export class FlexibleParser {
     // Try native Date parsing as last resort, but be more restrictive
     if (!options?.strict) {
       // Only allow native parsing for strings that look like valid dates
-      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/.test(trimmed) ||
-          /^\d{4}-\d{2}-\d{2}(\s\d{2}:\d{2}:\d{2})?$/.test(trimmed)) {
+      if (
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z?$/.test(trimmed) ||
+        /^\d{4}-\d{2}-\d{2}(\s\d{2}:\d{2}:\d{2})?$/.test(trimmed)
+      ) {
         const nativeDate = new Date(trimmed);
-        if (!isNaN(nativeDate.getTime()) && nativeDate.getFullYear() > 1900 && nativeDate.getFullYear() < 2200) {
+        if (
+          !isNaN(nativeDate.getTime()) &&
+          nativeDate.getFullYear() > 1900 &&
+          nativeDate.getFullYear() < 2200
+        ) {
           return nativeDate;
         }
       }

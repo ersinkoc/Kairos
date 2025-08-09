@@ -28,15 +28,34 @@ export interface KairosInstance {
     [key: string]: any;
 }
 export type TimeUnit = 'year' | 'years' | 'y' | 'month' | 'months' | 'M' | 'week' | 'weeks' | 'w' | 'day' | 'days' | 'd' | 'hour' | 'hours' | 'h' | 'minute' | 'minutes' | 'm' | 'second' | 'seconds' | 's' | 'millisecond' | 'milliseconds' | 'ms';
-export type KairosInput = string | number | Date | KairosInstance | undefined;
+export interface DateLike {
+    _date?: Date;
+    toDate?(): Date;
+    year?: number;
+    month?: number;
+    day?: number;
+    hour?: number;
+    minute?: number;
+    second?: number;
+    millisecond?: number;
+    date?: Date;
+}
+export type KairosInput = string | number | Date | KairosInstance | DateLike | undefined;
+export interface KairosPlugin {
+    name: string;
+    version?: string;
+    size?: number;
+    dependencies?: string[];
+    install(kairos: KairosStatic, utils: any): void;
+}
 export interface KairosStatic {
     (input?: KairosInput): KairosInstance;
-    use(plugin: any | any[]): KairosStatic;
-    extend(methods: Record<string, Function>): void;
+    use(plugin: KairosPlugin | KairosPlugin[]): KairosStatic;
+    extend(methods: Record<string, (...args: any[]) => any>): void;
     locale(name?: string): string | void;
     utc(input?: KairosInput): KairosInstance;
     unix(timestamp: number): KairosInstance;
-    plugins: Map<string, any>;
+    plugins: Map<string, KairosPlugin>;
     [key: string]: any;
 }
 export interface KairosConfig {

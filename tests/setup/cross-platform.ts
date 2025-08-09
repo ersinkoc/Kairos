@@ -24,12 +24,12 @@ kairos.use([
   // Core plugins
   formatTokens,
   timezonePlugin,
-  
+
   // Parse plugins
   flexibleParser,
   rfc2822Parser,
   unixParser,
-  
+
   // Holiday system
   holidayEngine,
   fixedCalculator,
@@ -38,11 +38,11 @@ kairos.use([
   lunarCalculator,
   relativeCalculator,
   customCalculator,
-  
+
   // Business plugins
   businessWorkday,
   businessFiscal,
-  
+
   // Locales
   localeUS,
   localeTR,

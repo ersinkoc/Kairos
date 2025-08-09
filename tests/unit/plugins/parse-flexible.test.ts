@@ -9,11 +9,11 @@ describe('Flexible Parser Plugin', () => {
   describe('FlexibleParser', () => {
     test('should parse ISO 8601 date formats', () => {
       const parser = new FlexibleParser();
-      
+
       const testCases = [
         { input: '2024-01-15', expected: new Date(2024, 0, 15) },
         { input: '2024/01/15', expected: new Date(2024, 0, 15) },
-        { input: '2024.01.15', expected: new Date(2024, 0, 15) }
+        { input: '2024.01.15', expected: new Date(2024, 0, 15) },
       ];
 
       testCases.forEach(({ input, expected }) => {
@@ -27,12 +27,12 @@ describe('Flexible Parser Plugin', () => {
 
     test('should parse US date formats (MM/DD/YYYY)', () => {
       const parser = new FlexibleParser();
-      
+
       const testCases = [
         { input: '1/15/2024', expected: new Date(2024, 0, 15) },
         { input: '01/15/2024', expected: new Date(2024, 0, 15) },
         { input: '12/31/2023', expected: new Date(2023, 11, 31) },
-        { input: '1-15-2024', expected: new Date(2024, 0, 15) }
+        { input: '1-15-2024', expected: new Date(2024, 0, 15) },
       ];
 
       testCases.forEach(({ input, expected }) => {
@@ -46,10 +46,10 @@ describe('Flexible Parser Plugin', () => {
 
     test('should parse European date formats (DD.MM.YYYY)', () => {
       const parser = new FlexibleParser();
-      
+
       const testCases = [
         { input: '15.01.2024', expected: new Date(2024, 0, 15) },
-        { input: '31.12.2023', expected: new Date(2023, 11, 31) }
+        { input: '31.12.2023', expected: new Date(2023, 11, 31) },
       ];
 
       testCases.forEach(({ input, expected }) => {
@@ -63,12 +63,12 @@ describe('Flexible Parser Plugin', () => {
 
     test('should parse dates with time', () => {
       const parser = new FlexibleParser();
-      
+
       const testCases = [
         { input: '2024-01-15 14:30', expected: new Date(2024, 0, 15, 14, 30) },
         { input: '2024-01-15 14:30:45', expected: new Date(2024, 0, 15, 14, 30, 45) },
         { input: '1/15/2024 2:30', expected: new Date(2024, 0, 15, 2, 30) },
-        { input: '1/15/2024 14:30:45', expected: new Date(2024, 0, 15, 14, 30, 45) }
+        { input: '1/15/2024 14:30:45', expected: new Date(2024, 0, 15, 14, 30, 45) },
       ];
 
       testCases.forEach(({ input, expected }) => {
@@ -101,7 +101,7 @@ describe('Flexible Parser Plugin', () => {
 
     test('should parse relative time expressions (past)', () => {
       const parser = new FlexibleParser();
-      
+
       const testCases = [
         { input: '5 seconds ago', unit: 1000, multiplier: 5 },
         { input: '10 minutes ago', unit: 60000, multiplier: 10 },
@@ -111,7 +111,7 @@ describe('Flexible Parser Plugin', () => {
         { input: '2 sec ago', unit: 1000, multiplier: 2 },
         { input: '15 min ago', unit: 60000, multiplier: 15 },
         { input: '1 hr ago', unit: 3600000, multiplier: 1 },
-        { input: '7 d ago', unit: 86400000, multiplier: 7 }
+        { input: '7 d ago', unit: 86400000, multiplier: 7 },
       ];
 
       testCases.forEach(({ input }) => {
@@ -123,7 +123,7 @@ describe('Flexible Parser Plugin', () => {
 
     test('should parse relative time expressions (future)', () => {
       const parser = new FlexibleParser();
-      
+
       const testCases = [
         'in 5 seconds',
         'in 10 minutes',
@@ -132,10 +132,10 @@ describe('Flexible Parser Plugin', () => {
         'in 1 week',
         'in 2 sec',
         'in 15 min',
-        'in 1 hr'
+        'in 1 hr',
       ];
 
-      testCases.forEach(input => {
+      testCases.forEach((input) => {
         const result = parser.parse(input);
         expect(result).not.toBeNull();
         expect(result!.getTime()).toBeGreaterThan(Date.now());
@@ -144,18 +144,18 @@ describe('Flexible Parser Plugin', () => {
 
     test('should parse month and year relative expressions', () => {
       const parser = new FlexibleParser();
-      
+
       // These require more complex validation due to month/year variations
       const pastCases = ['1 month ago', '2 months ago', '1 year ago', '2 years ago'];
       const futureCases = ['in 1 month', 'in 2 months', 'in 1 year', 'in 2 years'];
 
-      pastCases.forEach(input => {
+      pastCases.forEach((input) => {
         const result = parser.parse(input);
         expect(result).not.toBeNull();
         expect(result!.getTime()).toBeLessThan(Date.now());
       });
 
-      futureCases.forEach(input => {
+      futureCases.forEach((input) => {
         const result = parser.parse(input);
         expect(result).not.toBeNull();
         expect(result!.getTime()).toBeGreaterThan(Date.now());
@@ -164,12 +164,12 @@ describe('Flexible Parser Plugin', () => {
 
     test('should parse month names (short)', () => {
       const parser = new FlexibleParser();
-      
+
       const testCases = [
         { input: 'Jan 15, 2024', expected: new Date(2024, 0, 15) },
         { input: 'Feb 29, 2024', expected: new Date(2024, 1, 29) }, // Leap year
         { input: 'Dec 31 2023', expected: new Date(2023, 11, 31) },
-        { input: 'jul 4, 2024', expected: new Date(2024, 6, 4) }
+        { input: 'jul 4, 2024', expected: new Date(2024, 6, 4) },
       ];
 
       testCases.forEach(({ input, expected }) => {
@@ -183,12 +183,12 @@ describe('Flexible Parser Plugin', () => {
 
     test('should parse month names (full)', () => {
       const parser = new FlexibleParser();
-      
+
       const testCases = [
         { input: '15 January 2024', expected: new Date(2024, 0, 15) },
         { input: '4 July 2024', expected: new Date(2024, 6, 4) },
         { input: '31 December 2023', expected: new Date(2023, 11, 31) },
-        { input: '29 february 2024', expected: new Date(2024, 1, 29) }
+        { input: '29 february 2024', expected: new Date(2024, 1, 29) },
       ];
 
       testCases.forEach(({ input, expected }) => {
@@ -202,10 +202,10 @@ describe('Flexible Parser Plugin', () => {
 
     test('should parse special numeric formats', () => {
       const parser = new FlexibleParser();
-      
+
       const testCases = [
         { input: '20240115', expected: new Date(2024, 0, 15) }, // YYYYMMDD
-        { input: '20231231', expected: new Date(2023, 11, 31) }
+        { input: '20231231', expected: new Date(2023, 11, 31) },
       ];
 
       testCases.forEach(({ input, expected }) => {
@@ -219,7 +219,7 @@ describe('Flexible Parser Plugin', () => {
 
     test('should return null for invalid inputs', () => {
       const parser = new FlexibleParser();
-      
+
       const invalidInputs = [
         null,
         undefined,
@@ -229,10 +229,10 @@ describe('Flexible Parser Plugin', () => {
         'random text',
         '99/99/9999', // Clearly invalid
         'abc/def/2024',
-        '2024-ab-cd'
+        '2024-ab-cd',
       ];
 
-      invalidInputs.forEach(input => {
+      invalidInputs.forEach((input) => {
         const result = parser.parse(input as any);
         expect(result).toBeNull();
       });
@@ -240,17 +240,17 @@ describe('Flexible Parser Plugin', () => {
 
     test('should handle strict mode validation', () => {
       const parser = new FlexibleParser();
-      
+
       // These should be rejected in strict mode
       const questionableDates = [
         '1800-01-01', // Too old
         '2150-01-01', // Too far in future
       ];
 
-      questionableDates.forEach(input => {
+      questionableDates.forEach((input) => {
         const resultStrict = parser.parse(input, { strict: true });
         const resultNormal = parser.parse(input, { strict: false });
-        
+
         expect(resultStrict).toBeNull();
         // Normal mode might still parse these
       });
@@ -258,13 +258,13 @@ describe('Flexible Parser Plugin', () => {
 
     test('should guess date formats correctly', () => {
       const parser = new FlexibleParser();
-      
+
       const testCases = [
         { input: '2024-01-15', expectedType: 'YYYY-MM-DD' },
         { input: '1/15/2024', expectedType: 'MM/DD/YYYY' },
         { input: 'today', expectedType: 'natural' },
         { input: '5 minutes ago', expectedType: 'relative' },
-        { input: 'Jan 15, 2024', expectedType: 'custom' }
+        { input: 'Jan 15, 2024', expectedType: 'custom' },
       ];
 
       testCases.forEach(({ input, expectedType }) => {
@@ -276,19 +276,19 @@ describe('Flexible Parser Plugin', () => {
 
     test('should handle case insensitive parsing', () => {
       const parser = new FlexibleParser();
-      
+
       const testCases = [
         'TODAY',
-        'TOMORROW', 
+        'TOMORROW',
         'YESTERDAY',
         'NOW',
         '5 MINUTES AGO',
         'IN 2 HOURS',
         'JAN 15, 2024',
-        '15 JANUARY 2024'
+        '15 JANUARY 2024',
       ];
 
-      testCases.forEach(input => {
+      testCases.forEach((input) => {
         const result = parser.parse(input);
         expect(result).not.toBeNull();
       });
@@ -349,14 +349,14 @@ describe('Flexible Parser Plugin', () => {
         { input: 'Jan 15, 2024', expectedMonth: 1, expectedDate: 15 },
         { input: '15 January 2024', expectedMonth: 1, expectedDate: 15 },
         { input: 'today', expectedDate: new Date().getDate() },
-        { input: '1/15/2024', expectedMonth: 1, expectedDate: 15 }
+        { input: '1/15/2024', expectedMonth: 1, expectedDate: 15 },
       ];
 
       testCases.forEach(({ input, expectedMonth, expectedDate }) => {
         const parsed = kairos.parse(input);
         expect(parsed).not.toBeNull();
         expect(parsed.format).toBeDefined();
-        
+
         if (expectedMonth) {
           expect(parsed.month()).toBe(expectedMonth);
         }
@@ -376,7 +376,7 @@ describe('Flexible Parser Plugin', () => {
     test('should fallback to other parsers for non-flexible formats', () => {
       const isoString = '2024-01-15T12:00:00Z';
       const parsed = kairos.parse(isoString);
-      
+
       expect(parsed).not.toBeNull();
       expect(parsed.format).toBeDefined();
     });
@@ -387,10 +387,10 @@ describe('Flexible Parser Plugin', () => {
       const leapYearCases = [
         'Feb 29, 2024', // Valid leap year
         '29 February 2024', // Valid leap year
-        '2024-02-29' // Valid leap year
+        '2024-02-29', // Valid leap year
       ];
 
-      leapYearCases.forEach(input => {
+      leapYearCases.forEach((input) => {
         const result = kairos.parseFlexible(input);
         expect(result).not.toBeNull();
         expect(result.month()).toBe(2); // February
@@ -406,10 +406,10 @@ describe('Flexible Parser Plugin', () => {
         'in 30 days',
         'in 31 days',
         '1 month ago',
-        'in 1 month'
+        'in 1 month',
       ];
 
-      relativeCases.forEach(input => {
+      relativeCases.forEach((input) => {
         const result = kairos.parseFlexible(input);
         expect(result).not.toBeNull();
       });
@@ -424,13 +424,13 @@ describe('Flexible Parser Plugin', () => {
         { input: '1 h ago', expectedDiff: 1 * 3600000 },
         { input: '2 hr ago', expectedDiff: 2 * 3600000 },
         { input: '1 d ago', expectedDiff: 1 * 86400000 },
-        { input: '1 w ago', expectedDiff: 1 * 604800000 }
+        { input: '1 w ago', expectedDiff: 1 * 604800000 },
       ];
 
       aliasTests.forEach(({ input, expectedDiff }) => {
         const result = kairos.parseFlexible(input);
         expect(result).not.toBeNull();
-        
+
         const actualDiff = Math.abs(Date.now() - result.toDate().getTime());
         // Allow some tolerance for execution time
         expect(actualDiff).toBeCloseTo(expectedDiff, -2); // Within 100ms
@@ -444,10 +444,10 @@ describe('Flexible Parser Plugin', () => {
         '2024-01-15   ',
         '   today   ',
         '  5  minutes  ago  ',
-        'in   2   hours'
+        'in   2   hours',
       ];
 
-      whitespaceTests.forEach(input => {
+      whitespaceTests.forEach((input) => {
         const result = kairos.parseFlexible(input);
         expect(result).not.toBeNull();
       });
@@ -457,18 +457,18 @@ describe('Flexible Parser Plugin', () => {
       // Test disambiguation between US and European formats using dot notation
       const europeanDotDate = '15.01.2024'; // Clearly European format (DD.MM.YYYY)
       const usSlashDate = '01/15/2024'; // Clearly US format (MM/DD/YYYY)
-      
+
       const europeanResult = kairos.parseFlexible(europeanDotDate, { european: true });
       const usResult = kairos.parseFlexible(usSlashDate);
-      
+
       expect(usResult).not.toBeNull();
       expect(europeanResult).not.toBeNull();
-      
+
       // Both should result in the same date (January 15, 2024) but via different parsing
       expect(usResult.month()).toBe(1); // January in US format
       expect(usResult.date()).toBe(15);
-      
-      expect(europeanResult.month()).toBe(1); // January in European format  
+
+      expect(europeanResult.month()).toBe(1); // January in European format
       expect(europeanResult.date()).toBe(15);
     });
 
@@ -477,7 +477,7 @@ describe('Flexible Parser Plugin', () => {
         { input: '1/1/2024', expected: new Date(2024, 0, 1) },
         { input: '01/01/2024', expected: new Date(2024, 0, 1) },
         { input: '1/01/2024', expected: new Date(2024, 0, 1) },
-        { input: '01/1/2024', expected: new Date(2024, 0, 1) }
+        { input: '01/1/2024', expected: new Date(2024, 0, 1) },
       ];
 
       variations.forEach(({ input, expected }) => {
@@ -499,51 +499,45 @@ describe('Flexible Parser Plugin', () => {
         '5 minutes ago',
         'in 2 hours',
         '1/15/2024',
-        '20240115'
+        '20240115',
       ];
-      
+
       const start = performance.now();
-      
+
       for (let i = 0; i < 1000; i++) {
-        testStrings.forEach(str => {
+        testStrings.forEach((str) => {
           kairos.parseFlexible(str);
         });
       }
-      
+
       const duration = performance.now() - start;
       expect(duration).toBeLessThan(500); // Should complete in under 500ms
     });
 
     test('should guess formats efficiently', () => {
-      const testStrings = [
-        '2024-01-15',
-        'Jan 15, 2024',
-        'today',
-        '5 minutes ago',
-        '1/15/2024'
-      ];
-      
+      const testStrings = ['2024-01-15', 'Jan 15, 2024', 'today', '5 minutes ago', '1/15/2024'];
+
       const start = performance.now();
-      
+
       for (let i = 0; i < 1000; i++) {
-        testStrings.forEach(str => {
+        testStrings.forEach((str) => {
           kairos.guessDateFormat(str);
         });
       }
-      
+
       const duration = performance.now() - start;
       expect(duration).toBeLessThan(200); // Should complete in under 200ms
     });
 
     test('should handle natural language efficiently', () => {
       const start = performance.now();
-      
+
       for (let i = 0; i < 1000; i++) {
         kairos.today();
         kairos.tomorrow();
         kairos.yesterday();
       }
-      
+
       const duration = performance.now() - start;
       expect(duration).toBeLessThan(100); // Should complete in under 100ms
     });

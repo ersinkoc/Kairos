@@ -46,7 +46,7 @@ export class LocaleManager {
 
   register(code: string, locale: LocaleConfig): void {
     this.locales.set(code, locale);
-    
+
     // Set as default if it's the first locale
     if (this.locales.size === 1) {
       this.defaultLocale = code;
@@ -129,29 +129,29 @@ export class LocaleManager {
     }
 
     const allHolidays: HolidayRule[] = [];
-    
+
     // Add main holidays
     if (locale.holidays) {
       allHolidays.push(...locale.holidays);
     }
-    
+
     // Add federal holidays
     if (locale.federalHolidays) {
       allHolidays.push(...locale.federalHolidays);
     }
-    
+
     // Add state holidays
     if (locale.stateHolidays) {
       for (const stateHols of Object.values(locale.stateHolidays)) {
         allHolidays.push(...stateHols);
       }
     }
-    
+
     // Add public holidays
     if (locale.publicHolidays) {
       allHolidays.push(...locale.publicHolidays);
     }
-    
+
     // Add observances
     if (locale.observances) {
       allHolidays.push(...locale.observances);

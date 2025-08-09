@@ -8,19 +8,39 @@ import type {
   StaticMethods,
   PluginUtils,
 } from './types/plugin.js';
+import type { DateLike } from './types/base.js';
 import { LRUCache, memoize } from './utils/cache.js';
 import { throwError } from './utils/validators.js';
 
-const globalCache = new LRUCache<string, any>(1000);
+// Type guards
+const isKairosInstance = (obj: unknown): obj is KairosInstance => {
+  return obj !== null && typeof obj === 'object' && '_date' in obj && obj._date instanceof Date;
+};
+
+const hasToDateMethod = (obj: unknown): obj is { toDate(): Date } => {
+  return (
+    obj !== null && typeof obj === 'object' && 'toDate' in obj && typeof obj.toDate === 'function'
+  );
+};
+
+const isDateLike = (obj: unknown): obj is DateLike => {
+  return (
+    obj !== null &&
+    typeof obj === 'object' &&
+    (('year' in obj && 'month' in obj && 'day' in obj) || 'date' in obj)
+  );
+};
+
+const globalCache = new LRUCache<string, unknown>(1000);
 
 /**
  * Core Kairos class providing immutable date manipulation methods.
  * All methods return new instances rather than modifying the current instance.
- * 
+ *
  * @example
  * ```typescript
  * import kairos from 'kairos';
- * 
+ *
  * const date = kairos('2024-01-15');
  * const nextWeek = date.add(1, 'week');
  * const formatted = date.format('YYYY-MM-DD HH:mm:ss');
@@ -36,14 +56,14 @@ export class KairosCore {
 
   /**
    * Creates a new Kairos instance.
-   * 
+   *
    * @param input - The input to parse into a date. Can be:
    *   - `undefined`: Creates instance with current date/time
    *   - `Date`: Creates instance from Date object
    *   - `number`: Creates instance from timestamp (milliseconds since Unix epoch)
    *   - `string`: Parses date string (ISO 8601, YYYY-MM-DD, etc.)
    *   - `KairosInstance`: Creates instance from another Kairos instance
-   * 
+   *
    * @example
    * ```typescript
    * kairos();                    // Current date/time
@@ -78,59 +98,63 @@ export class KairosCore {
       if (input.toLowerCase() === 'invalid' || input === '') {
         return new Date(NaN);
       }
-      
+
       // Check if the input is a date-only string (YYYY-MM-DD)
       const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
       if (dateOnlyPattern.test(input)) {
         // Parse as local date by adding time component
         const [year, month, day] = input.split('-').map(Number);
-        
+
         // Validate month and day ranges
         if (month < 1 || month > 12) {
           return new Date(NaN);
         }
-        
+
         // Create the date and check if it's valid
         const date = new Date(year, month - 1, day, 0, 0, 0, 0);
-        
+
         // Check if the date components match what we input
         // This catches invalid dates like Feb 29 on non-leap years
-        if (date.getFullYear() !== year || 
-            date.getMonth() !== month - 1 || 
-            date.getDate() !== day) {
+        if (
+          date.getFullYear() !== year ||
+          date.getMonth() !== month - 1 ||
+          date.getDate() !== day
+        ) {
           return new Date(NaN);
         }
-        
+
         return date;
       }
-      
+
       // Try European date format DD.MM.YYYY
       const europeanPattern = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/;
       if (europeanPattern.test(input)) {
         const match = input.match(europeanPattern);
         if (match) {
           const day = parseInt(match[1], 10);
-          const month = parseInt(match[2], 10); 
+          const month = parseInt(match[2], 10);
           const year = parseInt(match[3], 10);
-          
+
           // Validate
           if (month < 1 || month > 12 || day < 1 || day > 31) {
             return new Date(NaN);
           }
-          
+
           const date = new Date(year, month - 1, day, 0, 0, 0, 0);
-          
+
           // Verify date didn't roll over
-          if (date.getFullYear() !== year || 
-              date.getMonth() !== month - 1 || 
-              date.getDate() !== day) {
+          if (
+            date.getFullYear() !== year ||
+            date.getMonth() !== month - 1 ||
+            date.getDate() !== day
+          ) {
             return new Date(NaN);
           }
-          
+
           return date;
         }
       }
-      
+
       const parsed = new Date(input);
       if (isNaN(parsed.getTime())) {
         if (KairosCore.config.strict) {
@@ -144,44 +168,43 @@ export class KairosCore {
     // Check if input is a Kairos instance or date-like object
     if (input && typeof input === 'object') {
       // Check for _date property (internal Kairos property)
-      if ('_date' in input && (input as any)._date instanceof Date) {
-        return new Date((input as any)._date.getTime());
+      if (isKairosInstance(input)) {
+        return new Date(input._date.getTime());
       }
-      
+
       // Check for toDate method (Kairos instance method)
-      if (typeof (input as any).toDate === 'function') {
-        return (input as any).toDate();
+      if (hasToDateMethod(input)) {
+        return input.toDate();
       }
-      
+
       // Check for year/month/day object
-      if ('year' in input && 'month' in input && 'day' in input) {
-        const obj = input as any;
-        const year = obj.year;
-        const month = obj.month - 1; // Convert 1-12 to 0-11
-        const day = obj.day;
-        const hour = obj.hour || 0;
-        const minute = obj.minute || 0;
-        const second = obj.second || 0;
-        const millisecond = obj.millisecond || 0;
-        
+      if (
+        isDateLike(input) &&
+        input.year !== undefined &&
+        input.month !== undefined &&
+        input.day !== undefined
+      ) {
+        const year = input.year;
+        const month = input.month - 1; // Convert 1-12 to 0-11
+        const day = input.day;
+        const hour = input.hour || 0;
+        const minute = input.minute || 0;
+        const second = input.second || 0;
+        const millisecond = input.millisecond || 0;
+
         const date = new Date(year, month, day, hour, minute, second, millisecond);
-        
+
         // Validate the date
-        if (date.getFullYear() !== year || 
-            date.getMonth() !== month || 
-            date.getDate() !== day) {
+        if (date.getFullYear() !== year || date.getMonth() !== month || date.getDate() !== day) {
           return new Date(NaN);
         }
-        
+
         return date;
       }
-      
+
       // Legacy check for date property
-      if ('date' in input) {
-        const dateValue = (input as any).date;
-        if (dateValue instanceof Date) {
-          return new Date(dateValue.getTime());
-        }
+      if (isDateLike(input) && input.date instanceof Date) {
+        return new Date(input.date.getTime());
       }
     }
 
@@ -428,7 +451,7 @@ export class KairosCore {
    * @param amount - The amount to add (can be negative for subtraction)
    * @param unit - The unit of time to add. Supported units:
    *   - `'year'`, `'years'`, `'y'` - Years
-   *   - `'month'`, `'months'`, `'M'` - Months  
+   *   - `'month'`, `'months'`, `'M'` - Months
    *   - `'week'`, `'weeks'`, `'w'` - Weeks
    *   - `'day'`, `'days'`, `'d'` - Days
    *   - `'hour'`, `'hours'`, `'h'` - Hours
@@ -459,11 +482,11 @@ export class KairosCore {
         const currentDay = clone._date.getDate();
         const currentMonth = clone._date.getMonth();
         const currentYear = clone._date.getFullYear();
-        
+
         // Calculate target month and year
         let targetMonth = currentMonth + amount;
         let targetYear = currentYear;
-        
+
         while (targetMonth < 0) {
           targetMonth += 12;
           targetYear--;
@@ -472,10 +495,10 @@ export class KairosCore {
           targetMonth -= 12;
           targetYear++;
         }
-        
+
         // Get the last day of the target month
         const lastDayOfTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
-        
+
         // Set to the target month, capping the day if necessary
         // Set day to 1 first to avoid month overflow issues
         clone._date.setDate(1);
@@ -559,11 +582,12 @@ export class KairosCore {
         clone._date.setDate(1);
         clone._date.setHours(0, 0, 0, 0);
         break;
-      case 'week':
+      case 'week': {
         const day = clone._date.getDay();
         clone._date.setDate(clone._date.getDate() - day);
         clone._date.setHours(0, 0, 0, 0);
         break;
+      }
       case 'day':
         clone._date.setHours(0, 0, 0, 0);
         break;
@@ -607,11 +631,12 @@ export class KairosCore {
         clone._date.setMonth(clone._date.getMonth() + 1, 0);
         clone._date.setHours(23, 59, 59, 999);
         break;
-      case 'week':
+      case 'week': {
         const day = clone._date.getDay();
         clone._date.setDate(clone._date.getDate() + (6 - day));
         clone._date.setHours(23, 59, 59, 999);
         break;
+      }
       case 'day':
         clone._date.setHours(23, 59, 59, 999);
         break;
@@ -700,7 +725,7 @@ export class KairosCore {
    *   - `MM` - 2-digit month (01-12)
    *   - `DD` - 2-digit day of month (01-31)
    *   - `HH` - 2-digit hour (00-23)
-   *   - `mm` - 2-digit minute (00-59)  
+   *   - `mm` - 2-digit minute (00-59)
    *   - `ss` - 2-digit second (00-59)
    * @returns Formatted date string
    * @example
@@ -716,7 +741,7 @@ export class KairosCore {
     if (!this.isValid()) {
       return 'Invalid Date';
     }
-    
+
     // Use UTC methods if this is a UTC instance
     const isUtc = (this as any)._isUTC;
     const year = isUtc ? this._date.getUTCFullYear() : this._date.getFullYear();
@@ -725,12 +750,12 @@ export class KairosCore {
     const hours = isUtc ? this._date.getUTCHours() : this._date.getHours();
     const minutes = isUtc ? this._date.getUTCMinutes() : this._date.getMinutes();
     const seconds = isUtc ? this._date.getUTCSeconds() : this._date.getSeconds();
-    
+
     // Double-check for NaN values
     if (isNaN(year) || isNaN(month) || isNaN(date)) {
       return 'Invalid Date';
     }
-    
+
     return template
       .replace(/YYYY/g, year.toString())
       .replace(/MM/g, month.toString().padStart(2, '0'))
@@ -790,13 +815,13 @@ export class PluginSystem {
    * import kairos from 'kairos';
    * import businessPlugin from 'kairos/plugins/business';
    * import holidayPlugin from 'kairos/plugins/holidays';
-   * 
+   *
    * // Install single plugin
    * kairos.use(businessPlugin);
-   * 
+   *
    * // Install multiple plugins
    * kairos.use([businessPlugin, holidayPlugin]);
-   * 
+   *
    * // Now use extended functionality
    * const date = kairos('2024-01-15');
    * console.log(date.isBusinessDay());
@@ -883,10 +908,10 @@ export class PluginSystem {
 
 /**
  * Main Kairos function for creating date instances.
- * 
+ *
  * @param input - Optional input to create date from (undefined = now, Date, number, string, or KairosInstance)
  * @returns A new KairosInstance
- * 
+ *
  * @example
  * ```typescript
  * // Create from various inputs
@@ -894,11 +919,11 @@ export class PluginSystem {
  * const specific = kairos('2024-01-15');
  * const fromDate = kairos(new Date());
  * const fromTimestamp = kairos(1640995200000);
- * 
+ *
  * // Use with plugins
  * import businessPlugin from 'kairos/plugins/business';
  * kairos.use(businessPlugin);
- * 
+ *
  * const date = kairos('2024-01-15');
  * console.log(date.isBusinessDay());
  * ```
@@ -918,12 +943,17 @@ const kairos = (input?: KairosInput) => new KairosCore(input) as KairosInstance;
  */
 (kairos as any).utc = (input?: KairosInput) => {
   let utcDate: Date;
-  
-  if (typeof input === 'string' && !input.endsWith('Z') && !input.includes('+') && !/[+-]\d{2}:?\d{2}$/.test(input)) {
+
+  if (
+    typeof input === 'string' &&
+    !input.endsWith('Z') &&
+    !input.includes('+') &&
+    !/[+-]\d{2}:?\d{2}$/.test(input)
+  ) {
     // Parse as UTC by manually constructing the date components
     const dateTimePattern = /^(\d{4})-(\d{2})-(\d{2})(?:\s+|T)(\d{2}):(\d{2})(?::(\d{2}))?$/;
     const dateOnlyPattern = /^(\d{4})-(\d{2})-(\d{2})$/;
-    
+
     const match = input.match(dateTimePattern) || input.match(dateOnlyPattern);
     if (match) {
       const year = parseInt(match[1], 10);
@@ -932,7 +962,7 @@ const kairos = (input?: KairosInput) => new KairosCore(input) as KairosInstance;
       const hour = match[4] ? parseInt(match[4], 10) : 0;
       const minute = match[5] ? parseInt(match[5], 10) : 0;
       const second = match[6] ? parseInt(match[6], 10) : 0;
-      
+
       // Use Date.UTC to create UTC timestamp
       utcDate = new Date(Date.UTC(year, month, day, hour, minute, second));
     } else {
@@ -943,7 +973,7 @@ const kairos = (input?: KairosInput) => new KairosCore(input) as KairosInstance;
   } else {
     utcDate = new Date(input as any);
   }
-  
+
   const instance = new KairosCore(utcDate) as any;
   instance._isUTC = true;
   return instance;

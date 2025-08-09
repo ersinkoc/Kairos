@@ -12,7 +12,7 @@ export interface PlatformInfo {
 export function getPlatformInfo(): PlatformInfo {
   const os = process.platform;
   let osType: PlatformInfo['os'] = 'unknown';
-  
+
   if (os === 'win32') {
     osType = 'windows';
   } else if (os === 'darwin') {
@@ -20,7 +20,7 @@ export function getPlatformInfo(): PlatformInfo {
   } else if (os === 'linux') {
     osType = 'linux';
   }
-  
+
   return {
     os: osType,
     node: process.version,
@@ -79,11 +79,11 @@ export function runOnlyOn(platform: 'windows' | 'macos' | 'linux', testFn: () =>
 // Timezone-specific test utilities
 export function withTimezone(tz: string, testFn: () => void): void {
   const originalTZ = process.env.TZ;
-  
+
   beforeEach(() => {
     process.env.TZ = tz;
   });
-  
+
   afterEach(() => {
     if (originalTZ) {
       process.env.TZ = originalTZ;
@@ -91,7 +91,7 @@ export function withTimezone(tz: string, testFn: () => void): void {
       delete process.env.TZ;
     }
   });
-  
+
   testFn();
 }
 
@@ -163,22 +163,19 @@ export function getMemoryLimit(): number {
 export function getAvailableLocales(): string[] {
   // Some locales might not be available on all platforms
   const baseLocales = ['en-US', 'en-GB'];
-  
+
   if (!isWindows()) {
     // Unix-like systems typically have more locales available
     baseLocales.push('de-DE', 'fr-FR', 'ja-JP', 'tr-TR', 'zh-CN');
   }
-  
+
   return baseLocales;
 }
 
 // Error message normalization
 export function normalizeErrorMessage(message: string): string {
   // Different platforms may format error messages differently
-  return message
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
-    .trim();
+  return message.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
 }
 
 // Date string normalization
@@ -194,23 +191,23 @@ export function normalizeDateString(dateStr: string): string {
 // Test data generators that account for platform differences
 export function generateTestDates(): Date[] {
   const dates: Date[] = [];
-  
+
   // Standard dates
   dates.push(new Date('2024-01-01'));
   dates.push(new Date('2024-06-15'));
   dates.push(new Date('2024-12-31'));
-  
+
   // Platform-specific edge cases
   if (!isWindows()) {
     // Unix timestamp edge cases
     dates.push(new Date(0)); // Unix epoch
     dates.push(new Date(-1)); // Before epoch
   }
-  
+
   // Timezone-sensitive dates
   dates.push(new Date('2024-03-10T02:30:00')); // DST transition (US)
   dates.push(new Date('2024-11-03T01:30:00')); // DST transition (US)
-  
+
   return dates;
 }
 

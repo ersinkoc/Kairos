@@ -114,7 +114,7 @@ export class TokenFormatter {
     if (!date || !template) {
       return '';
     }
-    
+
     // Check if date is invalid
     if (isNaN(date.getTime())) {
       return 'Invalid Date';
@@ -228,7 +228,7 @@ export default {
         if (!this.isValid()) {
           return 'Invalid Date';
         }
-        
+
         // If this is a UTC instance and we're using basic template, use core format method
         if ((this as any)._isUTC && /^[YMDHmsS\-: ]+$/.test(template)) {
           // Use core format method for UTC instances with basic templates
@@ -239,7 +239,7 @@ export default {
           const hours = date.getUTCHours();
           const minutes = date.getUTCMinutes();
           const seconds = date.getUTCSeconds();
-          
+
           return template
             .replace(/YYYY/g, year.toString())
             .replace(/MM/g, month.toString().padStart(2, '0'))
@@ -248,7 +248,7 @@ export default {
             .replace(/mm/g, minutes.toString().padStart(2, '0'))
             .replace(/ss/g, seconds.toString().padStart(2, '0'));
         }
-        
+
         const currentLocale = kairos.locales?.[kairos.currentLocale || 'en'];
         return formatter.format(this.toDate(), template, currentLocale);
       },

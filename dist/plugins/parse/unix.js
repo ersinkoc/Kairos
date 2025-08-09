@@ -89,9 +89,7 @@ export default {
             return parsed ? kairos(parsed) : null;
         };
         kairos.fromUnix = kairos.unix;
-        kairos.isUnixTimestamp = (input) => {
-            return parser.isUnixTimestamp(input);
-        };
+        kairos.isUnixTimestamp = (input) => parser.isUnixTimestamp(input);
         kairos.extend({
             unix(unit) {
                 return parser.toUnix(this.toDate(), unit);
