@@ -20,9 +20,9 @@ coverage/
 *.log
 *.tgz
 
-# Documentation source
+# Documentation source (keep essential docs in npm)
 docs/
-!docs/generated/
+!docs/README.md
 examples/
 *.md
 !README.md

@@ -84,7 +84,7 @@
     "build:prod": "npm run clean && npm run build:lib && npm run build:browser && npm run build:minify",
     "build:minify": "terser dist/index.js -o dist/index.min.js --compress --mangle",
     "clean": "rimraf dist",
-    "test": "cross-env JEST_SILENT=true jest --testPathPattern=\".*\" --silent --verbose=false",
+    "test": "cross-env JEST_SILENT=true jest --config jest.config.cjs --testPathPattern=\".*\" --silent --verbose=false",
     "test:verbose": "jest --testPathPattern=\".*\"",
     "test:silent": "cross-env JEST_SILENT=true jest --silent --verbose=false",
     "test:watch": "jest --watch",

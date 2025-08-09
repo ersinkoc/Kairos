@@ -52,8 +52,9 @@ pids/
 temp/
 tmp/
 
-# Documentation build
-docs/
+# Documentation build artifacts (keep docs/ but ignore generated files)
+docs/build/
+docs/.docusaurus/
 
 # Test artifacts
 test-results/
