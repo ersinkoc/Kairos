@@ -69,7 +69,18 @@ export function setupWithLocales() {
     const localePT = require('./plugins/locale/pt-BR/index.js').default;
     const localeRU = require('./plugins/locale/ru-RU/index.js').default;
     const localeCN = require('./plugins/locale/zh-CN/index.js').default;
-    kairos.use([localeUS, localeDE, localeTR, localeJP, localeFR, localeES, localeIT, localePT, localeRU, localeCN]);
+    kairos.use([
+        localeUS,
+        localeDE,
+        localeTR,
+        localeJP,
+        localeFR,
+        localeES,
+        localeIT,
+        localePT,
+        localeRU,
+        localeCN,
+    ]);
     kairos.locale('en-US');
     return kairos;
 }
