@@ -2722,7 +2722,7 @@
         },
     };
 
-    const holidays$3 = [
+    const holidays$9 = [
         {
             id: 'new-years-day',
             name: "New Year's Day",
@@ -2926,7 +2926,7 @@
             },
         ],
     };
-    const federalHolidays$1 = holidays$3.filter((h) => [
+    const federalHolidays$1 = holidays$9.filter((h) => [
         'new-years-day',
         'martin-luther-king-day',
         'presidents-day',
@@ -2939,9 +2939,9 @@
         'thanksgiving',
         'christmas-day',
     ].includes(h.id));
-    const allHolidays$3 = [...holidays$3, ...Object.values(stateHolidays$1).flat()];
+    const allHolidays$9 = [...holidays$9, ...Object.values(stateHolidays$1).flat()];
 
-    const locale$3 = {
+    const locale$9 = {
         name: 'English (United States)',
         code: 'en-US',
         months: [
@@ -2989,21 +2989,21 @@
             return isLower ? suffix.toLowerCase() : suffix;
         },
     };
-    var index$3 = {
+    var index$9 = {
         name: 'locale-en-US',
         version: '1.0.0',
         size: 1024,
         dependencies: ['holiday-engine'],
-        locale: locale$3,
+        locale: locale$9,
         install(kairos, _utils) {
             localeManager.register('en-US', {
-                ...locale$3,
-                holidays: holidays$3,
+                ...locale$9,
+                holidays: holidays$9,
                 federalHolidays: federalHolidays$1,
                 stateHolidays: stateHolidays$1,
             });
             kairos.locales = kairos.locales || {};
-            kairos.locales['en-US'] = locale$3;
+            kairos.locales['en-US'] = locale$9;
             kairos.extend({
                 getUSHolidays(state) {
                     if (state) {
@@ -3013,7 +3013,7 @@
                             return [...federalHolidays$1, ...stateHols];
                         }
                     }
-                    return holidays$3;
+                    return holidays$9;
                 },
                 getFederalHolidays() {
                     return federalHolidays$1;
@@ -3022,7 +3022,7 @@
                     return stateHolidays$1[state.toLowerCase()] || [];
                 },
                 getAllUSHolidays() {
-                    return allHolidays$3;
+                    return allHolidays$9;
                 },
             });
             kairos.addStatic?.({
@@ -3044,7 +3044,7 @@
         },
     };
 
-    const holidays$2 = [
+    const holidays$8 = [
         {
             id: 'new-years-day',
             name: 'Yılbaşı',
@@ -3198,7 +3198,7 @@
             },
         },
     ];
-    const observances$1 = [
+    const observances$7 = [
         {
             id: 'ashura',
             name: 'Aşure Günü',
@@ -3246,8 +3246,8 @@
             active: false,
         },
     ];
-    const allHolidays$2 = [...holidays$2, ...observances$1, ...historicalHolidays$2];
-    const publicHolidays$1 = holidays$2.filter((h) => [
+    const allHolidays$8 = [...holidays$8, ...observances$7, ...historicalHolidays$2];
+    const publicHolidays$1 = holidays$8.filter((h) => [
         'new-years-day',
         'national-sovereignty-day',
         'labor-day',
@@ -3259,7 +3259,7 @@
         'sacrifice-feast',
     ].includes(h.id));
 
-    const locale$2 = {
+    const locale$8 = {
         name: 'Türkçe (Türkiye)',
         code: 'tr-TR',
         months: [
@@ -3343,45 +3343,45 @@
             return '';
         },
     };
-    var index$2 = {
+    var index$8 = {
         name: 'locale-tr-TR',
         version: '1.0.0',
         size: 1536,
         dependencies: ['holiday-engine'],
-        locale: locale$2,
+        locale: locale$8,
         install(kairos, _utils) {
             localeManager.register('tr-TR', {
-                ...locale$2,
-                holidays: holidays$2,
+                ...locale$8,
+                holidays: holidays$8,
                 publicHolidays: publicHolidays$1,
-                observances: observances$1,
+                observances: observances$7,
                 historicalHolidays: historicalHolidays$2,
             });
             kairos.locales = kairos.locales || {};
-            kairos.locales['tr-TR'] = locale$2;
+            kairos.locales['tr-TR'] = locale$8;
             kairos.extend({
                 getTurkishHolidays(type) {
                     switch (type) {
                         case 'public':
                             return publicHolidays$1;
                         case 'religious':
-                            return holidays$2.filter((h) => h.type === 'lunar' || h.type === 'custom');
+                            return holidays$8.filter((h) => h.type === 'lunar' || h.type === 'custom');
                         case 'historical':
                             return historicalHolidays$2;
                         case 'all':
-                            return allHolidays$2;
+                            return allHolidays$8;
                         default:
-                            return holidays$2;
+                            return holidays$8;
                     }
                 },
                 getPublicHolidays() {
                     return publicHolidays$1;
                 },
                 getReligiousHolidays() {
-                    return holidays$2.filter((h) => h.type === 'lunar' || h.type === 'custom');
+                    return holidays$8.filter((h) => h.type === 'lunar' || h.type === 'custom');
                 },
                 getObservances() {
-                    return observances$1;
+                    return observances$7;
                 },
                 isReligiousHoliday() {
                     const holidayInfo = this.getHolidayInfo();
@@ -3398,7 +3398,7 @@
             });
             kairos.addStatic?.({
                 getRamazanBayrami(year) {
-                    const ramadanFeast = holidays$2.find((h) => h.id === 'ramadan-feast');
+                    const ramadanFeast = holidays$8.find((h) => h.id === 'ramadan-feast');
                     if (ramadanFeast) {
                         const dates = kairos.holidayEngine.calculate(ramadanFeast, year);
                         return dates.map((date) => kairos(date));
@@ -3406,7 +3406,7 @@
                     return [];
                 },
                 getKurbanBayrami(year) {
-                    const sacrificeFeast = holidays$2.find((h) => h.id === 'sacrifice-feast');
+                    const sacrificeFeast = holidays$8.find((h) => h.id === 'sacrifice-feast');
                     if (sacrificeFeast) {
                         const dates = kairos.holidayEngine.calculate(sacrificeFeast, year);
                         return dates.map((date) => kairos(date));
@@ -3414,7 +3414,7 @@
                     return [];
                 },
                 getKandilGecesi(year) {
-                    const kandilNights = holidays$2.filter((h) => h.name.includes('Kandil') || h.name.includes('Kadir'));
+                    const kandilNights = holidays$8.filter((h) => h.name.includes('Kandil') || h.name.includes('Kadir'));
                     const result = [];
                     for (const kandil of kandilNights) {
                         const dates = kairos.holidayEngine.calculate(kandil, year);
@@ -3429,7 +3429,7 @@
         },
     };
 
-    const holidays$1 = [
+    const holidays$7 = [
         {
             id: 'new-years-day',
             name: 'Neujahr',
@@ -3727,8 +3727,8 @@
             },
         ],
     };
-    const federalHolidays = holidays$1;
-    const allHolidays$1 = [...holidays$1, ...Object.values(stateHolidays).flat()];
+    const federalHolidays = holidays$7;
+    const allHolidays$7 = [...holidays$7, ...Object.values(stateHolidays).flat()];
     const historicalHolidays$1 = [
         {
             id: 'day-of-german-unity-old',
@@ -3746,7 +3746,7 @@
         },
     ];
 
-    const locale$1 = {
+    const locale$7 = {
         name: 'Deutsch (Deutschland)',
         code: 'de-DE',
         months: [
@@ -3782,22 +3782,22 @@
             return '';
         },
     };
-    var index$1 = {
+    var index$7 = {
         name: 'locale-de-DE',
         version: '1.0.0',
         size: 2048,
         dependencies: ['holiday-engine'],
-        locale: locale$1,
+        locale: locale$7,
         install(kairos, _utils) {
             localeManager.register('de-DE', {
-                ...locale$1,
-                holidays: holidays$1,
+                ...locale$7,
+                holidays: holidays$7,
                 federalHolidays,
                 stateHolidays: stateHolidays,
                 historicalHolidays: historicalHolidays$1,
             });
             kairos.locales = kairos.locales || {};
-            kairos.locales['de-DE'] = locale$1;
+            kairos.locales['de-DE'] = locale$7;
             kairos.extend({
                 getGermanHolidays(state) {
                     if (state) {
@@ -3807,7 +3807,7 @@
                             return [...federalHolidays, ...stateHols];
                         }
                     }
-                    return holidays$1;
+                    return holidays$7;
                 },
                 getFederalHolidays() {
                     return federalHolidays;
@@ -3816,7 +3816,7 @@
                     return stateHolidays[state.toLowerCase()] || [];
                 },
                 getAllHolidays() {
-                    return allHolidays$1;
+                    return allHolidays$7;
                 },
                 getHistoricalHolidays() {
                     return historicalHolidays$1;
@@ -3842,7 +3842,7 @@
             });
             kairos.addStatic?.({
                 getEasterHolidays(year) {
-                    const easterHolidays = holidays$1.filter((h) => h.type === 'easter-based');
+                    const easterHolidays = holidays$7.filter((h) => h.type === 'easter-based');
                     const result = [];
                     for (const holiday of easterHolidays) {
                         const dates = kairos.holidayEngine.calculate(holiday, year);
@@ -3884,7 +3884,7 @@
         },
     };
 
-    const holidays = [
+    const holidays$6 = [
         {
             id: 'new-years-day',
             name: '元日',
@@ -4030,7 +4030,7 @@
             active: false,
         },
     ];
-    const observances = [
+    const observances$6 = [
         {
             id: 'setsubun',
             name: '節分',
@@ -4099,18 +4099,18 @@
             rule: { month: 12, day: 31 },
         },
     ];
-    const goldenWeekHolidays = holidays.filter((h) => [
+    const goldenWeekHolidays = holidays$6.filter((h) => [
         'showa-day',
         'constitution-day',
         'greenery-day',
         'childrens-day',
         'golden-week-substitute',
     ].includes(h.id));
-    const publicHolidays = holidays.filter((h) => h.id !== 'golden-week-substitute');
-    const allHolidays = [...holidays, ...observances, ...historicalHolidays];
-    const reiwaHolidays = holidays.filter((h) => h.id !== 'emperors-birthday-showa' && h.id !== 'emperors-birthday-heisei');
+    const publicHolidays = holidays$6.filter((h) => h.id !== 'golden-week-substitute');
+    const allHolidays$6 = [...holidays$6, ...observances$6, ...historicalHolidays];
+    const reiwaHolidays = holidays$6.filter((h) => h.id !== 'emperors-birthday-showa' && h.id !== 'emperors-birthday-heisei');
     const heiseiHolidays = [
-        ...holidays.filter((h) => h.id !== 'emperors-birthday'),
+        ...holidays$6.filter((h) => h.id !== 'emperors-birthday'),
         ...historicalHolidays.filter((h) => h.id === 'emperors-birthday-heisei'),
     ];
     const olympics2020Holidays = [
@@ -4137,7 +4137,7 @@
         },
     ];
 
-    const locale = {
+    const locale$6 = {
         name: '日本語 (日本)',
         code: 'ja-JP',
         months: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
@@ -4174,32 +4174,32 @@
             return suffix;
         },
     };
-    var index = {
+    var index$6 = {
         name: 'locale-ja-JP',
         version: '1.0.0',
         size: 2048,
         dependencies: ['holiday-engine', 'holiday-custom-calculator'],
-        locale,
+        locale: locale$6,
         install(kairos, _utils) {
             localeManager.register('ja-JP', {
-                ...locale,
-                holidays,
+                ...locale$6,
+                holidays: holidays$6,
                 publicHolidays,
-                observances,
+                observances: observances$6,
                 historicalHolidays,
                 goldenWeekHolidays,
                 reiwaHolidays,
                 heiseiHolidays,
             });
             kairos.locales = kairos.locales || {};
-            kairos.locales['ja-JP'] = locale;
+            kairos.locales['ja-JP'] = locale$6;
             kairos.extend({
                 getJapaneseHolidays(type) {
                     switch (type) {
                         case 'public':
                             return publicHolidays;
                         case 'observances':
-                            return observances;
+                            return observances$6;
                         case 'historical':
                             return historicalHolidays;
                         case 'golden-week':
@@ -4211,16 +4211,16 @@
                         case 'olympics2020':
                             return olympics2020Holidays;
                         case 'all':
-                            return allHolidays;
+                            return allHolidays$6;
                         default:
-                            return holidays;
+                            return holidays$6;
                     }
                 },
                 getPublicHolidays() {
                     return publicHolidays;
                 },
                 getObservances() {
-                    return observances;
+                    return observances$6;
                 },
                 getGoldenWeekHolidays() {
                     return goldenWeekHolidays;
@@ -4234,7 +4234,7 @@
                     return holidayInfo !== null;
                 },
                 isObservance() {
-                    const holidayInfo = this.getHolidayInfo(observances);
+                    const holidayInfo = this.getHolidayInfo(observances$6);
                     return holidayInfo !== null;
                 },
                 isEquinoxHoliday() {
@@ -4297,7 +4297,7 @@
                     return result.sort((a, b) => a.date.valueOf() - b.date.valueOf());
                 },
                 getEquinoxDays(year) {
-                    const equinoxHolidays = holidays.filter((h) => ['vernal-equinox-day', 'autumnal-equinox-day'].includes(h.id));
+                    const equinoxHolidays = holidays$6.filter((h) => ['vernal-equinox-day', 'autumnal-equinox-day'].includes(h.id));
                     const result = [];
                     for (const holiday of equinoxHolidays) {
                         const dates = kairos.holidayEngine.calculate(holiday, year);
@@ -4310,7 +4310,7 @@
                     return result.sort((a, b) => a.date.valueOf() - b.date.valueOf());
                 },
                 getObon(year) {
-                    const obon = observances.find((h) => h.id === 'obon');
+                    const obon = observances$6.find((h) => h.id === 'obon');
                     if (obon) {
                         const dates = kairos.holidayEngine.calculate(obon, year);
                         return dates.map((date) => kairos(date));
@@ -4346,10 +4346,1634 @@
                         case 'heisei':
                             return heiseiHolidays;
                         case 'showa':
-                            return holidays;
+                            return holidays$6;
                         default:
-                            return holidays;
+                            return holidays$6;
                     }
+                },
+            });
+        },
+    };
+
+    const holidays$5 = [
+        {
+            name: 'Jour de l\'An',
+            type: 'fixed',
+            rule: { month: 1, day: 1 },
+        },
+        {
+            name: 'Fête du Travail',
+            type: 'fixed',
+            rule: { month: 5, day: 1 },
+        },
+        {
+            name: 'Victoire 1945',
+            type: 'fixed',
+            rule: { month: 5, day: 8 },
+        },
+        {
+            name: 'Fête Nationale',
+            type: 'fixed',
+            rule: { month: 7, day: 14 },
+        },
+        {
+            name: 'Assomption',
+            type: 'fixed',
+            rule: { month: 8, day: 15 },
+        },
+        {
+            name: 'Toussaint',
+            type: 'fixed',
+            rule: { month: 11, day: 1 },
+        },
+        {
+            name: 'Armistice 1918',
+            type: 'fixed',
+            rule: { month: 11, day: 11 },
+        },
+        {
+            name: 'Noël',
+            type: 'fixed',
+            rule: { month: 12, day: 25 },
+        },
+        {
+            name: 'Lundi de Pâques',
+            type: 'easter-based',
+            rule: { offset: 1 },
+        },
+        {
+            name: 'Ascension',
+            type: 'easter-based',
+            rule: { offset: 39 },
+        },
+        {
+            name: 'Lundi de Pentecôte',
+            type: 'easter-based',
+            rule: { offset: 50 },
+        },
+        {
+            name: 'Vendredi Saint',
+            type: 'easter-based',
+            rule: { offset: -2 },
+            regions: ['Alsace', 'Moselle'],
+        },
+        {
+            name: 'Saint-Étienne',
+            type: 'fixed',
+            rule: { month: 12, day: 26 },
+            regions: ['Alsace', 'Moselle'],
+        },
+    ];
+    const observances$5 = [
+        {
+            name: 'Saint-Valentin',
+            type: 'fixed',
+            rule: { month: 2, day: 14 },
+        },
+        {
+            name: 'Fête des Mères',
+            type: 'nth-weekday',
+            rule: { month: 5, weekday: 0, nth: -1 },
+        },
+        {
+            name: 'Fête des Pères',
+            type: 'nth-weekday',
+            rule: { month: 6, weekday: 0, nth: 3 },
+        },
+        {
+            name: 'Fête de la Musique',
+            type: 'fixed',
+            rule: { month: 6, day: 21 },
+        },
+        {
+            name: 'Halloween',
+            type: 'fixed',
+            rule: { month: 10, day: 31 },
+        },
+    ];
+    const regionalHolidays$5 = {
+        alsace: [
+            {
+                name: 'Vendredi Saint',
+                type: 'easter-based',
+                rule: { offset: -2 },
+            },
+            {
+                name: 'Saint-Étienne',
+                type: 'fixed',
+                rule: { month: 12, day: 26 },
+            },
+        ],
+        martinique: [
+            {
+                name: 'Abolition de l\'esclavage',
+                type: 'fixed',
+                rule: { month: 5, day: 22 },
+            },
+        ],
+        guadeloupe: [
+            {
+                name: 'Abolition de l\'esclavage',
+                type: 'fixed',
+                rule: { month: 5, day: 27 },
+            },
+        ],
+        guyane: [
+            {
+                name: 'Abolition de l\'esclavage',
+                type: 'fixed',
+                rule: { month: 6, day: 10 },
+            },
+        ],
+        reunion: [
+            {
+                name: 'Abolition de l\'esclavage',
+                type: 'fixed',
+                rule: { month: 12, day: 20 },
+            },
+        ],
+    };
+    const allHolidays$5 = [...holidays$5, ...observances$5];
+
+    const locale$5 = {
+        name: 'Français (France)',
+        code: 'fr-FR',
+        months: [
+            'janvier',
+            'février',
+            'mars',
+            'avril',
+            'mai',
+            'juin',
+            'juillet',
+            'août',
+            'septembre',
+            'octobre',
+            'novembre',
+            'décembre',
+        ],
+        monthsShort: ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'],
+        weekdays: ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'],
+        weekdaysShort: ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'],
+        weekdaysMin: ['di', 'lu', 'ma', 'me', 'je', 've', 'sa'],
+        formats: {
+            LT: 'HH:mm',
+            LTS: 'HH:mm:ss',
+            L: 'DD/MM/YYYY',
+            LL: 'D MMMM YYYY',
+            LLL: 'D MMMM YYYY HH:mm',
+            LLLL: 'dddd D MMMM YYYY HH:mm',
+        },
+        ordinal: (n) => {
+            return n === 1 ? `${n}er` : `${n}e`;
+        },
+        meridiem: (_hour, _minute, _isLower) => {
+            return '';
+        },
+        relativeTime: {
+            future: 'dans %s',
+            past: 'il y a %s',
+            s: 'quelques secondes',
+            ss: '%d secondes',
+            m: 'une minute',
+            mm: '%d minutes',
+            h: 'une heure',
+            hh: '%d heures',
+            d: 'un jour',
+            dd: '%d jours',
+            M: 'un mois',
+            MM: '%d mois',
+            y: 'un an',
+            yy: '%d ans',
+        },
+    };
+    var index$5 = {
+        name: 'locale-fr-FR',
+        version: '1.0.0',
+        size: 1024,
+        dependencies: ['holiday-engine'],
+        locale: locale$5,
+        install(kairos, _utils) {
+            localeManager.register('fr-FR', {
+                ...locale$5,
+                holidays: holidays$5,
+                observances: observances$5,
+                regionalHolidays: regionalHolidays$5,
+            });
+            kairos.locales = kairos.locales || {};
+            kairos.locales['fr-FR'] = locale$5;
+            kairos.extend({
+                getFrenchHolidays(region) {
+                    if (region) {
+                        const regionLower = region.toLowerCase();
+                        const regionHols = regionalHolidays$5[regionLower];
+                        if (regionHols) {
+                            return [...holidays$5, ...regionHols];
+                        }
+                    }
+                    return holidays$5;
+                },
+                getFrenchObservances() {
+                    return observances$5;
+                },
+                getRegionalHolidays(region) {
+                    return regionalHolidays$5[region.toLowerCase()] || [];
+                },
+                getAllFrenchHolidays() {
+                    return allHolidays$5;
+                },
+            });
+        },
+    };
+
+    const holidays$4 = [
+        {
+            name: 'Año Nuevo',
+            type: 'fixed',
+            rule: { month: 1, day: 1 },
+        },
+        {
+            name: 'Epifanía del Señor',
+            type: 'fixed',
+            rule: { month: 1, day: 6 },
+        },
+        {
+            name: 'Viernes Santo',
+            type: 'easter-based',
+            rule: { offset: -2 },
+        },
+        {
+            name: 'Fiesta del Trabajo',
+            type: 'fixed',
+            rule: { month: 5, day: 1 },
+        },
+        {
+            name: 'Asunción de la Virgen',
+            type: 'fixed',
+            rule: { month: 8, day: 15 },
+        },
+        {
+            name: 'Fiesta Nacional de España',
+            type: 'fixed',
+            rule: { month: 10, day: 12 },
+        },
+        {
+            name: 'Todos los Santos',
+            type: 'fixed',
+            rule: { month: 11, day: 1 },
+        },
+        {
+            name: 'Día de la Constitución',
+            type: 'fixed',
+            rule: { month: 12, day: 6 },
+        },
+        {
+            name: 'Inmaculada Concepción',
+            type: 'fixed',
+            rule: { month: 12, day: 8 },
+        },
+        {
+            name: 'Navidad',
+            type: 'fixed',
+            rule: { month: 12, day: 25 },
+        },
+        {
+            name: 'Jueves Santo',
+            type: 'easter-based',
+            rule: { offset: -3 },
+            regions: ['Andalucía', 'Aragón', 'Asturias', 'Baleares', 'Canarias', 'Cantabria', 'Castilla-La Mancha', 'Castilla y León', 'Extremadura', 'Galicia', 'Madrid', 'Murcia', 'Navarra', 'País Vasco', 'La Rioja'],
+        },
+        {
+            name: 'Lunes de Pascua',
+            type: 'easter-based',
+            rule: { offset: 1 },
+            regions: ['Baleares', 'Cataluña', 'Comunidad Valenciana', 'Navarra', 'País Vasco'],
+        },
+    ];
+    const regionalHolidays$4 = {
+        andalucia: [
+            {
+                name: 'Día de Andalucía',
+                type: 'fixed',
+                rule: { month: 2, day: 28 },
+            },
+        ],
+        aragon: [
+            {
+                name: 'San Jorge',
+                type: 'fixed',
+                rule: { month: 4, day: 23 },
+            },
+        ],
+        asturias: [
+            {
+                name: 'Día de Asturias',
+                type: 'fixed',
+                rule: { month: 9, day: 8 },
+            },
+        ],
+        baleares: [
+            {
+                name: 'Día de las Islas Baleares',
+                type: 'fixed',
+                rule: { month: 3, day: 1 },
+            },
+        ],
+        canarias: [
+            {
+                name: 'Día de Canarias',
+                type: 'fixed',
+                rule: { month: 5, day: 30 },
+            },
+        ],
+        cantabria: [
+            {
+                name: 'Día de las Instituciones de Cantabria',
+                type: 'fixed',
+                rule: { month: 7, day: 28 },
+            },
+        ],
+        castillaLaMancha: [
+            {
+                name: 'Día de Castilla-La Mancha',
+                type: 'fixed',
+                rule: { month: 5, day: 31 },
+            },
+        ],
+        castillaYLeon: [
+            {
+                name: 'Día de Castilla y León',
+                type: 'fixed',
+                rule: { month: 4, day: 23 },
+            },
+        ],
+        cataluna: [
+            {
+                name: 'Sant Jordi',
+                type: 'fixed',
+                rule: { month: 4, day: 23 },
+            },
+            {
+                name: 'Sant Joan',
+                type: 'fixed',
+                rule: { month: 6, day: 24 },
+            },
+            {
+                name: 'Diada Nacional de Catalunya',
+                type: 'fixed',
+                rule: { month: 9, day: 11 },
+            },
+            {
+                name: 'Sant Esteve',
+                type: 'fixed',
+                rule: { month: 12, day: 26 },
+            },
+        ],
+        extremadura: [
+            {
+                name: 'Día de Extremadura',
+                type: 'fixed',
+                rule: { month: 9, day: 8 },
+            },
+        ],
+        galicia: [
+            {
+                name: 'Día Nacional de Galicia',
+                type: 'fixed',
+                rule: { month: 7, day: 25 },
+            },
+        ],
+        madrid: [
+            {
+                name: 'Día de la Comunidad de Madrid',
+                type: 'fixed',
+                rule: { month: 5, day: 2 },
+            },
+        ],
+        murcia: [
+            {
+                name: 'Día de la Región de Murcia',
+                type: 'fixed',
+                rule: { month: 6, day: 9 },
+            },
+        ],
+        navarra: [
+            {
+                name: 'San Fermín',
+                type: 'fixed',
+                rule: { month: 7, day: 7 },
+            },
+        ],
+        paisVasco: [
+            {
+                name: 'Lunes de Pascua',
+                type: 'easter-based',
+                rule: { offset: 1 },
+            },
+        ],
+        laRioja: [
+            {
+                name: 'Día de La Rioja',
+                type: 'fixed',
+                rule: { month: 6, day: 9 },
+            },
+        ],
+        valencia: [
+            {
+                name: 'San Vicente Mártir',
+                type: 'fixed',
+                rule: { month: 1, day: 22 },
+            },
+            {
+                name: 'Fallas',
+                type: 'fixed',
+                rule: { month: 3, day: 19 },
+            },
+            {
+                name: 'San Juan',
+                type: 'fixed',
+                rule: { month: 6, day: 24 },
+            },
+            {
+                name: 'Día de la Comunidad Valenciana',
+                type: 'fixed',
+                rule: { month: 10, day: 9 },
+            },
+        ],
+    };
+    const observances$4 = [
+        {
+            name: 'San Valentín',
+            type: 'fixed',
+            rule: { month: 2, day: 14 },
+        },
+        {
+            name: 'Día del Padre',
+            type: 'fixed',
+            rule: { month: 3, day: 19 },
+        },
+        {
+            name: 'Día de la Madre',
+            type: 'nth-weekday',
+            rule: { month: 5, weekday: 0, nth: 1 },
+        },
+        {
+            name: 'Nochevieja',
+            type: 'fixed',
+            rule: { month: 12, day: 31 },
+        },
+    ];
+    const allHolidays$4 = [...holidays$4, ...observances$4];
+
+    const locale$4 = {
+        name: 'Español (España)',
+        code: 'es-ES',
+        months: [
+            'enero',
+            'febrero',
+            'marzo',
+            'abril',
+            'mayo',
+            'junio',
+            'julio',
+            'agosto',
+            'septiembre',
+            'octubre',
+            'noviembre',
+            'diciembre',
+        ],
+        monthsShort: ['ene.', 'feb.', 'mar.', 'abr.', 'may.', 'jun.', 'jul.', 'ago.', 'sep.', 'oct.', 'nov.', 'dic.'],
+        weekdays: ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'],
+        weekdaysShort: ['dom.', 'lun.', 'mar.', 'mié.', 'jue.', 'vie.', 'sáb.'],
+        weekdaysMin: ['do', 'lu', 'ma', 'mi', 'ju', 'vi', 'sá'],
+        formats: {
+            LT: 'H:mm',
+            LTS: 'H:mm:ss',
+            L: 'DD/MM/YYYY',
+            LL: 'D [de] MMMM [de] YYYY',
+            LLL: 'D [de] MMMM [de] YYYY H:mm',
+            LLLL: 'dddd, D [de] MMMM [de] YYYY H:mm',
+        },
+        ordinal: (n) => {
+            return `${n}º`;
+        },
+        meridiem: (hour, _minute, isLower) => {
+            const m = hour < 12 ? 'de la mañana' : hour < 20 ? 'de la tarde' : 'de la noche';
+            return isLower ? m : m.toUpperCase();
+        },
+        relativeTime: {
+            future: 'en %s',
+            past: 'hace %s',
+            s: 'unos segundos',
+            ss: '%d segundos',
+            m: 'un minuto',
+            mm: '%d minutos',
+            h: 'una hora',
+            hh: '%d horas',
+            d: 'un día',
+            dd: '%d días',
+            M: 'un mes',
+            MM: '%d meses',
+            y: 'un año',
+            yy: '%d años',
+        },
+    };
+    var index$4 = {
+        name: 'locale-es-ES',
+        version: '1.0.0',
+        size: 1024,
+        dependencies: ['holiday-engine'],
+        locale: locale$4,
+        install(kairos, _utils) {
+            localeManager.register('es-ES', {
+                ...locale$4,
+                holidays: holidays$4,
+                observances: observances$4,
+                regionalHolidays: regionalHolidays$4,
+            });
+            kairos.locales = kairos.locales || {};
+            kairos.locales['es-ES'] = locale$4;
+            kairos.extend({
+                getSpanishHolidays(region) {
+                    if (region) {
+                        const regionLower = region.toLowerCase().replace(/\s/g, '');
+                        const regionHols = regionalHolidays$4[regionLower];
+                        if (regionHols) {
+                            return [...holidays$4, ...regionHols];
+                        }
+                    }
+                    return holidays$4;
+                },
+                getSpanishObservances() {
+                    return observances$4;
+                },
+                getRegionalSpanishHolidays(region) {
+                    return regionalHolidays$4[region.toLowerCase().replace(/\s/g, '')] || [];
+                },
+                getAllSpanishHolidays() {
+                    return allHolidays$4;
+                },
+            });
+        },
+    };
+
+    const holidays$3 = [
+        {
+            name: 'Capodanno',
+            type: 'fixed',
+            rule: { month: 1, day: 1 },
+        },
+        {
+            name: 'Epifania',
+            type: 'fixed',
+            rule: { month: 1, day: 6 },
+        },
+        {
+            name: 'Festa della Liberazione',
+            type: 'fixed',
+            rule: { month: 4, day: 25 },
+        },
+        {
+            name: 'Festa del Lavoro',
+            type: 'fixed',
+            rule: { month: 5, day: 1 },
+        },
+        {
+            name: 'Festa della Repubblica',
+            type: 'fixed',
+            rule: { month: 6, day: 2 },
+        },
+        {
+            name: 'Assunzione di Maria',
+            type: 'fixed',
+            rule: { month: 8, day: 15 },
+        },
+        {
+            name: 'Ognissanti',
+            type: 'fixed',
+            rule: { month: 11, day: 1 },
+        },
+        {
+            name: 'Immacolata Concezione',
+            type: 'fixed',
+            rule: { month: 12, day: 8 },
+        },
+        {
+            name: 'Natale',
+            type: 'fixed',
+            rule: { month: 12, day: 25 },
+        },
+        {
+            name: 'Santo Stefano',
+            type: 'fixed',
+            rule: { month: 12, day: 26 },
+        },
+        {
+            name: 'Pasquetta',
+            type: 'easter-based',
+            rule: { offset: 1 },
+        },
+    ];
+    const regionalHolidays$3 = {
+        sicilia: [
+            {
+                name: 'Santa Lucia',
+                type: 'fixed',
+                rule: { month: 12, day: 13 },
+            },
+        ],
+        sardegna: [
+            {
+                name: 'Sagra di Sant\'Efisio',
+                type: 'fixed',
+                rule: { month: 5, day: 1 },
+            },
+        ],
+        veneto: [
+            {
+                name: 'San Marco',
+                type: 'fixed',
+                rule: { month: 4, day: 25 },
+            },
+        ],
+        toscana: [
+            {
+                name: 'San Giovanni Battista',
+                type: 'fixed',
+                rule: { month: 6, day: 24 },
+            },
+        ],
+        lazio: [
+            {
+                name: 'Santi Pietro e Paolo',
+                type: 'fixed',
+                rule: { month: 6, day: 29 },
+            },
+        ],
+        lombardia: [
+            {
+                name: 'Sant\'Ambrogio',
+                type: 'fixed',
+                rule: { month: 12, day: 7 },
+            },
+        ],
+    };
+    const observances$3 = [
+        {
+            name: 'San Valentino',
+            type: 'fixed',
+            rule: { month: 2, day: 14 },
+        },
+        {
+            name: 'Festa della Donna',
+            type: 'fixed',
+            rule: { month: 3, day: 8 },
+        },
+        {
+            name: 'Festa della Mamma',
+            type: 'nth-weekday',
+            rule: { month: 5, weekday: 0, nth: 2 },
+        },
+        {
+            name: 'Festa del Papà',
+            type: 'fixed',
+            rule: { month: 3, day: 19 },
+        },
+        {
+            name: 'Vigilia di Natale',
+            type: 'fixed',
+            rule: { month: 12, day: 24 },
+        },
+        {
+            name: 'Capodanno',
+            type: 'fixed',
+            rule: { month: 12, day: 31 },
+        },
+    ];
+    const allHolidays$3 = [...holidays$3, ...observances$3];
+
+    const locale$3 = {
+        name: 'Italiano (Italia)',
+        code: 'it-IT',
+        months: [
+            'gennaio',
+            'febbraio',
+            'marzo',
+            'aprile',
+            'maggio',
+            'giugno',
+            'luglio',
+            'agosto',
+            'settembre',
+            'ottobre',
+            'novembre',
+            'dicembre',
+        ],
+        monthsShort: ['gen.', 'feb.', 'mar.', 'apr.', 'mag.', 'giu.', 'lug.', 'ago.', 'set.', 'ott.', 'nov.', 'dic.'],
+        weekdays: ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'],
+        weekdaysShort: ['dom.', 'lun.', 'mar.', 'mer.', 'gio.', 'ven.', 'sab.'],
+        weekdaysMin: ['do', 'lu', 'ma', 'me', 'gi', 've', 'sa'],
+        formats: {
+            LT: 'HH:mm',
+            LTS: 'HH:mm:ss',
+            L: 'DD/MM/YYYY',
+            LL: 'D MMMM YYYY',
+            LLL: 'D MMMM YYYY HH:mm',
+            LLLL: 'dddd D MMMM YYYY HH:mm',
+        },
+        ordinal: (n) => {
+            return `${n}º`;
+        },
+        meridiem: (hour, _minute, isLower) => {
+            const m = hour < 12 ? 'del mattino' : hour < 18 ? 'del pomeriggio' : 'della sera';
+            return isLower ? m : m.toUpperCase();
+        },
+        relativeTime: {
+            future: 'tra %s',
+            past: '%s fa',
+            s: 'alcuni secondi',
+            ss: '%d secondi',
+            m: 'un minuto',
+            mm: '%d minuti',
+            h: 'un\'ora',
+            hh: '%d ore',
+            d: 'un giorno',
+            dd: '%d giorni',
+            M: 'un mese',
+            MM: '%d mesi',
+            y: 'un anno',
+            yy: '%d anni',
+        },
+    };
+    var index$3 = {
+        name: 'locale-it-IT',
+        version: '1.0.0',
+        size: 1024,
+        dependencies: ['holiday-engine'],
+        locale: locale$3,
+        install(kairos, _utils) {
+            localeManager.register('it-IT', {
+                ...locale$3,
+                holidays: holidays$3,
+                observances: observances$3,
+                regionalHolidays: regionalHolidays$3,
+            });
+            kairos.locales = kairos.locales || {};
+            kairos.locales['it-IT'] = locale$3;
+            kairos.extend({
+                getItalianHolidays(region) {
+                    if (region) {
+                        const regionLower = region.toLowerCase();
+                        const regionHols = regionalHolidays$3[regionLower];
+                        if (regionHols) {
+                            return [...holidays$3, ...regionHols];
+                        }
+                    }
+                    return holidays$3;
+                },
+                getItalianObservances() {
+                    return observances$3;
+                },
+                getRegionalItalianHolidays(region) {
+                    return regionalHolidays$3[region.toLowerCase()] || [];
+                },
+                getAllItalianHolidays() {
+                    return allHolidays$3;
+                },
+            });
+        },
+    };
+
+    const holidays$2 = [
+        {
+            name: 'Confraternização Universal',
+            type: 'fixed',
+            rule: { month: 1, day: 1 },
+        },
+        {
+            name: 'Tiradentes',
+            type: 'fixed',
+            rule: { month: 4, day: 21 },
+        },
+        {
+            name: 'Dia do Trabalhador',
+            type: 'fixed',
+            rule: { month: 5, day: 1 },
+        },
+        {
+            name: 'Independência do Brasil',
+            type: 'fixed',
+            rule: { month: 9, day: 7 },
+        },
+        {
+            name: 'Nossa Senhora Aparecida',
+            type: 'fixed',
+            rule: { month: 10, day: 12 },
+        },
+        {
+            name: 'Finados',
+            type: 'fixed',
+            rule: { month: 11, day: 2 },
+        },
+        {
+            name: 'Proclamação da República',
+            type: 'fixed',
+            rule: { month: 11, day: 15 },
+        },
+        {
+            name: 'Natal',
+            type: 'fixed',
+            rule: { month: 12, day: 25 },
+        },
+        {
+            name: 'Carnaval',
+            type: 'easter-based',
+            rule: { offset: -47 },
+        },
+        {
+            name: 'Sexta-feira Santa',
+            type: 'easter-based',
+            rule: { offset: -2 },
+        },
+        {
+            name: 'Corpus Christi',
+            type: 'easter-based',
+            rule: { offset: 60 },
+        },
+    ];
+    const regionalHolidays$2 = {
+        acre: [
+            {
+                name: 'Dia da Amazônia',
+                type: 'fixed',
+                rule: { month: 9, day: 5 },
+            },
+            {
+                name: 'Tratado de Petrópolis',
+                type: 'fixed',
+                rule: { month: 11, day: 17 },
+            },
+        ],
+        alagoas: [
+            {
+                name: 'São João',
+                type: 'fixed',
+                rule: { month: 6, day: 24 },
+            },
+            {
+                name: 'São Pedro',
+                type: 'fixed',
+                rule: { month: 6, day: 29 },
+            },
+        ],
+        bahia: [
+            {
+                name: 'Independência da Bahia',
+                type: 'fixed',
+                rule: { month: 7, day: 2 },
+            },
+        ],
+        ceara: [
+            {
+                name: 'Abolição da Escravidão no Ceará',
+                type: 'fixed',
+                rule: { month: 3, day: 25 },
+            },
+        ],
+        df: [
+            {
+                name: 'Fundação de Brasília',
+                type: 'fixed',
+                rule: { month: 4, day: 21 },
+            },
+            {
+                name: 'Dia da Consciência Negra',
+                type: 'fixed',
+                rule: { month: 11, day: 20 },
+            },
+        ],
+        rj: [
+            {
+                name: 'Morte de Zumbi dos Palmares',
+                type: 'fixed',
+                rule: { month: 4, day: 23 },
+            },
+            {
+                name: 'São Jorge',
+                type: 'fixed',
+                rule: { month: 4, day: 23 },
+            },
+        ],
+        sp: [
+            {
+                name: 'Revolução Constitucionalista',
+                type: 'fixed',
+                rule: { month: 7, day: 9 },
+            },
+            {
+                name: 'Dia da Consciência Negra',
+                type: 'fixed',
+                rule: { month: 11, day: 20 },
+            },
+        ],
+    };
+    const observances$2 = [
+        {
+            name: 'Dia dos Namorados',
+            type: 'fixed',
+            rule: { month: 6, day: 12 },
+        },
+        {
+            name: 'Dia das Mães',
+            type: 'nth-weekday',
+            rule: { month: 5, weekday: 0, nth: 2 },
+        },
+        {
+            name: 'Dia dos Pais',
+            type: 'nth-weekday',
+            rule: { month: 8, weekday: 0, nth: 2 },
+        },
+        {
+            name: 'Dia das Crianças',
+            type: 'fixed',
+            rule: { month: 10, day: 12 },
+        },
+        {
+            name: 'Dia do Professor',
+            type: 'fixed',
+            rule: { month: 10, day: 15 },
+        },
+        {
+            name: 'Véspera de Natal',
+            type: 'fixed',
+            rule: { month: 12, day: 24 },
+        },
+        {
+            name: 'Véspera de Ano Novo',
+            type: 'fixed',
+            rule: { month: 12, day: 31 },
+        },
+    ];
+    const allHolidays$2 = [...holidays$2, ...observances$2];
+
+    const locale$2 = {
+        name: 'Português (Brasil)',
+        code: 'pt-BR',
+        months: [
+            'janeiro',
+            'fevereiro',
+            'março',
+            'abril',
+            'maio',
+            'junho',
+            'julho',
+            'agosto',
+            'setembro',
+            'outubro',
+            'novembro',
+            'dezembro',
+        ],
+        monthsShort: ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.'],
+        weekdays: ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'],
+        weekdaysShort: ['dom.', 'seg.', 'ter.', 'qua.', 'qui.', 'sex.', 'sáb.'],
+        weekdaysMin: ['do', 'sg', 'te', 'qa', 'qi', 'sx', 'sá'],
+        formats: {
+            LT: 'HH:mm',
+            LTS: 'HH:mm:ss',
+            L: 'DD/MM/YYYY',
+            LL: 'D [de] MMMM [de] YYYY',
+            LLL: 'D [de] MMMM [de] YYYY [às] HH:mm',
+            LLLL: 'dddd, D [de] MMMM [de] YYYY [às] HH:mm',
+        },
+        ordinal: (n) => {
+            return `${n}º`;
+        },
+        meridiem: (hour, _minute, isLower) => {
+            const m = hour < 12 ? 'da manhã' : hour < 18 ? 'da tarde' : 'da noite';
+            return isLower ? m : m.toUpperCase();
+        },
+        relativeTime: {
+            future: 'em %s',
+            past: 'há %s',
+            s: 'poucos segundos',
+            ss: '%d segundos',
+            m: 'um minuto',
+            mm: '%d minutos',
+            h: 'uma hora',
+            hh: '%d horas',
+            d: 'um dia',
+            dd: '%d dias',
+            M: 'um mês',
+            MM: '%d meses',
+            y: 'um ano',
+            yy: '%d anos',
+        },
+    };
+    var index$2 = {
+        name: 'locale-pt-BR',
+        version: '1.0.0',
+        size: 1024,
+        dependencies: ['holiday-engine'],
+        locale: locale$2,
+        install(kairos, _utils) {
+            localeManager.register('pt-BR', {
+                ...locale$2,
+                holidays: holidays$2,
+                observances: observances$2,
+                regionalHolidays: regionalHolidays$2,
+            });
+            kairos.locales = kairos.locales || {};
+            kairos.locales['pt-BR'] = locale$2;
+            kairos.extend({
+                getBrazilianHolidays(region) {
+                    if (region) {
+                        const regionLower = region.toLowerCase();
+                        const regionHols = regionalHolidays$2[regionLower];
+                        if (regionHols) {
+                            return [...holidays$2, ...regionHols];
+                        }
+                    }
+                    return holidays$2;
+                },
+                getBrazilianObservances() {
+                    return observances$2;
+                },
+                getRegionalBrazilianHolidays(region) {
+                    return regionalHolidays$2[region.toLowerCase()] || [];
+                },
+                getAllBrazilianHolidays() {
+                    return allHolidays$2;
+                },
+            });
+        },
+    };
+
+    const holidays$1 = [
+        {
+            name: 'Новый год',
+            type: 'fixed',
+            rule: { month: 1, day: 1 },
+        },
+        {
+            name: 'Рождество Христово',
+            type: 'fixed',
+            rule: { month: 1, day: 7 },
+        },
+        {
+            name: 'День защитника Отечества',
+            type: 'fixed',
+            rule: { month: 2, day: 23 },
+        },
+        {
+            name: 'Международный женский день',
+            type: 'fixed',
+            rule: { month: 3, day: 8 },
+        },
+        {
+            name: 'Праздник Весны и Труда',
+            type: 'fixed',
+            rule: { month: 5, day: 1 },
+        },
+        {
+            name: 'День Победы',
+            type: 'fixed',
+            rule: { month: 5, day: 9 },
+        },
+        {
+            name: 'День России',
+            type: 'fixed',
+            rule: { month: 6, day: 12 },
+        },
+        {
+            name: 'День народного единства',
+            type: 'fixed',
+            rule: { month: 11, day: 4 },
+        },
+        {
+            name: 'Новогодние каникулы',
+            type: 'fixed',
+            rule: { month: 1, day: 2 },
+        },
+        {
+            name: 'Новогодние каникулы',
+            type: 'fixed',
+            rule: { month: 1, day: 3 },
+        },
+        {
+            name: 'Новогодние каникулы',
+            type: 'fixed',
+            rule: { month: 1, day: 4 },
+        },
+        {
+            name: 'Новогодние каникулы',
+            type: 'fixed',
+            rule: { month: 1, day: 5 },
+        },
+        {
+            name: 'Новогодние каникулы',
+            type: 'fixed',
+            rule: { month: 1, day: 6 },
+        },
+        {
+            name: 'Новогодние каникулы',
+            type: 'fixed',
+            rule: { month: 1, day: 8 },
+        },
+        {
+            name: 'Православная Пасха',
+            type: 'easter-based',
+            rule: { offset: 0 },
+        },
+    ];
+    const regionalHolidays$1 = {
+        tatarstan: [
+            {
+                name: 'День Республики Татарстан',
+                type: 'fixed',
+                rule: { month: 8, day: 30 },
+            },
+        ],
+        bashkortostan: [
+            {
+                name: 'День Республики Башкортостан',
+                type: 'fixed',
+                rule: { month: 10, day: 11 },
+            },
+        ],
+        sakha: [
+            {
+                name: 'День Республики Саха (Якутия)',
+                type: 'fixed',
+                rule: { month: 4, day: 27 },
+            },
+        ],
+        chechnya: [
+            {
+                name: 'День мира в Чеченской Республике',
+                type: 'fixed',
+                rule: { month: 4, day: 16 },
+            },
+        ],
+        dagestan: [
+            {
+                name: 'День единения народов Дагестана',
+                type: 'fixed',
+                rule: { month: 9, day: 15 },
+            },
+        ],
+    };
+    const observances$1 = [
+        {
+            name: 'День святого Валентина',
+            type: 'fixed',
+            rule: { month: 2, day: 14 },
+        },
+        {
+            name: 'Масленица',
+            type: 'easter-based',
+            rule: { offset: -49 },
+        },
+        {
+            name: 'День космонавтики',
+            type: 'fixed',
+            rule: { month: 4, day: 12 },
+        },
+        {
+            name: 'Радоница',
+            type: 'easter-based',
+            rule: { offset: 9 },
+        },
+        {
+            name: 'День Победы (вечером)',
+            type: 'fixed',
+            rule: { month: 5, day: 9 },
+        },
+        {
+            name: 'День знаний',
+            type: 'fixed',
+            rule: { month: 9, day: 1 },
+        },
+        {
+            name: 'День учителя',
+            type: 'fixed',
+            rule: { month: 10, day: 5 },
+        },
+        {
+            name: 'День матери',
+            type: 'nth-weekday',
+            rule: { month: 11, weekday: 0, nth: -1 },
+        },
+        {
+            name: 'День Конституции Российской Федерации',
+            type: 'fixed',
+            rule: { month: 12, day: 12 },
+        },
+    ];
+    const allHolidays$1 = [...holidays$1, ...observances$1];
+
+    const locale$1 = {
+        name: 'Русский (Россия)',
+        code: 'ru-RU',
+        months: [
+            'январь',
+            'февраль',
+            'март',
+            'апрель',
+            'май',
+            'июнь',
+            'июль',
+            'август',
+            'сентябрь',
+            'октябрь',
+            'ноябрь',
+            'декабрь',
+        ],
+        monthsShort: ['янв.', 'фев.', 'мар.', 'апр.', 'май', 'июн.', 'июл.', 'авг.', 'сен.', 'окт.', 'ноя.', 'дек.'],
+        weekdays: ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'],
+        weekdaysShort: ['вс.', 'пн.', 'вт.', 'ср.', 'чт.', 'пт.', 'сб.'],
+        weekdaysMin: ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'],
+        formats: {
+            LT: 'H:mm',
+            LTS: 'H:mm:ss',
+            L: 'DD.MM.YYYY',
+            LL: 'D MMMM YYYY [г.]',
+            LLL: 'D MMMM YYYY [г.], H:mm',
+            LLLL: 'dddd, D MMMM YYYY [г.], H:mm',
+        },
+        ordinal: (n) => {
+            return `${n}-й`;
+        },
+        meridiem: (hour, _minute, _isLower) => {
+            return hour < 4 ? 'ночи' : hour < 12 ? 'утра' : hour < 17 ? 'дня' : 'вечера';
+        },
+        relativeTime: {
+            future: 'через %s',
+            past: '%s назад',
+            s: 'несколько секунд',
+            ss: (n) => {
+                return n % 10 === 1 && n % 100 !== 11
+                    ? `${n} секунду`
+                    : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)
+                        ? `${n} секунды`
+                        : `${n} секунд`;
+            },
+            m: 'минуту',
+            mm: (n) => {
+                return n % 10 === 1 && n % 100 !== 11
+                    ? `${n} минуту`
+                    : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)
+                        ? `${n} минуты`
+                        : `${n} минут`;
+            },
+            h: 'час',
+            hh: (n) => {
+                return n % 10 === 1 && n % 100 !== 11
+                    ? `${n} час`
+                    : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)
+                        ? `${n} часа`
+                        : `${n} часов`;
+            },
+            d: 'день',
+            dd: (n) => {
+                return n % 10 === 1 && n % 100 !== 11
+                    ? `${n} день`
+                    : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)
+                        ? `${n} дня`
+                        : `${n} дней`;
+            },
+            M: 'месяц',
+            MM: (n) => {
+                return n % 10 === 1 && n % 100 !== 11
+                    ? `${n} месяц`
+                    : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)
+                        ? `${n} месяца`
+                        : `${n} месяцев`;
+            },
+            y: 'год',
+            yy: (n) => {
+                return n % 10 === 1 && n % 100 !== 11
+                    ? `${n} год`
+                    : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)
+                        ? `${n} года`
+                        : `${n} лет`;
+            },
+        },
+    };
+    var index$1 = {
+        name: 'locale-ru-RU',
+        version: '1.0.0',
+        size: 1024,
+        dependencies: ['holiday-engine'],
+        locale: locale$1,
+        install(kairos, _utils) {
+            localeManager.register('ru-RU', {
+                ...locale$1,
+                holidays: holidays$1,
+                observances: observances$1,
+                regionalHolidays: regionalHolidays$1,
+            });
+            kairos.locales = kairos.locales || {};
+            kairos.locales['ru-RU'] = locale$1;
+            kairos.extend({
+                getRussianHolidays(region) {
+                    if (region) {
+                        const regionLower = region.toLowerCase();
+                        const regionHols = regionalHolidays$1[regionLower];
+                        if (regionHols) {
+                            return [...holidays$1, ...regionHols];
+                        }
+                    }
+                    return holidays$1;
+                },
+                getRussianObservances() {
+                    return observances$1;
+                },
+                getRegionalRussianHolidays(region) {
+                    return regionalHolidays$1[region.toLowerCase()] || [];
+                },
+                getAllRussianHolidays() {
+                    return allHolidays$1;
+                },
+            });
+        },
+    };
+
+    const holidays = [
+        {
+            name: '元旦',
+            type: 'fixed',
+            rule: { month: 1, day: 1 },
+        },
+        {
+            name: '劳动节',
+            type: 'fixed',
+            rule: { month: 5, day: 1 },
+        },
+        {
+            name: '国庆节',
+            type: 'fixed',
+            rule: { month: 10, day: 1 },
+        },
+        {
+            name: '国庆黄金周',
+            type: 'fixed',
+            rule: { month: 10, day: 2 },
+        },
+        {
+            name: '国庆黄金周',
+            type: 'fixed',
+            rule: { month: 10, day: 3 },
+        },
+        {
+            name: '春节',
+            type: 'lunar',
+            rule: { calendar: 'chinese', month: 1, day: 1 },
+        },
+        {
+            name: '春节假期',
+            type: 'lunar',
+            rule: { calendar: 'chinese', month: 1, day: 2 },
+        },
+        {
+            name: '春节假期',
+            type: 'lunar',
+            rule: { calendar: 'chinese', month: 1, day: 3 },
+        },
+        {
+            name: '清明节',
+            type: 'fixed',
+            rule: { month: 4, day: 5 },
+        },
+        {
+            name: '端午节',
+            type: 'lunar',
+            rule: { calendar: 'chinese', month: 5, day: 5 },
+        },
+        {
+            name: '中秋节',
+            type: 'lunar',
+            rule: { calendar: 'chinese', month: 8, day: 15 },
+        },
+    ];
+    const regionalHolidays = {
+        xinjiang: [
+            {
+                name: '古尔邦节',
+                type: 'custom',
+                rule: { calculate: (year) => [new Date(year, 8, 10)] },
+            },
+        ],
+        tibet: [
+            {
+                name: '藏历新年',
+                type: 'custom',
+                rule: { calculate: (year) => [new Date(year, 1, 10)] },
+            },
+        ],
+        guangxi: [
+            {
+                name: '三月三',
+                type: 'lunar',
+                rule: { month: 3, day: 3 },
+            },
+        ],
+        hongkong: [
+            {
+                name: '佛诞节',
+                type: 'lunar',
+                rule: { month: 4, day: 8 },
+            },
+        ],
+        macau: [
+            {
+                name: '澳门特别行政区成立纪念日',
+                type: 'fixed',
+                rule: { month: 12, day: 20 },
+            },
+        ],
+    };
+    const observances = [
+        {
+            name: '情人节',
+            type: 'fixed',
+            rule: { month: 2, day: 14 },
+        },
+        {
+            name: '妇女节',
+            type: 'fixed',
+            rule: { month: 3, day: 8 },
+        },
+        {
+            name: '植树节',
+            type: 'fixed',
+            rule: { month: 3, day: 12 },
+        },
+        {
+            name: '愚人节',
+            type: 'fixed',
+            rule: { month: 4, day: 1 },
+        },
+        {
+            name: '青年节',
+            type: 'fixed',
+            rule: { month: 5, day: 4 },
+        },
+        {
+            name: '母亲节',
+            type: 'nth-weekday',
+            rule: { month: 5, weekday: 0, nth: 2 },
+        },
+        {
+            name: '儿童节',
+            type: 'fixed',
+            rule: { month: 6, day: 1 },
+        },
+        {
+            name: '父亲节',
+            type: 'nth-weekday',
+            rule: { month: 6, weekday: 0, nth: 3 },
+        },
+        {
+            name: '建党节',
+            type: 'fixed',
+            rule: { month: 7, day: 1 },
+        },
+        {
+            name: '建军节',
+            type: 'fixed',
+            rule: { month: 8, day: 1 },
+        },
+        {
+            name: '教师节',
+            type: 'fixed',
+            rule: { month: 9, day: 10 },
+        },
+        {
+            name: '重阳节',
+            type: 'lunar',
+            rule: { calendar: 'chinese', month: 9, day: 9 },
+        },
+        {
+            name: '万圣节',
+            type: 'fixed',
+            rule: { month: 10, day: 31 },
+        },
+        {
+            name: '光棍节',
+            type: 'fixed',
+            rule: { month: 11, day: 11 },
+        },
+        {
+            name: '圣诞节',
+            type: 'fixed',
+            rule: { month: 12, day: 25 },
+        },
+    ];
+    const allHolidays = [...holidays, ...observances];
+
+    const locale = {
+        name: '中文 (简体，中国)',
+        code: 'zh-CN',
+        months: [
+            '一月',
+            '二月',
+            '三月',
+            '四月',
+            '五月',
+            '六月',
+            '七月',
+            '八月',
+            '九月',
+            '十月',
+            '十一月',
+            '十二月',
+        ],
+        monthsShort: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+        weekdays: ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'],
+        weekdaysShort: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'],
+        weekdaysMin: ['日', '一', '二', '三', '四', '五', '六'],
+        formats: {
+            LT: 'HH:mm',
+            LTS: 'HH:mm:ss',
+            L: 'YYYY/MM/DD',
+            LL: 'YYYY年M月D日',
+            LLL: 'YYYY年M月D日 HH:mm',
+            LLLL: 'dddd YYYY年M月D日 HH:mm',
+        },
+        ordinal: (n) => {
+            return `第${n}`;
+        },
+        meridiem: (hour, _minute, _isLower) => {
+            if (hour < 6) {
+                return '凌晨';
+            }
+            else if (hour < 9) {
+                return '早上';
+            }
+            else if (hour < 12) {
+                return '上午';
+            }
+            else if (hour < 13) {
+                return '中午';
+            }
+            else if (hour < 18) {
+                return '下午';
+            }
+            else {
+                return '晚上';
+            }
+        },
+        relativeTime: {
+            future: '%s后',
+            past: '%s前',
+            s: '几秒',
+            ss: '%d秒',
+            m: '1分钟',
+            mm: '%d分钟',
+            h: '1小时',
+            hh: '%d小时',
+            d: '1天',
+            dd: '%d天',
+            M: '1个月',
+            MM: '%d个月',
+            y: '1年',
+            yy: '%d年',
+        },
+    };
+    var index = {
+        name: 'locale-zh-CN',
+        version: '1.0.0',
+        size: 1024,
+        dependencies: ['holiday-engine'],
+        locale,
+        install(kairos, _utils) {
+            localeManager.register('zh-CN', {
+                ...locale,
+                holidays,
+                observances,
+                regionalHolidays,
+            });
+            kairos.locales = kairos.locales || {};
+            kairos.locales['zh-CN'] = locale;
+            kairos.extend({
+                getChineseHolidays(region) {
+                    if (region) {
+                        const regionLower = region.toLowerCase();
+                        const regionHols = regionalHolidays[regionLower];
+                        if (regionHols) {
+                            return [...holidays, ...regionHols];
+                        }
+                    }
+                    return holidays;
+                },
+                getChineseObservances() {
+                    return observances;
+                },
+                getRegionalChineseHolidays(region) {
+                    return regionalHolidays[region.toLowerCase()] || [];
+                },
+                getAllChineseHolidays() {
+                    return allHolidays;
                 },
             });
         },
@@ -4362,18 +5986,99 @@
     const DESCRIPTION = 'Revolutionary zero-dependency JavaScript date/time library with modular architecture and dynamic holiday system';
     function setupBasic() {
         const kairos = require('./core/plugin-system.js').default;
+        const parseFlexible = require('./plugins/parse/flexible.js').default;
+        const parseISO = require('./plugins/parse/iso.js').default;
+        const formatTokens = require('./plugins/format/tokens.js').default;
+        kairos.use([parseFlexible, parseISO, formatTokens]);
         return kairos;
     }
     function setupWithBusiness() {
         const kairos = require('./core/plugin-system.js').default;
+        const businessWorkday = require('./plugins/business/workday.js').default;
+        const businessFiscal = require('./plugins/business/fiscal.js').default;
+        const holidayEngine = require('./plugins/holiday/engine.js').default;
+        kairos.use([businessWorkday, businessFiscal, holidayEngine]);
         return kairos;
     }
     function setupWithLocales() {
         const kairos = require('./core/plugin-system.js').default;
+        const localeUS = require('./plugins/locale/en-US/index.js').default;
+        const localeDE = require('./plugins/locale/de-DE/index.js').default;
+        const localeTR = require('./plugins/locale/tr-TR/index.js').default;
+        const localeJP = require('./plugins/locale/ja-JP/index.js').default;
+        const localeFR = require('./plugins/locale/fr-FR/index.js').default;
+        const localeES = require('./plugins/locale/es-ES/index.js').default;
+        const localeIT = require('./plugins/locale/it-IT/index.js').default;
+        const localePT = require('./plugins/locale/pt-BR/index.js').default;
+        const localeRU = require('./plugins/locale/ru-RU/index.js').default;
+        const localeCN = require('./plugins/locale/zh-CN/index.js').default;
+        kairos.use([localeUS, localeDE, localeTR, localeJP, localeFR, localeES, localeIT, localePT, localeRU, localeCN]);
+        kairos.locale('en-US');
         return kairos;
     }
     function setupFull() {
         const kairos = require('./core/plugin-system.js').default;
+        const holidayEngine = require('./plugins/holiday/engine.js').default;
+        const businessWorkday = require('./plugins/business/workday.js').default;
+        const businessFiscal = require('./plugins/business/fiscal.js').default;
+        const relativeTimePlugin = require('./plugins/relative/relative-time.js').default;
+        const calendarPlugin = require('./plugins/calendar/calendar.js').default;
+        const durationPlugin = require('./plugins/duration/duration.js').default;
+        const rangePlugin = require('./plugins/range/range.js').default;
+        const timezonePlugin = require('./plugins/timezone/timezone.js').default;
+        const parseFlexible = require('./plugins/parse/flexible.js').default;
+        const parseISO = require('./plugins/parse/iso.js').default;
+        const parseRFC2822 = require('./plugins/parse/rfc2822.js').default;
+        const parseUnix = require('./plugins/parse/unix.js').default;
+        const formatTokens = require('./plugins/format/tokens.js').default;
+        const localeUS = require('./plugins/locale/en-US/index.js').default;
+        const localeDE = require('./plugins/locale/de-DE/index.js').default;
+        const localeTR = require('./plugins/locale/tr-TR/index.js').default;
+        const localeJP = require('./plugins/locale/ja-JP/index.js').default;
+        const localeFR = require('./plugins/locale/fr-FR/index.js').default;
+        const localeES = require('./plugins/locale/es-ES/index.js').default;
+        const localeIT = require('./plugins/locale/it-IT/index.js').default;
+        const localePT = require('./plugins/locale/pt-BR/index.js').default;
+        const localeRU = require('./plugins/locale/ru-RU/index.js').default;
+        const localeCN = require('./plugins/locale/zh-CN/index.js').default;
+        const fixedCalculator = require('./plugins/holiday/calculators/fixed.js').default;
+        const nthWeekdayCalculator = require('./plugins/holiday/calculators/nth-weekday.js').default;
+        const easterCalculator = require('./plugins/holiday/calculators/easter.js').default;
+        const lunarCalculator = require('./plugins/holiday/calculators/lunar.js').default;
+        const relativeCalculator = require('./plugins/holiday/calculators/relative.js').default;
+        const customCalculator = require('./plugins/holiday/calculators/custom.js').default;
+        kairos.use([
+            holidayEngine,
+            fixedCalculator,
+            nthWeekdayCalculator,
+            easterCalculator,
+            lunarCalculator,
+            relativeCalculator,
+            customCalculator,
+            businessWorkday,
+            businessFiscal,
+            relativeTimePlugin,
+            calendarPlugin,
+            durationPlugin,
+            rangePlugin,
+            timezonePlugin,
+            parseFlexible,
+            parseISO,
+            parseRFC2822,
+            parseUnix,
+            formatTokens,
+            localeUS,
+            localeDE,
+            localeTR,
+            localeJP,
+            localeFR,
+            localeES,
+            localeIT,
+            localePT,
+            localeRU,
+            localeCN,
+        ]);
+        kairos.locale('en-US');
         return kairos;
     }
 
@@ -4394,10 +6099,10 @@
     exports.RelativeCalculator = RelativeCalculator;
     exports.RelativeTimeCalculator = RelativeTimeCalculator;
     exports.VERSION = VERSION;
-    exports.allGermanHolidays = allHolidays$1;
-    exports.allJapaneseHolidays = allHolidays;
-    exports.allTurkishHolidays = allHolidays$2;
-    exports.allUSHolidays = allHolidays$3;
+    exports.allGermanHolidays = allHolidays$7;
+    exports.allJapaneseHolidays = allHolidays$6;
+    exports.allTurkishHolidays = allHolidays$8;
+    exports.allUSHolidays = allHolidays$9;
     exports.businessFiscal = fiscal;
     exports.businessWorkday = workday;
     exports.calendarPlugin = calendarPlugin;
@@ -4409,7 +6114,7 @@
     exports.fixedCalculator = fixed;
     exports.germanFederalHolidays = federalHolidays;
     exports.germanHistoricalHolidays = historicalHolidays$1;
-    exports.germanHolidays = holidays$1;
+    exports.germanHolidays = holidays$7;
     exports.germanStateHolidays = stateHolidays;
     exports.holidayEngine = engine$1;
     exports.isValidDate = isValidDate;
@@ -4423,14 +6128,20 @@
     exports.japaneseGoldenWeekHolidays = goldenWeekHolidays;
     exports.japaneseHeiseiHolidays = heiseiHolidays;
     exports.japaneseHistoricalHolidays = historicalHolidays;
-    exports.japaneseHolidays = holidays;
-    exports.japaneseObservances = observances;
+    exports.japaneseHolidays = holidays$6;
+    exports.japaneseObservances = observances$6;
     exports.japanesePublicHolidays = publicHolidays;
     exports.japaneseReiwaHolidays = reiwaHolidays;
-    exports.localeDE = index$1;
-    exports.localeJP = index;
-    exports.localeTR = index$2;
-    exports.localeUS = index$3;
+    exports.localeCN = index;
+    exports.localeDE = index$7;
+    exports.localeES = index$4;
+    exports.localeFR = index$5;
+    exports.localeIT = index$3;
+    exports.localeJP = index$6;
+    exports.localePT = index$2;
+    exports.localeRU = index$1;
+    exports.localeTR = index$8;
+    exports.localeUS = index$9;
     exports.lunarCalculator = lunar;
     exports.memoize = memoize;
     exports.nthWeekdayCalculator = nthWeekday;
@@ -4442,11 +6153,11 @@
     exports.setupWithLocales = setupWithLocales;
     exports.throwError = throwError;
     exports.turkishHistoricalHolidays = historicalHolidays$2;
-    exports.turkishHolidays = holidays$2;
-    exports.turkishObservances = observances$1;
+    exports.turkishHolidays = holidays$8;
+    exports.turkishObservances = observances$7;
     exports.turkishPublicHolidays = publicHolidays$1;
     exports.usFederalHolidays = federalHolidays$1;
-    exports.usHolidays = holidays$3;
+    exports.usHolidays = holidays$9;
     exports.usStateHolidays = stateHolidays$1;
     exports.validateHolidayRule = validateHolidayRule;
 
