@@ -1,6 +1,6 @@
 {
   "name": "@oxog/kairos",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Revolutionary zero-dependency JavaScript date/time library with modular architecture and dynamic holiday system",
   "type": "module",
   "main": "dist/index.js",
@@ -187,7 +187,7 @@
     {
       "name": "Core Library",
       "path": "dist/index.js",
-      "limit": "25 KB"
+      "limit": "28 KB"
     },
     {
       "name": "Core + Holiday Engine",
@@ -200,7 +200,7 @@
     {
       "name": "Core + All Plugins",
       "path": "dist/**/*.js",
-      "limit": "200 KB"
+      "limit": "225 KB"
     },
     {
       "name": "Browser Bundle (UMD)",

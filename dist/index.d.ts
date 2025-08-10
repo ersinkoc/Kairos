@@ -39,7 +39,7 @@ export { holidays as usHolidays, stateHolidays as usStateHolidays, federalHolida
 export { holidays as turkishHolidays, observances as turkishObservances, historicalHolidays as turkishHistoricalHolidays, allHolidays as allTurkishHolidays, publicHolidays as turkishPublicHolidays, } from './plugins/locale/tr-TR/holidays.js';
 export { holidays as germanHolidays, stateHolidays as germanStateHolidays, federalHolidays as germanFederalHolidays, allHolidays as allGermanHolidays, historicalHolidays as germanHistoricalHolidays, } from './plugins/locale/de-DE/holidays.js';
 export { holidays as japaneseHolidays, observances as japaneseObservances, historicalHolidays as japaneseHistoricalHolidays, goldenWeekHolidays as japaneseGoldenWeekHolidays, publicHolidays as japanesePublicHolidays, allHolidays as allJapaneseHolidays, reiwaHolidays as japaneseReiwaHolidays, heiseiHolidays as japaneseHeiseiHolidays, } from './plugins/locale/ja-JP/holidays.js';
-export declare const VERSION = "1.0.0";
+export declare const VERSION = "1.1.0";
 export declare const AUTHOR = "Ersin Koc";
 export declare const REPOSITORY = "https://github.com/ersinkoc/kairos";
 export declare const HOMEPAGE = "https://github.com/ersinkoc/kairos#readme";

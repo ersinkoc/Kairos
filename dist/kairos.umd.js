@@ -6081,7 +6081,7 @@
         },
     };
 
-    const VERSION = '1.0.0';
+    const VERSION = '1.1.0';
     const AUTHOR = 'Ersin Koc';
     const REPOSITORY = 'https://github.com/ersinkoc/kairos';
     const HOMEPAGE = 'https://github.com/ersinkoc/kairos#readme';

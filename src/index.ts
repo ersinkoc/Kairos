@@ -135,7 +135,7 @@ export {
 } from './plugins/locale/ja-JP/holidays.js';
 
 // Version and metadata
-export const VERSION = '1.0.0';
+export const VERSION = '1.1.0';
 export const AUTHOR = 'Ersin Koc';
 export const REPOSITORY = 'https://github.com/ersinkoc/kairos';
 export const HOMEPAGE = 'https://github.com/ersinkoc/kairos#readme';
