@@ -159,14 +159,13 @@ export default {
                 return TimezoneManager.isDST(this.toDate());
             },
             isUTC() {
-                return !!this._isUTC || this.offset() === 0;
+                return !!this._isUTC;
             },
             local() {
                 if (!this.isUTC()) {
                     return this.clone();
                 }
-                const localDate = new Date(this.toDate().getTime());
-                const instance = kairos(localDate);
+                const instance = kairos(this.toDate());
                 delete instance._isUTC;
                 return instance;
             },

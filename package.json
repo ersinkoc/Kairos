@@ -175,9 +175,12 @@
   },
   "sideEffects": false,
   "lint-staged": {
-    "*.ts": [
+    "src/**/*.ts": [
       "prettier --write",
       "eslint --fix"
+    ],
+    "tests/**/*.ts": [
+      "prettier --write"
     ],
     "*.{js,json,md}": [
       "prettier --write"

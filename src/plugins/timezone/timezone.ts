@@ -216,8 +216,9 @@ export default {
 
       // Check if in UTC
       isUTC(): boolean {
-        // Check if this instance was created with UTC flag
-        return !!(this as any)._isUTC || this.offset() === 0;
+        // Only check if this instance was created with UTC flag
+        // Don't check offset() === 0 because local time can have 0 offset in UTC timezone
+        return !!(this as any)._isUTC;
       },
 
       // Convert to local time
@@ -226,9 +227,9 @@ export default {
         if (!this.isUTC()) {
           return this.clone();
         }
-        // Convert from UTC to local
-        const localDate = new Date(this.toDate().getTime());
-        const instance = kairos(localDate);
+        // Convert from UTC to local time
+        // Create a new instance without the UTC flag
+        const instance = kairos(this.toDate());
         delete (instance as any)._isUTC;
         return instance;
       },
