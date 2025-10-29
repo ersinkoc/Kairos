@@ -214,6 +214,6 @@ export const federalHolidays = holidays.filter((h) => [
     'veterans-day',
     'thanksgiving',
     'christmas-day',
-].includes(h.id));
+].includes(h.id || ''));
 export const allHolidays = [...holidays, ...Object.values(stateHolidays).flat()];
 //# sourceMappingURL=holidays.js.map

@@ -1,15 +1,17 @@
 /*!
- * Kairos v1.0.0
+ * Kairos v1.1.0
  * (c) 2025 Ersin Koc
  * Released under the MIT License
  * https://github.com/ersinkoc/kairos
  */
-var kairos = (function (exports) {
+var kairos = (function (exports, events) {
     'use strict';
 
     class LRUCache {
         constructor(maxSize = 1000) {
             this.cache = new Map();
+            this.hits = 0;
+            this.misses = 0;
             this.maxSize = maxSize;
         }
         get(key) {
@@ -17,8 +19,11 @@ var kairos = (function (exports) {
             if (value !== undefined) {
                 this.cache.delete(key);
                 this.cache.set(key, value);
+                this.hits++;
+                return value;
             }
-            return value;
+            this.misses++;
+            return undefined;
         }
         set(key, value) {
             if (this.cache.has(key)) {
@@ -37,22 +42,70 @@ var kairos = (function (exports) {
         }
         clear() {
             this.cache.clear();
+            this.hits = 0;
+            this.misses = 0;
         }
         size() {
             return this.cache.size;
         }
+        getHitRate() {
+            const total = this.hits + this.misses;
+            return total === 0 ? 0 : this.hits / total;
+        }
+        getStats() {
+            return {
+                size: this.cache.size,
+                maxSize: this.maxSize,
+                hits: this.hits,
+                misses: this.misses,
+                hitRate: this.getHitRate(),
+            };
+        }
+        getMultiple(keys) {
+            const result = new Map();
+            for (const key of keys) {
+                const value = this.get(key);
+                if (value !== undefined) {
+                    result.set(key, value);
+                }
+            }
+            return result;
+        }
+        setMultiple(entries) {
+            for (const [key, value] of entries) {
+                this.set(key, value);
+            }
+        }
+        cleanup(shouldEvict) {
+            for (const [key, value] of this.cache) {
+                if (shouldEvict(key, value)) {
+                    this.cache.delete(key);
+                }
+            }
+        }
+        delete(key) {
+            return this.cache.delete(key);
+        }
     }
-    function memoize(fn, keyGenerator) {
-        const cache = new LRUCache();
+    function memoize(fn, keyGenerator, options) {
+        const cache = new LRUCache(options?.maxSize || 1000);
+        const ttl = options?.ttl;
         return ((...args) => {
             const key = keyGenerator ? keyGenerator(...args) : JSON.stringify(args);
-            if (cache.has(key)) {
-                return cache.get(key);
+            const cached = cache.get(key);
+            if (cached) {
+                if (!ttl || Date.now() - cached.timestamp < ttl) {
+                    return cached.value;
+                }
+                cache.delete(key);
             }
             const result = fn(...args);
-            cache.set(key, result);
+            cache.set(key, { value: result, timestamp: Date.now() });
             return result;
         });
+    }
+    function memoizeDate(fn, keyGenerator) {
+        return memoize(fn, keyGenerator, { maxSize: 10000, ttl: 60000 });
     }
     function createDateCache() {
         return new LRUCache(10000);
@@ -60,6 +113,394 @@ var kairos = (function (exports) {
     function createHolidayCache() {
         return new LRUCache(5000);
     }
+
+    class ObjectPool {
+        constructor(createFn, options) {
+            this.pool = [];
+            this.created = 0;
+            this.reused = 0;
+            this.createFn = createFn;
+            this.resetFn =
+                options?.resetFn ||
+                    ((obj) => {
+                        if (obj && typeof obj === 'object' && 'reset' in obj && typeof obj.reset === 'function') {
+                            obj.reset();
+                        }
+                    });
+            this.maxSize = options?.maxSize || 100;
+        }
+        acquire() {
+            if (this.pool.length > 0) {
+                const obj = this.pool.pop();
+                this.reused++;
+                return obj;
+            }
+            this.created++;
+            return this.createFn();
+        }
+        release(obj) {
+            if (this.pool.length < this.maxSize) {
+                if (this.resetFn) {
+                    this.resetFn(obj);
+                }
+                this.pool.push(obj);
+            }
+        }
+        preWarm(count) {
+            for (let i = 0; i < count; i++) {
+                const obj = this.createFn();
+                this.pool.push(obj);
+            }
+        }
+        clear() {
+            this.pool = [];
+        }
+        getStats() {
+            return {
+                poolSize: this.pool.length,
+                maxSize: this.maxSize,
+                created: this.created,
+                reused: this.reused,
+                reuseRate: this.reused / (this.created + this.reused) || 0,
+                efficiency: this.reused / this.created || 0,
+            };
+        }
+    }
+    const datePool = new ObjectPool(() => new Date(), {
+        maxSize: 50,
+        resetFn: (date) => date.setTime(0),
+    });
+    new ObjectPool(() => [], {
+        maxSize: 20,
+        resetFn: (arr) => (arr.length = 0),
+    });
+    new ObjectPool(() => new Map(), {
+        maxSize: 20,
+        resetFn: (map) => map.clear(),
+    });
+    new ObjectPool(() => new Set(), {
+        maxSize: 20,
+        resetFn: (set) => set.clear(),
+    });
+    function createPool(createFn, options) {
+        return new ObjectPool(createFn, options);
+    }
+    class PoolManager {
+        constructor() {
+            this.pools = new Map();
+        }
+        register(name, createFn, options) {
+            const pool = new ObjectPool(createFn, options);
+            this.pools.set(name, pool);
+            return pool;
+        }
+        getPool(name) {
+            return this.pools.get(name);
+        }
+        preWarmAll(counts) {
+            for (const [name, count] of Object.entries(counts)) {
+                const pool = this.pools.get(name);
+                if (pool) {
+                    pool.preWarm(count);
+                }
+            }
+        }
+        clearAll() {
+            for (const pool of this.pools.values()) {
+                pool.clear();
+            }
+        }
+        getAllStats() {
+            const stats = {};
+            for (const [name, pool] of this.pools) {
+                stats[name] = pool.getStats();
+            }
+            return stats;
+        }
+    }
+    const globalPoolManager = new PoolManager();
+    globalPoolManager.register('date', () => new Date(), {
+        maxSize: 50,
+        resetFn: (date) => date.setTime(0),
+    });
+    globalPoolManager.register('array', () => [], {
+        maxSize: 20,
+        resetFn: (arr) => (arr.length = 0),
+    });
+    globalPoolManager.register('map', () => new Map(), {
+        maxSize: 20,
+        resetFn: (map) => map.clear(),
+    });
+    globalPoolManager.register('set', () => new Set(), {
+        maxSize: 20,
+        resetFn: (set) => set.clear(),
+    });
+
+    class MemoryMonitor extends events.EventEmitter {
+        constructor(options) {
+            super();
+            this.snapshots = [];
+            this.monitoring = false;
+            this.interval = null;
+            this.lastHeapUsed = 0;
+            this.maxSnapshots = options?.maxSnapshots || 100;
+            this.checkInterval = options?.checkInterval || 1000;
+            this.thresholds = {
+                heapUsed: {
+                    warning: 200,
+                    critical: 400,
+                    emergency: 600,
+                },
+                rss: {
+                    warning: 300,
+                    critical: 500,
+                    emergency: 800,
+                },
+                heapGrowthRate: {
+                    warning: 10,
+                    critical: 20,
+                    emergency: 50,
+                },
+                ...options?.thresholds,
+            };
+        }
+        takeSnapshot() {
+            const memUsage = process.memoryUsage();
+            const snapshot = {
+                timestamp: Date.now(),
+                rss: memUsage.rss / 1024 / 1024,
+                heapTotal: memUsage.heapTotal / 1024 / 1024,
+                heapUsed: memUsage.heapUsed / 1024 / 1024,
+                external: memUsage.external / 1024 / 1024,
+                arrayBuffers: memUsage.arrayBuffers / 1024 / 1024,
+            };
+            this.snapshots.push(snapshot);
+            if (this.snapshots.length > this.maxSnapshots) {
+                this.snapshots.shift();
+            }
+            return snapshot;
+        }
+        checkThresholds(snapshot) {
+            const alerts = [];
+            if (this.thresholds.heapUsed) {
+                const { warning, critical, emergency } = this.thresholds.heapUsed;
+                if (snapshot.heapUsed >= emergency) {
+                    alerts.push({
+                        type: 'emergency',
+                        message: `Heap usage critically high: ${snapshot.heapUsed.toFixed(2)}MB`,
+                        threshold: emergency,
+                        current: snapshot.heapUsed,
+                        timestamp: snapshot.timestamp,
+                    });
+                }
+                else if (snapshot.heapUsed >= critical) {
+                    alerts.push({
+                        type: 'critical',
+                        message: `Heap usage very high: ${snapshot.heapUsed.toFixed(2)}MB`,
+                        threshold: critical,
+                        current: snapshot.heapUsed,
+                        timestamp: snapshot.timestamp,
+                    });
+                }
+                else if (snapshot.heapUsed >= warning) {
+                    alerts.push({
+                        type: 'warning',
+                        message: `Heap usage elevated: ${snapshot.heapUsed.toFixed(2)}MB`,
+                        threshold: warning,
+                        current: snapshot.heapUsed,
+                        timestamp: snapshot.timestamp,
+                    });
+                }
+            }
+            if (this.thresholds.rss) {
+                const { warning, critical, emergency } = this.thresholds.rss;
+                if (snapshot.rss >= emergency) {
+                    alerts.push({
+                        type: 'emergency',
+                        message: `RSS critically high: ${snapshot.rss.toFixed(2)}MB`,
+                        threshold: emergency,
+                        current: snapshot.rss,
+                        timestamp: snapshot.timestamp,
+                    });
+                }
+                else if (snapshot.rss >= critical) {
+                    alerts.push({
+                        type: 'critical',
+                        message: `RSS very high: ${snapshot.rss.toFixed(2)}MB`,
+                        threshold: critical,
+                        current: snapshot.rss,
+                        timestamp: snapshot.timestamp,
+                    });
+                }
+                else if (snapshot.rss >= warning) {
+                    alerts.push({
+                        type: 'warning',
+                        message: `RSS elevated: ${snapshot.rss.toFixed(2)}MB`,
+                        threshold: warning,
+                        current: snapshot.rss,
+                        timestamp: snapshot.timestamp,
+                    });
+                }
+            }
+            if (this.thresholds.heapGrowthRate && this.lastHeapUsed > 0) {
+                const growth = snapshot.heapUsed - this.lastHeapUsed;
+                const { warning, critical, emergency } = this.thresholds.heapGrowthRate;
+                if (growth >= emergency) {
+                    alerts.push({
+                        type: 'emergency',
+                        message: `Rapid heap growth: ${growth.toFixed(2)}MB in ${this.checkInterval}ms`,
+                        threshold: emergency,
+                        current: growth,
+                        timestamp: snapshot.timestamp,
+                    });
+                }
+                else if (growth >= critical) {
+                    alerts.push({
+                        type: 'critical',
+                        message: `High heap growth: ${growth.toFixed(2)}MB in ${this.checkInterval}ms`,
+                        threshold: critical,
+                        current: growth,
+                        timestamp: snapshot.timestamp,
+                    });
+                }
+                else if (growth >= warning) {
+                    alerts.push({
+                        type: 'warning',
+                        message: `Heap growth detected: ${growth.toFixed(2)}MB in ${this.checkInterval}ms`,
+                        threshold: warning,
+                        current: growth,
+                        timestamp: snapshot.timestamp,
+                    });
+                }
+            }
+            this.lastHeapUsed = snapshot.heapUsed;
+            return alerts;
+        }
+        monitor() {
+            const snapshot = this.takeSnapshot();
+            const alerts = this.checkThresholds(snapshot);
+            for (const alert of alerts) {
+                this.emit('alert', alert);
+                if (alert.type === 'emergency') {
+                    this.emit('emergency', alert);
+                }
+                else if (alert.type === 'critical') {
+                    this.emit('critical', alert);
+                }
+            }
+            this.emit('snapshot', snapshot);
+        }
+        start() {
+            if (this.monitoring) {
+                return;
+            }
+            this.monitoring = true;
+            this.interval = setInterval(() => {
+                this.monitor();
+            }, this.checkInterval);
+            this.emit('started');
+        }
+        stop() {
+            if (!this.monitoring) {
+                return;
+            }
+            if (this.interval) {
+                clearInterval(this.interval);
+                this.interval = null;
+            }
+            this.monitoring = false;
+            this.emit('stopped');
+        }
+        isMonitoring() {
+            return this.monitoring;
+        }
+        getSnapshots(count) {
+            if (count) {
+                return this.snapshots.slice(-count);
+            }
+            return [...this.snapshots];
+        }
+        getLatestSnapshot() {
+            return this.snapshots.length > 0 ? this.snapshots[this.snapshots.length - 1] : null;
+        }
+        getStats() {
+            if (this.snapshots.length === 0) {
+                return null;
+            }
+            const heapUsages = this.snapshots.map((s) => s.heapUsed);
+            const rssUsages = this.snapshots.map((s) => s.rss);
+            return {
+                snapshotCount: this.snapshots.length,
+                monitoring: this.monitoring,
+                checkInterval: this.checkInterval,
+                timeRange: {
+                    start: this.snapshots[0].timestamp,
+                    end: this.snapshots[this.snapshots.length - 1].timestamp,
+                    duration: this.snapshots[this.snapshots.length - 1].timestamp - this.snapshots[0].timestamp,
+                },
+                heap: {
+                    current: this.snapshots[this.snapshots.length - 1].heapUsed,
+                    min: Math.min(...heapUsages),
+                    max: Math.max(...heapUsages),
+                    avg: heapUsages.reduce((sum, val) => sum + val, 0) / heapUsages.length,
+                    growth: this.snapshots[this.snapshots.length - 1].heapUsed - this.snapshots[0].heapUsed,
+                },
+                rss: {
+                    current: this.snapshots[this.snapshots.length - 1].rss,
+                    min: Math.min(...rssUsages),
+                    max: Math.max(...rssUsages),
+                    avg: rssUsages.reduce((sum, val) => sum + val, 0) / rssUsages.length,
+                    growth: this.snapshots[this.snapshots.length - 1].rss - this.snapshots[0].rss,
+                },
+            };
+        }
+        clearSnapshots() {
+            this.snapshots = [];
+            this.lastHeapUsed = 0;
+            this.emit('cleared');
+        }
+        updateThresholds(newThresholds) {
+            this.thresholds = { ...this.thresholds, ...newThresholds };
+            this.emit('thresholds-updated', this.thresholds);
+        }
+        getThresholds() {
+            return { ...this.thresholds };
+        }
+        forceGC() {
+            if (global.gc) {
+                global.gc();
+                this.emit('gc-forced');
+                return true;
+            }
+            return false;
+        }
+        detectMemoryLeaks(windowSize = 10, threshold = 5) {
+            if (this.snapshots.length < windowSize) {
+                return false;
+            }
+            const recent = this.snapshots.slice(-windowSize);
+            const heapUsages = recent.map((s) => s.heapUsed);
+            let growingCount = 0;
+            for (let i = 1; i < heapUsages.length; i++) {
+                if (heapUsages[i] > heapUsages[i - 1]) {
+                    growingCount++;
+                }
+            }
+            const growthRatio = growingCount / (heapUsages.length - 1);
+            const totalGrowth = heapUsages[heapUsages.length - 1] - heapUsages[0];
+            const isLeaking = growthRatio > 0.7 && totalGrowth > threshold;
+            if (isLeaking) {
+                this.emit('memory-leak-detected', {
+                    windowSize,
+                    growthRatio,
+                    totalGrowth,
+                    duration: recent[recent.length - 1].timestamp - recent[0].timestamp,
+                });
+            }
+            return isLeaking;
+        }
+    }
+    const globalMemoryMonitor = new MemoryMonitor();
 
     function isValidDate(date) {
         return date instanceof Date && !isNaN(date.getTime());
@@ -70,13 +511,13 @@ var kairos = (function (exports) {
     function isValidString(value) {
         return typeof value === 'string' && value.length > 0;
     }
-    function isValidYear(year) {
+    function isValidYear$1(year) {
         return isValidNumber(year) && year >= 1000 && year <= 9999;
     }
-    function isValidMonth(month) {
+    function isValidMonth$1(month) {
         return isValidNumber(month) && month >= 1 && month <= 12;
     }
-    function isValidDay(day) {
+    function isValidDay$1(day) {
         return isValidNumber(day) && day >= 1 && day <= 31;
     }
     function isValidWeekday(weekday) {
@@ -85,7 +526,7 @@ var kairos = (function (exports) {
     function isValidNth(nth) {
         return isValidNumber(nth) && ((nth >= 1 && nth <= 5) || nth === -1);
     }
-    function validateHolidayRule(rule) {
+    function validateHolidayRule$1(rule) {
         const errors = [];
         if (!rule || typeof rule !== 'object') {
             errors.push('Rule must be an object');
@@ -104,15 +545,15 @@ var kairos = (function (exports) {
         }
         switch (rule.type) {
             case 'fixed':
-                if (!isValidMonth(rule.rule.month)) {
+                if (!isValidMonth$1(rule.rule.month)) {
                     errors.push('Fixed rule month must be 1-12');
                 }
-                if (!isValidDay(rule.rule.day)) {
+                if (!isValidDay$1(rule.rule.day)) {
                     errors.push('Fixed rule day must be 1-31');
                 }
                 break;
             case 'nth-weekday':
-                if (!isValidMonth(rule.rule.month)) {
+                if (!isValidMonth$1(rule.rule.month)) {
                     errors.push('Nth-weekday rule month must be 1-12');
                 }
                 if (!isValidWeekday(rule.rule.weekday)) {
@@ -135,10 +576,10 @@ var kairos = (function (exports) {
                 if (!validCalendars.includes(rule.rule.calendar)) {
                     errors.push(`Lunar rule calendar must be one of: ${validCalendars.join(', ')}`);
                 }
-                if (!isValidMonth(rule.rule.month)) {
+                if (!isValidMonth$1(rule.rule.month)) {
                     errors.push('Lunar rule month must be 1-12');
                 }
-                if (!isValidDay(rule.rule.day)) {
+                if (!isValidDay$1(rule.rule.day)) {
                     errors.push('Lunar rule day must be 1-31');
                 }
                 break;
@@ -176,7 +617,107 @@ var kairos = (function (exports) {
             (('year' in obj && 'month' in obj && 'day' in obj) || 'date' in obj));
     };
     const globalCache = new LRUCache(1000);
+    const REGEX_CACHE = {
+        dateOnly: /^\d{4}-\d{2}-\d{2}$/,
+        european: /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/,
+        iso8601: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,
+        usFormat: /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
+    };
+    const parseCache = new LRUCache(5000);
+    const isValidDateComponents = (year, month, day) => {
+        if (year < 1 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) {
+            return false;
+        }
+        const date = new Date(year, month - 1, day, 0, 0, 0, 0);
+        return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+    };
+    const parseISODate = memoizeDate((input) => {
+        if (REGEX_CACHE.dateOnly.test(input)) {
+            const [year, month, day] = input.split('-').map(Number);
+            if (isValidDateComponents(year, month, day)) {
+                return new Date(year, month - 1, day, 0, 0, 0, 0);
+            }
+            return null;
+        }
+        return null;
+    }, (input) => input);
+    const parseEuropeanDate = memoizeDate((input) => {
+        const match = input.match(REGEX_CACHE.european);
+        if (match) {
+            const day = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10);
+            const year = parseInt(match[3], 10);
+            if (isValidDateComponents(year, month, day)) {
+                return new Date(year, month - 1, day, 0, 0, 0, 0);
+            }
+            return null;
+        }
+        return null;
+    }, (input) => input);
+    const parseUSDate = memoizeDate((input) => {
+        const match = input.match(REGEX_CACHE.usFormat);
+        if (match) {
+            const month = parseInt(match[1], 10);
+            const day = parseInt(match[2], 10);
+            const year = parseInt(match[3], 10);
+            if (isValidDateComponents(year, month, day)) {
+                return new Date(year, month - 1, day, 0, 0, 0, 0);
+            }
+            return null;
+        }
+        return null;
+    }, (input) => input);
     class KairosCore {
+        static enableMemoryMonitoring(thresholds) {
+            if (!this._memoryMonitorEnabled) {
+                if (thresholds) {
+                    globalMemoryMonitor.updateThresholds(thresholds);
+                }
+                globalMemoryMonitor.start();
+                this._memoryMonitorEnabled = true;
+                globalMemoryMonitor.on('emergency', (alert) => {
+                    console.error(`🚨 Memory Emergency: ${alert.message}`);
+                    globalMemoryMonitor.forceGC();
+                });
+                globalMemoryMonitor.on('critical', (alert) => {
+                    console.warn(`⚠️ Memory Critical: ${alert.message}`);
+                });
+                globalMemoryMonitor.on('memory-leak-detected', (info) => {
+                    console.error(`💧 Memory Leak Detected: Growth ratio: ${(info.growthRatio * 100).toFixed(1)}%`);
+                });
+            }
+        }
+        static disableMemoryMonitoring() {
+            if (this._memoryMonitorEnabled) {
+                globalMemoryMonitor.stop();
+                this._memoryMonitorEnabled = false;
+            }
+        }
+        static isMemoryMonitoringEnabled() {
+            return this._memoryMonitorEnabled;
+        }
+        static enableObjectPooling() {
+            this._objectPoolEnabled = true;
+            globalPoolManager.preWarmAll({
+                date: 20,
+                array: 10,
+                map: 5,
+                set: 5,
+            });
+        }
+        static disableObjectPooling() {
+            this._objectPoolEnabled = false;
+            globalPoolManager.clearAll();
+        }
+        static isObjectPoolingEnabled() {
+            return this._objectPoolEnabled;
+        }
+        static getMemoryStats() {
+            return globalMemoryMonitor.getStats();
+        }
+        static getObjectPoolStats() {
+            return globalPoolManager.getAllStats();
+        }
         constructor(input) {
             this._date = this.parseInput(input);
         }
@@ -188,55 +729,43 @@ var kairos = (function (exports) {
                 return new Date(input.getTime());
             }
             if (typeof input === 'number') {
-                if (isNaN(input)) {
-                    return new Date(NaN);
-                }
-                return new Date(input);
+                return isNaN(input) ? new Date(NaN) : new Date(input);
             }
             if (typeof input === 'string') {
-                if (input.toLowerCase() === 'invalid' || input === '') {
-                    return new Date(NaN);
+                if (parseCache.has(input)) {
+                    const cached = parseCache.get(input);
+                    return new Date(cached.getTime());
                 }
-                const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
-                if (dateOnlyPattern.test(input)) {
-                    const [year, month, day] = input.split('-').map(Number);
-                    if (month < 1 || month > 12) {
-                        return new Date(NaN);
-                    }
-                    const date = new Date(year, month - 1, day, 0, 0, 0, 0);
-                    if (date.getFullYear() !== year ||
-                        date.getMonth() !== month - 1 ||
-                        date.getDate() !== day) {
-                        return new Date(NaN);
-                    }
-                    return date;
+                if (input.length === 0 || input.toLowerCase() === 'invalid') {
+                    const invalid = new Date(NaN);
+                    parseCache.set(input, invalid);
+                    return invalid;
                 }
-                const europeanPattern = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/;
-                if (europeanPattern.test(input)) {
-                    const match = input.match(europeanPattern);
-                    if (match) {
-                        const day = parseInt(match[1], 10);
-                        const month = parseInt(match[2], 10);
-                        const year = parseInt(match[3], 10);
-                        if (month < 1 || month > 12 || day < 1 || day > 31) {
-                            return new Date(NaN);
-                        }
-                        const date = new Date(year, month - 1, day, 0, 0, 0, 0);
-                        if (date.getFullYear() !== year ||
-                            date.getMonth() !== month - 1 ||
-                            date.getDate() !== day) {
-                            return new Date(NaN);
-                        }
-                        return date;
-                    }
+                let result = null;
+                result = parseISODate(input);
+                if (result) {
+                    parseCache.set(input, result);
+                    return result;
+                }
+                result = parseEuropeanDate(input);
+                if (result) {
+                    parseCache.set(input, result);
+                    return result;
+                }
+                result = parseUSDate(input);
+                if (result) {
+                    parseCache.set(input, result);
+                    return result;
                 }
                 const parsed = new Date(input);
                 if (isNaN(parsed.getTime())) {
                     if (KairosCore.config.strict) {
                         throwError(`Invalid date string: ${input}`, 'INVALID_DATE');
                     }
+                    parseCache.set(input, new Date(NaN));
                     return new Date(NaN);
                 }
+                parseCache.set(input, parsed);
                 return parsed;
             }
             if (input && typeof input === 'object') {
@@ -288,6 +817,19 @@ var kairos = (function (exports) {
             return new Date(this._date.getTime());
         }
         clone() {
+            if (KairosCore._objectPoolEnabled) {
+                const pooledDate = datePool.acquire();
+                pooledDate.setTime(this._date.getTime());
+                const instance = new KairosCore(pooledDate);
+                if (typeof globalThis !== 'undefined' && 'FinalizationRegistry' in globalThis) {
+                    const FinalizationRegistry = globalThis.FinalizationRegistry;
+                    const registry = new FinalizationRegistry((date) => {
+                        datePool.release(date);
+                    });
+                    registry.register(instance, pooledDate);
+                }
+                return instance;
+            }
             return new KairosCore(this._date);
         }
         year(value) {
@@ -549,6 +1091,8 @@ var kairos = (function (exports) {
         strict: false,
         suppressDeprecationWarnings: false,
     };
+    KairosCore._memoryMonitorEnabled = false;
+    KairosCore._objectPoolEnabled = true;
     class PluginSystem {
         static use(plugin) {
             const plugins = Array.isArray(plugin) ? plugin : [plugin];
@@ -651,6 +1195,596 @@ var kairos = (function (exports) {
         return instance;
     };
     kairos.unix = (timestamp) => new KairosCore(new Date(timestamp * 1000));
+
+    const createTimestamp = (value) => value;
+    const createYear = (value) => value;
+    const createMonth = (value) => value;
+    const createDay = (value) => value;
+    const createHour = (value) => value;
+    const createMinute = (value) => value;
+    const createSecond = (value) => value;
+    const createMillisecond = (value) => value;
+    const createDayOfWeek = (value) => value;
+    const createDayOfYear = (value) => value;
+    const createWeekOfYear = (value) => value;
+    const createLocaleCode = (value) => value;
+    const createTimeZone = (value) => value;
+    const createFormatString = (value) => value;
+    const createDateString = (value) => value;
+    const createHolidayId = (value) => value;
+    const createBusinessDayId = (value) => value;
+    const isValidTimestamp = (value) => Number.isInteger(value) && value >= -8640000000000000 && value <= 8640000000000000;
+    const isValidYear = (value) => Number.isInteger(value) && value >= 1 && value <= 9999;
+    const isValidMonth = (value) => Number.isInteger(value) && value >= 1 && value <= 12;
+    const isValidDay = (value) => Number.isInteger(value) && value >= 1 && value <= 31;
+    const isValidHour = (value) => Number.isInteger(value) && value >= 0 && value <= 23;
+    const isValidMinute = (value) => Number.isInteger(value) && value >= 0 && value <= 59;
+    const isValidSecond = (value) => Number.isInteger(value) && value >= 0 && value <= 59;
+    const isValidMillisecond = (value) => Number.isInteger(value) && value >= 0 && value <= 999;
+    const isValidDayOfWeek = (value) => Number.isInteger(value) && value >= 0 && value <= 6;
+    const isValidDayOfYear = (value) => Number.isInteger(value) && value >= 1 && value <= 366;
+    const isValidWeekOfYear = (value) => Number.isInteger(value) && value >= 1 && value <= 53;
+    const isValidLocaleCode = (value) => /^[a-z]{2}-[A-Z]{2}$/.test(value);
+    const isValidFormatString = (value) => value.length > 0 && /^[A-Za-z0-9\-\s]+$/.test(value);
+    const toTimestamp = (value) => isValidTimestamp(value) ? createTimestamp(value) : null;
+    const toYear = (value) => isValidYear(value) ? createYear(value) : null;
+    const toMonth = (value) => isValidMonth(value) ? createMonth(value) : null;
+    const toDay = (value) => (isValidDay(value) ? createDay(value) : null);
+    const toHour = (value) => isValidHour(value) ? createHour(value) : null;
+    const toMinute = (value) => isValidMinute(value) ? createMinute(value) : null;
+    const toSecond = (value) => isValidSecond(value) ? createSecond(value) : null;
+    const toMillisecond = (value) => isValidMillisecond(value) ? createMillisecond(value) : null;
+    const toDayOfWeek = (value) => isValidDayOfWeek(value) ? createDayOfWeek(value) : null;
+    const toDayOfYear = (value) => isValidDayOfYear(value) ? createDayOfYear(value) : null;
+    const toWeekOfYear = (value) => isValidWeekOfYear(value) ? createWeekOfYear(value) : null;
+    const toLocaleCode = (value) => isValidLocaleCode(value) ? createLocaleCode(value) : null;
+    const toFormatString = (value) => isValidFormatString(value) ? createFormatString(value) : null;
+    const isTimestamp = (value) => typeof value === 'number' && isValidTimestamp(value);
+    const isYear = (value) => typeof value === 'number' && isValidYear(value);
+    const isMonth = (value) => typeof value === 'number' && isValidMonth(value);
+    const isDay = (value) => typeof value === 'number' && isValidDay(value);
+    const isHour = (value) => typeof value === 'number' && isValidHour(value);
+    const isMinute = (value) => typeof value === 'number' && isValidMinute(value);
+    const isSecond = (value) => typeof value === 'number' && isValidSecond(value);
+    const isMillisecond = (value) => typeof value === 'number' && isValidMillisecond(value);
+    const isDayOfWeek = (value) => typeof value === 'number' && isValidDayOfWeek(value);
+    const isDayOfYear = (value) => typeof value === 'number' && isValidDayOfYear(value);
+    const isWeekOfYear = (value) => typeof value === 'number' && isValidWeekOfYear(value);
+    const isLocaleCode = (value) => typeof value === 'string' && isValidLocaleCode(value);
+    const isFormatString = (value) => typeof value === 'string' && isValidFormatString(value);
+
+    const FORMAT_TOKENS = {
+        YYYY: {
+            token: 'YYYY',
+            category: 'year',
+            length: 4,
+            description: '4-digit year',
+            example: '2024',
+        },
+        YY: { token: 'YY', category: 'year', length: 2, description: '2-digit year', example: '24' },
+        Y: { token: 'Y', category: 'year', length: 1, description: 'Year (flexible)', example: '2024' },
+        MMMM: {
+            token: 'MMMM',
+            category: 'month',
+            length: 4,
+            description: 'Full month name',
+            example: 'January',
+        },
+        MMM: {
+            token: 'MMM',
+            category: 'month',
+            length: 3,
+            description: 'Short month name',
+            example: 'Jan',
+        },
+        MM: {
+            token: 'MM',
+            category: 'month',
+            length: 2,
+            description: 'Zero-padded month',
+            example: '01',
+        },
+        M: { token: 'M', category: 'month', length: 1, description: 'Month', example: '1' },
+        DDDD: { token: 'DDDD', category: 'day', length: 4, description: 'Day of year', example: '001' },
+        DD: { token: 'DD', category: 'day', length: 2, description: 'Zero-padded day', example: '01' },
+        D: { token: 'D', category: 'day', length: 1, description: 'Day', example: '1' },
+        dddd: {
+            token: 'dddd',
+            category: 'weekday',
+            length: 4,
+            description: 'Full weekday name',
+            example: 'Monday',
+        },
+        ddd: {
+            token: 'ddd',
+            category: 'weekday',
+            length: 3,
+            description: 'Short weekday name',
+            example: 'Mon',
+        },
+        dd: {
+            token: 'dd',
+            category: 'weekday',
+            length: 2,
+            description: 'Min weekday name',
+            example: 'Mo',
+        },
+        d: { token: 'd', category: 'weekday', length: 1, description: 'Weekday', example: '1' },
+        HH: {
+            token: 'HH',
+            category: 'hour',
+            length: 2,
+            description: '24-hour, zero-padded',
+            example: '14',
+        },
+        H: { token: 'H', category: 'hour', length: 1, description: '24-hour', example: '14' },
+        hh: {
+            token: 'hh',
+            category: 'hour',
+            length: 2,
+            description: '12-hour, zero-padded',
+            example: '02',
+        },
+        h: { token: 'h', category: 'hour', length: 1, description: '12-hour', example: '2' },
+        mm: {
+            token: 'mm',
+            category: 'minute',
+            length: 2,
+            description: 'Zero-padded minutes',
+            example: '05',
+        },
+        m: { token: 'm', category: 'minute', length: 1, description: 'Minutes', example: '5' },
+        ss: {
+            token: 'ss',
+            category: 'second',
+            length: 2,
+            description: 'Zero-padded seconds',
+            example: '09',
+        },
+        s: { token: 's', category: 'second', length: 1, description: 'Seconds', example: '9' },
+        SSS: {
+            token: 'SSS',
+            category: 'millisecond',
+            length: 3,
+            description: 'Zero-padded milliseconds',
+            example: '123',
+        },
+        SS: {
+            token: 'SS',
+            category: 'millisecond',
+            length: 2,
+            description: '2-digit milliseconds',
+            example: '12',
+        },
+        S: { token: 'S', category: 'millisecond', length: 1, description: 'Milliseconds', example: '1' },
+        A: { token: 'A', category: 'meridiem', length: 1, description: 'AM/PM uppercase', example: 'PM' },
+        a: { token: 'a', category: 'meridiem', length: 1, description: 'am/pm lowercase', example: 'pm' },
+        Z: {
+            token: 'Z',
+            category: 'timezone',
+            length: 1,
+            description: 'Timezone offset',
+            example: '+00:00',
+        },
+        ZZ: {
+            token: 'ZZ',
+            category: 'timezone',
+            length: 2,
+            description: 'Timezone offset',
+            example: '+0000',
+        },
+        ZZZ: {
+            token: 'ZZZ',
+            category: 'timezone',
+            length: 3,
+            description: 'Timezone name',
+            example: 'UTC',
+        },
+        X: {
+            token: 'X',
+            category: 'timestamp',
+            length: 1,
+            description: 'Unix timestamp (seconds)',
+            example: '1640995200',
+        },
+        x: {
+            token: 'x',
+            category: 'timestamp',
+            length: 1,
+            description: 'Unix timestamp (milliseconds)',
+            example: '1640995200000',
+        },
+        Q: { token: 'Q', category: 'quarter', length: 1, description: 'Quarter', example: '1' },
+        QQ: {
+            token: 'QQ',
+            category: 'quarter',
+            length: 2,
+            description: 'Zero-padded quarter',
+            example: '01',
+        },
+        wo: {
+            token: 'wo',
+            category: 'week',
+            length: 2,
+            description: 'Week of year ordinal',
+            example: '1st',
+        },
+        ww: { token: 'ww', category: 'week', length: 2, description: 'Week of year', example: '01' },
+        w: { token: 'w', category: 'week', length: 1, description: 'Week of year', example: '1' },
+        gg: {
+            token: 'gg',
+            category: 'weekYear',
+            length: 2,
+            description: '2-digit week year',
+            example: '24',
+        },
+        gggg: {
+            token: 'gggg',
+            category: 'weekYear',
+            length: 4,
+            description: '4-digit week year',
+            example: '2024',
+        },
+        k: { token: 'k', category: 'weekYear', length: 1, description: 'ISO week year', example: '2024' },
+        kk: {
+            token: 'kk',
+            category: 'weekYear',
+            length: 2,
+            description: '2-digit ISO week year',
+            example: '24',
+        },
+        E: { token: 'E', category: 'isoDay', length: 1, description: 'ISO day of week', example: '1' },
+        EE: { token: 'EE', category: 'isoDay', length: 2, description: '2-digit ISO day', example: '01' },
+        EEE: { token: 'EEE', category: 'isoDay', length: 3, description: 'ISO day name', example: 'Mon' },
+        L: { token: 'L', category: 'isoWeek', length: 1, description: 'ISO week of year', example: '1' },
+        LL: {
+            token: 'LL',
+            category: 'isoWeek',
+            length: 2,
+            description: '2-digit ISO week',
+            example: '01',
+        },
+        LLL: {
+            token: 'LLL',
+            category: 'isoWeek',
+            length: 3,
+            description: '3-digit ISO week',
+            example: '001',
+        },
+    };
+
+    class KairosBaseError extends Error {
+        constructor(type, message, code, input, context, locale = 'en-US') {
+            super(message);
+            this.name = this.constructor.name;
+            this.type = type;
+            this.code = code || type;
+            this.input = input;
+            this.timestamp = new Date();
+            if (context !== undefined) {
+                this.context = context;
+            }
+            this.locale = locale;
+            if (Error.captureStackTrace) {
+                Error.captureStackTrace(this, this.constructor);
+            }
+        }
+        getLocalizedMessage(locale) {
+            const targetLocale = locale || this.locale;
+            return this.translateMessage(targetLocale);
+        }
+        toJSON() {
+            return {
+                name: this.name,
+                type: this.type,
+                code: this.code,
+                message: this.message,
+                localizedMessage: this.getLocalizedMessage(),
+                input: this.input,
+                context: this.context,
+                timestamp: this.timestamp.toISOString(),
+                locale: this.locale,
+                stack: this.stack,
+            };
+        }
+        isType(type) {
+            return this.type === type;
+        }
+        hasCode(code) {
+            return this.code === code;
+        }
+        getDescription() {
+            return `${this.code}: ${this.getLocalizedMessage()}`;
+        }
+    }
+    class InvalidDateError extends KairosBaseError {
+        constructor(message, input, context, locale = 'en-US') {
+            super('INVALID_DATE', message, 'INVALID_DATE', input, context, locale);
+        }
+        translateMessage(locale) {
+            const messages = {
+                'en-US': 'Invalid date provided',
+                'es-ES': 'Fecha inválida proporcionada',
+                'fr-FR': 'Date invalide fournie',
+                'de-DE': 'Ungültiges Datum angegeben',
+                'it-IT': 'Data non valida fornita',
+                'pt-BR': 'Data inválida fornecida',
+                'ru-RU': 'Предоставлена недействительная дата',
+                'zh-CN': '提供的日期无效',
+                'ja-JP': '無効な日付が提供されました',
+                'tr-TR': 'Geçersiz tarih sağlandı',
+            };
+            return messages[locale] || messages['en-US'];
+        }
+    }
+    class InvalidFormatError extends KairosBaseError {
+        constructor(message, input, context, locale = 'en-US') {
+            super('INVALID_FORMAT', message, 'INVALID_FORMAT', input, context, locale);
+        }
+        translateMessage(locale) {
+            const messages = {
+                'en-US': 'Invalid format string',
+                'es-ES': 'Cadena de formato inválida',
+                'fr-FR': 'Chaîne de format invalide',
+                'de-DE': 'Ungültige Formatzeichenfolge',
+                'it-IT': 'Stringa di formato non valida',
+                'pt-BR': 'String de formato inválido',
+                'ru-RU': 'Недопустимая строка формата',
+                'zh-CN': '无效的格式字符串',
+                'ja-JP': '無効なフォーマット文字列',
+                'tr-TR': 'Geçersiz format dizesi',
+            };
+            return messages[locale] || messages['en-US'];
+        }
+    }
+    class InvalidLocaleError extends KairosBaseError {
+        constructor(message, input, context, locale = 'en-US') {
+            super('INVALID_LOCALE', message, 'INVALID_LOCALE', input, context, locale);
+        }
+        translateMessage(locale) {
+            const messages = {
+                'en-US': 'Invalid locale specified',
+                'es-ES': 'Configuración regional inválida especificada',
+                'fr-FR': 'Locale invalide spécifiée',
+                'de-DE': 'Ungültiges Gebietsschema angegeben',
+                'it-IT': 'Locale non valido specificato',
+                'pt-BR': 'Localidade inválida especificada',
+                'ru-RU': 'Указан недопустимый язык',
+                'zh-CN': '指定的区域设置无效',
+                'ja-JP': '無効なロケールが指定されました',
+                'tr-TR': 'Geçersiz yerel ayarı belirtildi',
+            };
+            return messages[locale] || messages['en-US'];
+        }
+    }
+    class InvalidTimezoneError extends KairosBaseError {
+        constructor(message, input, context, locale = 'en-US') {
+            super('INVALID_TIMEZONE', message, 'INVALID_TIMEZONE', input, context, locale);
+        }
+        translateMessage(locale) {
+            const messages = {
+                'en-US': 'Invalid timezone specified',
+                'es-ES': 'Zona horaria inválida especificada',
+                'fr-FR': 'Fuseau horaire invalide spécifié',
+                'de-DE': 'Ungültige Zeitzone angegeben',
+                'it-IT': 'Fuso orario non valido specificato',
+                'pt-BR': 'Fuso horário inválido especificado',
+                'ru-RU': 'Указан недопустимый часовой пояс',
+                'zh-CN': '指定的时区无效',
+                'ja-JP': '無効なタイムゾーンが指定されました',
+                'tr-TR': 'Geçersiz saat dilimi belirtildi',
+            };
+            return messages[locale] || messages['en-US'];
+        }
+    }
+    class ParsingError extends KairosBaseError {
+        constructor(message, input, context, locale = 'en-US') {
+            super('PARSING_ERROR', message, 'PARSING_ERROR', input, context, locale);
+        }
+        translateMessage(locale) {
+            const messages = {
+                'en-US': 'Failed to parse date/time',
+                'es-ES': 'Error al analizar fecha/hora',
+                'fr-FR': "Échec de l'analyse de la date/heure",
+                'de-DE': 'Fehler beim Parsen von Datum/Uhrzeit',
+                'it-IT': "Errore nell'analisi di data/ora",
+                'pt-BR': 'Falha ao analisar data/hora',
+                'ru-RU': 'Ошибка анализа даты/времени',
+                'zh-CN': '解析日期/时间失败',
+                'ja-JP': '日付/時刻の解析に失敗しました',
+                'tr-TR': 'Tarih/saat ayrıştırma başarısız',
+            };
+            return messages[locale] || messages['en-US'];
+        }
+    }
+    class ValidationError extends KairosBaseError {
+        constructor(field, message, value, constraint, context, locale = 'en-US') {
+            super('VALIDATION_ERROR', message, 'VALIDATION_ERROR', value, context, locale);
+            this.field = field;
+            this.value = value;
+            this.constraint = constraint;
+        }
+        translateMessage(locale) {
+            const messages = {
+                'en-US': `Validation failed for field '${this.field}'`,
+                'es-ES': `Validación fallida para el campo '${this.field}'`,
+                'fr-FR': `Échec de la validation pour le champ '${this.field}'`,
+                'de-DE': `Validierung fehlgeschlagen für Feld '${this.field}'`,
+                'it-IT': `Validazione fallita per il campo '${this.field}'`,
+                'pt-BR': `Validação falhou para o campo '${this.field}'`,
+                'ru-RU': `Ошибка валидации для поля '${this.field}'`,
+                'zh-CN': `字段'${this.field}'验证失败`,
+                'ja-JP': `フィールド'${this.field}'の検証に失敗しました`,
+                'tr-TR': `'${this.field}' alanı için doğrulama başarısız`,
+            };
+            return messages[locale] || messages['en-US'];
+        }
+        toJSON() {
+            return {
+                ...super.toJSON(),
+                field: this.field,
+                value: this.value,
+                constraint: this.constraint,
+            };
+        }
+    }
+    class PluginError extends KairosBaseError {
+        constructor(pluginName, pluginType, message, context, locale = 'en-US') {
+            super('PLUGIN_ERROR', message, 'PLUGIN_ERROR', pluginName, context, locale);
+            this.pluginName = pluginName;
+            this.pluginType = pluginType;
+        }
+        translateMessage(locale) {
+            const messages = {
+                'en-US': `Plugin '${this.pluginName}' error`,
+                'es-ES': `Error del plugin '${this.pluginName}'`,
+                'fr-FR': `Erreur du plugin '${this.pluginName}'`,
+                'de-DE': `Plugin '${this.pluginName}' Fehler`,
+                'it-IT': `Errore del plugin '${this.pluginName}'`,
+                'pt-BR': `Erro do plugin '${this.pluginName}'`,
+                'ru-RU': `Ошибка плагина '${this.pluginName}'`,
+                'zh-CN': `插件'${this.pluginName}'错误`,
+                'ja-JP': `プラグイン'${this.pluginName}'エラー`,
+                'tr-TR': `'${this.pluginName}' eklenti hatası`,
+            };
+            return messages[locale] || messages['en-US'];
+        }
+        toJSON() {
+            return {
+                ...super.toJSON(),
+                pluginName: this.pluginName,
+                pluginType: this.pluginType,
+            };
+        }
+    }
+    class ConfigurationError extends KairosBaseError {
+        constructor(configKey, message, configValue, context, locale = 'en-US') {
+            super('CONFIGURATION_ERROR', message, 'CONFIGURATION_ERROR', configKey, context, locale);
+            this.configKey = configKey;
+            this.configValue = configValue;
+        }
+        translateMessage(locale) {
+            const messages = {
+                'en-US': `Configuration error for '${this.configKey}'`,
+                'es-ES': `Error de configuración para '${this.configKey}'`,
+                'fr-FR': `Erreur de configuration pour '${this.configKey}'`,
+                'de-DE': `Konfigurationsfehler für '${this.configKey}'`,
+                'it-IT': `Errore di configurazione per '${this.configKey}'`,
+                'pt-BR': `Erro de configuração para '${this.configKey}'`,
+                'ru-RU': `Ошибка конфигурации для '${this.configKey}'`,
+                'zh-CN': `'${this.configKey}'配置错误`,
+                'ja-JP': `'${this.configKey}'設定エラー`,
+                'tr-TR': `'${this.configKey}' yapılandırma hatası`,
+            };
+            return messages[locale] || messages['en-US'];
+        }
+        toJSON() {
+            return {
+                ...super.toJSON(),
+                configKey: this.configKey,
+                configValue: this.configValue,
+            };
+        }
+    }
+    class ErrorFactory {
+        static setDefaultLocale(locale) {
+            this.defaultLocale = locale;
+        }
+        static createInvalidDate(input, context) {
+            return new InvalidDateError('Invalid date provided', input, context, this.defaultLocale);
+        }
+        static createInvalidFormat(format, context) {
+            return new InvalidFormatError(`Invalid format string: ${format}`, format, context, this.defaultLocale);
+        }
+        static createInvalidLocale(locale, context) {
+            return new InvalidLocaleError(`Invalid locale: ${locale}`, locale, context, this.defaultLocale);
+        }
+        static createInvalidTimezone(timezone, context) {
+            return new InvalidTimezoneError(`Invalid timezone: ${timezone}`, timezone, context, this.defaultLocale);
+        }
+        static createParsingError(input, originalError, context) {
+            const message = originalError
+                ? `Failed to parse: ${originalError.message}`
+                : `Failed to parse input: ${JSON.stringify(input)}`;
+            return new ParsingError(message, input, { ...context, originalError: originalError?.message }, this.defaultLocale);
+        }
+        static createValidationError(field, value, constraint, context) {
+            return new ValidationError(field, `Validation failed: ${constraint}`, value, constraint, context, this.defaultLocale);
+        }
+        static createPluginError(pluginName, pluginType, error, context) {
+            const message = typeof error === 'string' ? error : error.message;
+            return new PluginError(pluginName, pluginType, message, { ...context, originalError: typeof error === 'string' ? undefined : error.message }, this.defaultLocale);
+        }
+        static createConfigurationError(configKey, message, configValue, context) {
+            return new ConfigurationError(configKey, message, configValue, context, this.defaultLocale);
+        }
+    }
+    ErrorFactory.defaultLocale = 'en-US';
+    class ErrorHandler {
+        static isKairosError(error) {
+            return error instanceof KairosBaseError;
+        }
+        static wrapError(error, fallbackMessage = 'Unknown error occurred') {
+            if (error instanceof KairosBaseError) {
+                return error;
+            }
+            if (error instanceof Error) {
+                return new ParsingError(fallbackMessage, error.message, {
+                    originalError: error.message,
+                    stack: error.stack,
+                });
+            }
+            return new ParsingError(fallbackMessage, error);
+        }
+        static getErrorDetails(error) {
+            if (error instanceof KairosBaseError) {
+                const result = {
+                    type: error.type,
+                    message: error.getLocalizedMessage(),
+                    code: error.code,
+                };
+                if (error.input !== undefined) {
+                    result.input = error.input;
+                }
+                if (error.context !== undefined) {
+                    result.context = error.context;
+                }
+                if (error.stack !== undefined) {
+                    result.stack = error.stack;
+                }
+                return result;
+            }
+            if (error instanceof Error) {
+                const result = {
+                    type: 'GENERIC_ERROR',
+                    message: error.message,
+                    code: 'GENERIC',
+                };
+                if (error.stack !== undefined) {
+                    result.stack = error.stack;
+                }
+                return result;
+            }
+            return {
+                type: 'UNKNOWN_ERROR',
+                message: String(error),
+                code: 'UNKNOWN',
+                input: error,
+            };
+        }
+        static formatErrorForUser(error, locale) {
+            const details = this.getErrorDetails(error);
+            const targetLocale = locale || 'en-US';
+            if (error instanceof KairosBaseError) {
+                return error.getLocalizedMessage(targetLocale);
+            }
+            return details.message;
+        }
+        static formatErrorForLogging(error) {
+            const details = this.getErrorDetails(error);
+            return `[${details.type}] ${details.message} (${details.code})`;
+        }
+    }
 
     class LocaleManager {
         constructor() {
@@ -784,7 +1918,7 @@ var kairos = (function (exports) {
             this.calculators.set(type, calculator);
         }
         calculate(rule, year) {
-            const errors = validateHolidayRule(rule);
+            const errors = validateHolidayRule$1(rule);
             if (errors.length > 0) {
                 throw new Error(`Invalid holiday rule: ${errors.join(', ')}`);
             }
@@ -910,7 +2044,7 @@ var kairos = (function (exports) {
             return result.sort((a, b) => a.date.getTime() - b.date.getTime());
         }
         calculateWithContext(rule, year, allHolidays) {
-            const errors = validateHolidayRule(rule);
+            const errors = validateHolidayRule$1(rule);
             if (errors.length > 0) {
                 throw new Error(`Invalid holiday rule: ${errors.join(', ')}`);
             }
@@ -2935,7 +4069,7 @@ var kairos = (function (exports) {
         'veterans-day',
         'thanksgiving',
         'christmas-day',
-    ].includes(h.id));
+    ].includes(h.id || ''));
     const allHolidays$9 = [...holidays$9, ...Object.values(stateHolidays$1).flat()];
 
     const locale$9 = {
@@ -3254,7 +4388,7 @@ var kairos = (function (exports) {
         'republic-day',
         'ramadan-feast',
         'sacrifice-feast',
-    ].includes(h.id));
+    ].includes(h.id || ''));
 
     const locale$8 = {
         name: 'Türkçe (Türkiye)',
@@ -4102,7 +5236,7 @@ var kairos = (function (exports) {
         'greenery-day',
         'childrens-day',
         'golden-week-substitute',
-    ].includes(h.id));
+    ].includes(h.id || ''));
     const publicHolidays = holidays$6.filter((h) => h.id !== 'golden-week-substitute');
     const allHolidays$6 = [...holidays$6, ...observances$6, ...historicalHolidays];
     const reiwaHolidays = holidays$6.filter((h) => h.id !== 'emperors-birthday-showa' && h.id !== 'emperors-birthday-heisei');
@@ -4294,7 +5428,7 @@ var kairos = (function (exports) {
                     return result.sort((a, b) => a.date.valueOf() - b.date.valueOf());
                 },
                 getEquinoxDays(year) {
-                    const equinoxHolidays = holidays$6.filter((h) => ['vernal-equinox-day', 'autumnal-equinox-day'].includes(h.id));
+                    const equinoxHolidays = holidays$6.filter((h) => ['vernal-equinox-day', 'autumnal-equinox-day'].includes(h.id || ''));
                     const result = [];
                     for (const holiday of equinoxHolidays) {
                         const dates = kairos.holidayEngine.calculate(holiday, year);
@@ -6078,6 +7212,1297 @@ var kairos = (function (exports) {
         },
     };
 
+    const DateValidationSchema = {
+        name: 'DateComponents',
+        description: 'Validation schema for date components',
+        version: '1.0.0',
+        strict: false,
+        sanitize: true,
+        transform: true,
+        stopOnFirstError: false,
+        rules: {
+            year: {
+                name: 'year',
+                required: true,
+                type: 'number',
+                min: 1000,
+                max: 9999,
+                message: 'Year must be between 1000 and 9999',
+                custom: (value, context) => {
+                    if (context.strict && value < 1900) {
+                        return 'Years before 1900 are not supported in strict mode';
+                    }
+                    return true;
+                },
+            },
+            month: {
+                name: 'month',
+                required: true,
+                type: 'number',
+                min: 1,
+                max: 12,
+                message: 'Month must be between 1 and 12',
+            },
+            day: {
+                name: 'day',
+                required: true,
+                type: 'number',
+                min: 1,
+                max: 31,
+                message: 'Day must be between 1 and 31',
+                custom: (value, context) => {
+                    if (context.partial)
+                        return true;
+                    const { year, month } = context;
+                    if (year && month) {
+                        const daysInMonth = new Date(year, month, 0).getDate();
+                        if (value > daysInMonth) {
+                            return `${month === 2 ? 'February' : `Month ${month}`} in ${year} has only ${daysInMonth} days`;
+                        }
+                    }
+                    return true;
+                },
+            },
+            hour: {
+                name: 'hour',
+                required: false,
+                type: 'number',
+                min: 0,
+                max: 23,
+                message: 'Hour must be between 0 and 23',
+                transform: (value) => Math.floor(value),
+            },
+            minute: {
+                name: 'minute',
+                required: false,
+                type: 'number',
+                min: 0,
+                max: 59,
+                message: 'Minute must be between 0 and 59',
+                transform: (value) => Math.floor(value),
+            },
+            second: {
+                name: 'second',
+                required: false,
+                type: 'number',
+                min: 0,
+                max: 59,
+                message: 'Second must be between 0 and 59',
+                transform: (value) => Math.floor(value),
+            },
+            millisecond: {
+                name: 'millisecond',
+                required: false,
+                type: 'number',
+                min: 0,
+                max: 999,
+                message: 'Millisecond must be between 0 and 999',
+                transform: (value) => Math.floor(value),
+            },
+        },
+    };
+    const HolidayValidationSchema = {
+        name: 'HolidayRule',
+        description: 'Validation schema for holiday rules',
+        version: '1.0.0',
+        strict: true,
+        sanitize: false,
+        transform: false,
+        stopOnFirstError: false,
+        rules: {
+            name: {
+                name: 'name',
+                required: true,
+                type: 'string',
+                minLength: 1,
+                maxLength: 100,
+                pattern: /^[a-zA-Z0-9\s\-_]+$/,
+                message: 'Holiday name must be 1-100 characters and contain only letters, numbers, spaces, hyphens, and underscores',
+                sanitize: true,
+            },
+            type: {
+                name: 'type',
+                required: true,
+                type: 'string',
+                enum: ['fixed', 'nth-weekday', 'relative', 'lunar', 'easter-based', 'custom'],
+                message: 'Holiday type must be one of: fixed, nth-weekday, relative, lunar, easter-based, custom',
+            },
+            active: {
+                name: 'active',
+                required: false,
+                type: 'boolean',
+                transform: (value) => Boolean(value),
+            },
+        },
+        customValidators: {
+            validateHolidayRule: (value) => {
+                if (!value.rule || typeof value.rule !== 'object') {
+                    return 'Holiday rule must have a rule property';
+                }
+                switch (value.type) {
+                    case 'fixed':
+                        if (!value.rule.month || !value.rule.day) {
+                            return 'Fixed holiday must have month and day';
+                        }
+                        break;
+                    case 'nth-weekday':
+                        if (!value.rule.month || !value.rule.weekday || !value.rule.nth) {
+                            return 'Nth-weekday holiday must have month, weekday, and nth';
+                        }
+                        break;
+                }
+                return true;
+            },
+        },
+    };
+    class AdvancedValidator {
+        constructor() {
+            this.schemas = new Map();
+            this.cache = new Map();
+            this.performanceMetrics = {
+                validations: 0,
+                totalDuration: 0,
+                cacheHits: 0,
+                cacheMisses: 0,
+            };
+            this.registerSchema(DateValidationSchema);
+            this.registerSchema(HolidayValidationSchema);
+        }
+        registerSchema(schema) {
+            this.schemas.set(schema.name, schema);
+            this.clearCache();
+        }
+        validate(schemaName, data, context = {}) {
+            const startTime = performance.now();
+            const cacheKey = this.generateCacheKey(schemaName, data, context);
+            const cached = this.cache.get(cacheKey);
+            if (cached) {
+                this.performanceMetrics.cacheHits++;
+                return cached;
+            }
+            this.performanceMetrics.cacheMisses++;
+            const schema = this.schemas.get(schemaName);
+            if (!schema) {
+                throw ErrorFactory.createConfigurationError(schemaName, `Validation schema '${schemaName}' not found`);
+            }
+            const fullContext = {
+                operation: 'validate',
+                strict: schema.strict || false,
+                sanitize: schema.sanitize || false,
+                transform: schema.transform || false,
+                stopOnFirstError: schema.stopOnFirstError || false,
+                ...context,
+            };
+            const result = this.performValidation(schema, data, fullContext);
+            const endTime = performance.now();
+            result.performance.duration = endTime - startTime;
+            this.performanceMetrics.validations++;
+            this.performanceMetrics.totalDuration += result.performance.duration;
+            this.cache.set(cacheKey, result);
+            return result;
+        }
+        performValidation(schema, data, context) {
+            const errors = [];
+            const warnings = [];
+            let sanitized = false;
+            let transformed = false;
+            let rulesChecked = 0;
+            let rulesSkipped = 0;
+            const result = { ...data };
+            for (const [fieldName, rule] of Object.entries(schema.rules)) {
+                rulesChecked++;
+                const value = result[fieldName];
+                const fieldPath = context.path ? `${context.path}.${fieldName}` : fieldName;
+                try {
+                    if (rule.required && (value === undefined || value === null || value === '')) {
+                        errors.push({
+                            field: fieldName,
+                            value,
+                            rule: 'required',
+                            message: rule.message || `${fieldName} is required`,
+                            code: 'REQUIRED_FIELD',
+                            severity: 'error',
+                            path: fieldPath,
+                            context,
+                        });
+                        if (schema.stopOnFirstError) {
+                            break;
+                        }
+                        continue;
+                    }
+                    if (!rule.required && (value === undefined || value === null || value === '')) {
+                        rulesSkipped++;
+                        continue;
+                    }
+                    if (!this.validateType(value, rule.type)) {
+                        errors.push({
+                            field: fieldName,
+                            value,
+                            rule: 'type',
+                            message: `${fieldName} must be of type ${rule.type}`,
+                            code: 'INVALID_TYPE',
+                            severity: 'error',
+                            path: fieldPath,
+                            context,
+                        });
+                        if (schema.stopOnFirstError) {
+                            break;
+                        }
+                        continue;
+                    }
+                    if (rule.type === 'number') {
+                        if (rule.min !== undefined && value < rule.min) {
+                            errors.push({
+                                field: fieldName,
+                                value,
+                                rule: 'min',
+                                message: rule.message || `${fieldName} must be at least ${rule.min}`,
+                                code: 'MIN_VALUE',
+                                severity: 'error',
+                                path: fieldPath,
+                                context,
+                            });
+                        }
+                        if (rule.max !== undefined && value > rule.max) {
+                            errors.push({
+                                field: fieldName,
+                                value,
+                                rule: 'max',
+                                message: rule.message || `${fieldName} must be at most ${rule.max}`,
+                                code: 'MAX_VALUE',
+                                severity: 'error',
+                                path: fieldPath,
+                                context,
+                            });
+                        }
+                    }
+                    if (rule.type === 'string') {
+                        if (rule.minLength !== undefined && value.length < rule.minLength) {
+                            errors.push({
+                                field: fieldName,
+                                value,
+                                rule: 'minLength',
+                                message: rule.message || `${fieldName} must be at least ${rule.minLength} characters`,
+                                code: 'MIN_LENGTH',
+                                severity: 'error',
+                                path: fieldPath,
+                                context,
+                            });
+                        }
+                        if (rule.maxLength !== undefined && value.length > rule.maxLength) {
+                            errors.push({
+                                field: fieldName,
+                                value,
+                                rule: 'maxLength',
+                                message: rule.message || `${fieldName} must be at most ${rule.maxLength} characters`,
+                                code: 'MAX_LENGTH',
+                                severity: 'error',
+                                path: fieldPath,
+                                context,
+                            });
+                        }
+                        if (rule.pattern && !rule.pattern.test(value)) {
+                            errors.push({
+                                field: fieldName,
+                                value,
+                                rule: 'pattern',
+                                message: rule.message || `${fieldName} format is invalid`,
+                                code: 'INVALID_PATTERN',
+                                severity: 'error',
+                                path: fieldPath,
+                                context,
+                            });
+                        }
+                        if (rule.sanitize) {
+                            result[fieldName] = this.sanitizeString(value);
+                            sanitized = true;
+                        }
+                    }
+                    if (rule.enum && !rule.enum.includes(value)) {
+                        errors.push({
+                            field: fieldName,
+                            value,
+                            rule: 'enum',
+                            message: rule.message || `${fieldName} must be one of: ${rule.enum.join(', ')}`,
+                            code: 'INVALID_ENUM',
+                            severity: 'error',
+                            path: fieldPath,
+                            context,
+                        });
+                    }
+                    if (rule.custom) {
+                        const customResult = rule.custom(value, { ...context, path: fieldPath });
+                        if (customResult !== true) {
+                            const message = typeof customResult === 'string'
+                                ? customResult
+                                : rule.message || `${fieldName} is invalid`;
+                            errors.push({
+                                field: fieldName,
+                                value,
+                                rule: 'custom',
+                                message,
+                                code: 'CUSTOM_VALIDATION',
+                                severity: 'error',
+                                path: fieldPath,
+                                context,
+                            });
+                        }
+                    }
+                    if (rule.transform && value !== undefined) {
+                        result[fieldName] = rule.transform(value);
+                        transformed = true;
+                    }
+                }
+                catch (error) {
+                    errors.push({
+                        field: fieldName,
+                        value,
+                        rule: 'system',
+                        message: `Validation error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                        code: 'SYSTEM_ERROR',
+                        severity: 'error',
+                        path: fieldPath,
+                        context,
+                    });
+                }
+            }
+            if (schema.customValidators) {
+                for (const [validatorName, validator] of Object.entries(schema.customValidators)) {
+                    try {
+                        const customResult = validator(data, context);
+                        if (customResult !== true) {
+                            errors.push({
+                                field: 'root',
+                                value: data,
+                                rule: validatorName,
+                                message: typeof customResult === 'string' ? customResult : 'Custom validation failed',
+                                code: 'CUSTOM_VALIDATOR',
+                                severity: 'error',
+                                path: context.path || 'root',
+                                context,
+                            });
+                        }
+                    }
+                    catch (error) {
+                        errors.push({
+                            field: 'root',
+                            value: data,
+                            rule: validatorName,
+                            message: `Custom validator error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                            code: 'CUSTOM_VALIDATOR_ERROR',
+                            severity: 'error',
+                            path: context.path || 'root',
+                            context,
+                        });
+                    }
+                }
+            }
+            const success = errors.length === 0;
+            return {
+                valid: success,
+                data: success ? result : undefined,
+                errors,
+                warnings,
+                context,
+                sanitized,
+                transformed,
+                performance: {
+                    duration: 0,
+                    rulesChecked,
+                    rulesSkipped,
+                },
+            };
+        }
+        validateType(value, expectedType) {
+            switch (expectedType) {
+                case 'string':
+                    return typeof value === 'string';
+                case 'number':
+                    return typeof value === 'number' && !isNaN(value) && isFinite(value);
+                case 'boolean':
+                    return typeof value === 'boolean';
+                case 'date':
+                    return value instanceof Date && !isNaN(value.getTime());
+                case 'object':
+                    return typeof value === 'object' && value !== null && !Array.isArray(value);
+                case 'array':
+                    return Array.isArray(value);
+                case 'function':
+                    return typeof value === 'function';
+                default:
+                    return true;
+            }
+        }
+        sanitizeString(value) {
+            return value
+                .trim()
+                .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                .replace(/<[^>]*>/g, '')
+                .replace(/[<>]/g, '');
+        }
+        generateCacheKey(schemaName, data, context) {
+            const dataHash = JSON.stringify(data);
+            const contextHash = JSON.stringify(context);
+            return `${schemaName}:${dataHash}:${contextHash}`;
+        }
+        clearCache() {
+            this.cache.clear();
+        }
+        getPerformanceMetrics() {
+            return {
+                ...this.performanceMetrics,
+                averageDuration: this.performanceMetrics.validations > 0
+                    ? this.performanceMetrics.totalDuration / this.performanceMetrics.validations
+                    : 0,
+                cacheHitRate: this.performanceMetrics.cacheHits + this.performanceMetrics.cacheMisses > 0
+                    ? this.performanceMetrics.cacheHits /
+                        (this.performanceMetrics.cacheHits + this.performanceMetrics.cacheMisses)
+                    : 0,
+            };
+        }
+        resetPerformanceMetrics() {
+            this.performanceMetrics = {
+                validations: 0,
+                totalDuration: 0,
+                cacheHits: 0,
+                cacheMisses: 0,
+            };
+        }
+    }
+    const globalValidator = new AdvancedValidator();
+    function validateDateComponents(data, context) {
+        return globalValidator.validate('DateComponents', data, context);
+    }
+    function validateHolidayRule(data, context) {
+        return globalValidator.validate('HolidayRule', data, context);
+    }
+    function createCustomValidator(schema) {
+        const validator = new AdvancedValidator();
+        validator.registerSchema(schema);
+        return (data, context) => {
+            return validator.validate(schema.name, data, context);
+        };
+    }
+
+    class AdvancedErrorHandler {
+        constructor() {
+            this.recoveryConfigs = new Map();
+            this.errorHistory = [];
+            this.maxHistorySize = 1000;
+            this.monitoringEnabled = true;
+            this.errorMetrics = this.initializeMetrics();
+            this.setupDefaultRecoveryConfigs();
+        }
+        initializeMetrics() {
+            return {
+                totalErrors: 0,
+                errorsByType: {},
+                errorsByComponent: {},
+                errorsBySeverity: { low: 0, medium: 0, high: 0, critical: 0 },
+                recoveryAttempts: 0,
+                successfulRecoveries: 0,
+                failedRecoveries: 0,
+                averageRecoveryTime: 0,
+                lastError: new Date(),
+                criticalErrors: 0,
+            };
+        }
+        setupDefaultRecoveryConfigs() {
+            this.setRecoveryConfig('date_parsing', {
+                maxAttempts: 3,
+                baseDelay: 100,
+                maxDelay: 1000,
+                backoffMultiplier: 2,
+                jitter: true,
+                retryableErrors: ['PARSING_ERROR', 'INVALID_DATE'],
+                fallbackValue: new Date(),
+                fallbackFunction: () => new Date(),
+            });
+            this.setRecoveryConfig('validation', {
+                maxAttempts: 1,
+                baseDelay: 0,
+                maxDelay: 0,
+                backoffMultiplier: 1,
+                jitter: false,
+                retryableErrors: ['VALIDATION_ERROR'],
+                fallbackFunction: () => null,
+                sanitizeFunction: (input) => {
+                    if (typeof input === 'string') {
+                        return input.trim().replace(/[<>]/g, '');
+                    }
+                    return input;
+                },
+            });
+            this.setRecoveryConfig('holiday_calculation', {
+                maxAttempts: 2,
+                baseDelay: 50,
+                maxDelay: 500,
+                backoffMultiplier: 1.5,
+                jitter: true,
+                retryableErrors: ['CALCULATION_ERROR', 'INVALID_HOLIDAY_RULE'],
+                fallbackValue: null,
+                fallbackFunction: () => null,
+            });
+            this.setRecoveryConfig('plugin', {
+                maxAttempts: 1,
+                baseDelay: 0,
+                maxDelay: 0,
+                backoffMultiplier: 1,
+                jitter: false,
+                retryableErrors: [],
+                fallbackValue: null,
+                fallbackFunction: (error, context) => {
+                    console.warn(`Plugin error in ${context.component}: ${error.message}`);
+                    return null;
+                },
+            });
+            this.setRecoveryConfig('critical', {
+                maxAttempts: 0,
+                baseDelay: 0,
+                maxDelay: 0,
+                backoffMultiplier: 1,
+                jitter: false,
+                retryableErrors: [],
+                fallbackValue: null,
+                fallbackFunction: () => null,
+            });
+        }
+        setRecoveryConfig(errorType, config) {
+            this.recoveryConfigs.set(errorType, config);
+        }
+        getRecoveryConfig(error) {
+            let errorType = 'unknown';
+            if (error instanceof KairosBaseError) {
+                errorType = error.type.toLowerCase();
+            }
+            else if (error.name === 'TypeError') {
+                errorType = 'type_error';
+            }
+            else if (error.name === 'RangeError') {
+                errorType = 'range_error';
+            }
+            else if (error.name === 'ReferenceError') {
+                errorType = 'reference_error';
+            }
+            return (this.recoveryConfigs.get(errorType) ||
+                this.recoveryConfigs.get('unknown') || {
+                maxAttempts: 0,
+                baseDelay: 0,
+                maxDelay: 0,
+                backoffMultiplier: 1,
+                jitter: false,
+                retryableErrors: [],
+                fallbackFunction: () => null,
+                fallbackValue: null,
+            });
+        }
+        async handleError(error, context, originalFunction) {
+            const startTime = performance.now();
+            this.updateErrorMetrics(error, context);
+            const severity = this.determineErrorSeverity(error, context);
+            this.logError(error, context, severity);
+            const config = this.getRecoveryConfig(error);
+            if (config.maxAttempts === 0) {
+                return {
+                    recovered: false,
+                    strategy: 'abort',
+                    error,
+                    attempts: 0,
+                    duration: performance.now() - startTime,
+                };
+            }
+            let lastError = error;
+            let strategy = 'retry';
+            for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
+                this.errorMetrics.recoveryAttempts++;
+                try {
+                    const delay = this.calculateDelay(attempt, config);
+                    if (delay > 0) {
+                        await this.sleep(delay);
+                    }
+                    let result;
+                    if (config.retryableErrors.includes(error.name) ||
+                        config.retryableErrors.some((pattern) => error.message.includes(pattern))) {
+                        if (originalFunction) {
+                            result = await originalFunction();
+                            strategy = 'retry';
+                        }
+                    }
+                    if (result === undefined && config.sanitizeFunction && context.input !== undefined) {
+                        config.sanitizeFunction(context.input);
+                        if (originalFunction) {
+                            result = await originalFunction();
+                        }
+                        strategy = 'sanitize';
+                    }
+                    if (result === undefined && config.transformFunction && context.input !== undefined) {
+                        config.transformFunction(context.input);
+                        if (originalFunction) {
+                            result = await originalFunction();
+                        }
+                        strategy = 'transform';
+                    }
+                    if (result === undefined && config.fallbackFunction) {
+                        result = config.fallbackFunction(lastError, context);
+                        strategy = 'fallback';
+                    }
+                    if (result === undefined && config.fallbackValue !== undefined) {
+                        result = config.fallbackValue;
+                        strategy = 'fallback';
+                    }
+                    if (result === undefined && config.delegateFunction) {
+                        result = await config.delegateFunction(lastError, context);
+                        strategy = 'delegate';
+                    }
+                    if (result !== undefined) {
+                        this.errorMetrics.successfulRecoveries++;
+                        const duration = performance.now() - startTime;
+                        return {
+                            recovered: true,
+                            strategy,
+                            result,
+                            attempts: attempt,
+                            duration,
+                            fallbackUsed: strategy === 'fallback' || strategy === 'delegate',
+                        };
+                    }
+                }
+                catch (recoveryError) {
+                    lastError =
+                        recoveryError instanceof Error ? recoveryError : new Error(String(recoveryError));
+                }
+            }
+            this.errorMetrics.failedRecoveries++;
+            const duration = performance.now() - startTime;
+            return {
+                recovered: false,
+                strategy: strategy || 'abort',
+                error: lastError,
+                attempts: config.maxAttempts,
+                duration,
+            };
+        }
+        calculateDelay(attempt, config) {
+            let delay = config.baseDelay * Math.pow(config.backoffMultiplier, attempt - 1);
+            delay = Math.min(delay, config.maxDelay);
+            if (config.jitter) {
+                const jitterFactor = 0.75 + Math.random() * 0.5;
+                delay = delay * jitterFactor;
+            }
+            return Math.floor(delay);
+        }
+        sleep(ms) {
+            return new Promise((resolve) => setTimeout(resolve, ms));
+        }
+        determineErrorSeverity(error, context) {
+            if (error.message.includes('out of memory') ||
+                error.message.includes('stack overflow') ||
+                (error.name === 'RangeError' && error.message.includes('Maximum call stack'))) {
+                return 'critical';
+            }
+            if ((error instanceof KairosBaseError && error.type === 'CONFIGURATION_ERROR') ||
+                context.component === 'core' ||
+                (error.name === 'TypeError' && error.message.includes('Cannot read property'))) {
+                return 'high';
+            }
+            if (error instanceof KairosBaseError &&
+                ['PARSING_ERROR', 'VALIDATION_ERROR', 'PLUGIN_ERROR'].includes(error.type)) {
+                return 'medium';
+            }
+            return 'low';
+        }
+        updateErrorMetrics(error, context) {
+            this.errorMetrics.totalErrors++;
+            this.errorMetrics.lastError = new Date();
+            const errorType = error instanceof KairosBaseError ? error.type : error.name;
+            this.errorMetrics.errorsByType[errorType] =
+                (this.errorMetrics.errorsByType[errorType] || 0) + 1;
+            this.errorMetrics.errorsByComponent[context.component] =
+                (this.errorMetrics.errorsByComponent[context.component] || 0) + 1;
+            const severity = this.determineErrorSeverity(error, context);
+            this.errorMetrics.errorsBySeverity[severity]++;
+            if (severity === 'critical') {
+                this.errorMetrics.criticalErrors++;
+            }
+            this.addToHistory(error, context);
+        }
+        addToHistory(error, context) {
+            this.errorHistory.push({
+                error,
+                context,
+            });
+            if (this.errorHistory.length > this.maxHistorySize) {
+                this.errorHistory = this.errorHistory.slice(-this.maxHistorySize);
+            }
+        }
+        logError(error, context, severity) {
+            if (!this.monitoringEnabled)
+                return;
+            const logLevel = severity === 'critical'
+                ? 'error'
+                : severity === 'high'
+                    ? 'warn'
+                    : severity === 'medium'
+                        ? 'info'
+                        : 'debug';
+            const logMessage = `[${severity.toUpperCase()}] ${context.component}.${context.operation}: ${error.message}`;
+            console[logLevel](logMessage, {
+                error: error.name,
+                type: error.type,
+                context: context.component,
+                operation: context.operation,
+                timestamp: context.timestamp.toISOString(),
+                stack: error.stack,
+            });
+        }
+        getErrorMetrics() {
+            return { ...this.errorMetrics };
+        }
+        getErrorHistory(limit) {
+            if (limit) {
+                return this.errorHistory.slice(-limit);
+            }
+            return [...this.errorHistory];
+        }
+        clearHistory() {
+            this.errorHistory = [];
+            this.errorMetrics = this.initializeMetrics();
+        }
+        setMonitoringEnabled(enabled) {
+            this.monitoringEnabled = enabled;
+        }
+        setMaxHistorySize(size) {
+            this.maxHistorySize = size;
+            if (this.errorHistory.length > size) {
+                this.errorHistory = this.errorHistory.slice(-size);
+            }
+        }
+        getRecoverySuggestions(error, context) {
+            const suggestions = [];
+            const config = this.getRecoveryConfig(error);
+            if (error instanceof KairosBaseError) {
+                switch (error.type) {
+                    case 'INVALID_DATE':
+                        suggestions.push('Check if the date format is correct');
+                        suggestions.push('Verify the date string is not empty');
+                        suggestions.push('Consider using a different date format');
+                        break;
+                    case 'PARSING_ERROR':
+                        suggestions.push('Verify the input format matches the expected pattern');
+                        suggestions.push('Check for special characters in the input');
+                        suggestions.push('Try a more lenient parsing approach');
+                        break;
+                    case 'VALIDATION_ERROR':
+                        suggestions.push('Review the validation rules');
+                        suggestions.push('Check if all required fields are provided');
+                        suggestions.push('Verify field values are within allowed ranges');
+                        break;
+                    case 'INVALID_TIMEZONE':
+                        suggestions.push('Verify the timezone identifier is valid');
+                        suggestions.push('Use standard IANA timezone names');
+                        break;
+                    case 'PLUGIN_ERROR':
+                        suggestions.push('Check if the plugin is properly loaded');
+                        suggestions.push('Verify plugin configuration');
+                        suggestions.push('Try reloading the plugin');
+                        break;
+                }
+            }
+            if (context.component === 'parser') {
+                suggestions.push('Consider using a different parsing strategy');
+                suggestions.push('Check if locale settings are correct');
+            }
+            if (context.component === 'validator') {
+                suggestions.push('Review validation schema');
+                suggestions.push('Consider enabling sanitization');
+            }
+            if (config.maxAttempts > 0) {
+                suggestions.push(`System will attempt up to ${config.maxAttempts} recovery attempts`);
+            }
+            if (config.fallbackFunction !== undefined || config.fallbackValue !== undefined) {
+                suggestions.push('Fallback behavior is configured for this error type');
+            }
+            return suggestions;
+        }
+    }
+    const globalErrorHandler = new AdvancedErrorHandler();
+    async function handleError(error, context, originalFunction) {
+        return globalErrorHandler.handleError(error, context, originalFunction);
+    }
+    class ErrorBoundary {
+        constructor(config) {
+            this.errorHandler = config?.errorHandler || globalErrorHandler;
+            this.fallbackComponent = config?.fallbackComponent;
+        }
+        async execute(fn, context) {
+            try {
+                return await fn();
+            }
+            catch (error) {
+                const kairosError = error instanceof Error ? error : new Error(String(error));
+                const recoveryResult = await this.errorHandler.handleError(kairosError, context, fn);
+                if (recoveryResult.recovered && recoveryResult.result !== undefined) {
+                    return recoveryResult.result;
+                }
+                if (this.fallbackComponent) {
+                    return this.fallbackComponent(kairosError, context);
+                }
+                throw kairosError;
+            }
+        }
+    }
+    class ErrorMonitor {
+        constructor(config) {
+            this.alertCallbacks = [];
+            this.errorHandler = config?.errorHandler || globalErrorHandler;
+            this.alertThresholds = {
+                errorRate: config?.alertThresholds?.errorRate || 0.1,
+                criticalErrors: config?.alertThresholds?.criticalErrors || 5,
+                recoveryFailureRate: config?.alertThresholds?.recoveryFailureRate || 0.5,
+            };
+        }
+        checkAlerts() {
+            const metrics = this.errorHandler.getErrorMetrics();
+            const alerts = [];
+            const totalOperations = metrics.totalErrors + metrics.successfulRecoveries;
+            if (totalOperations > 0) {
+                const errorRate = metrics.totalErrors / totalOperations;
+                if (errorRate > this.alertThresholds.errorRate) {
+                    alerts.push({
+                        type: 'error_rate',
+                        severity: 'high',
+                        message: `Error rate (${(errorRate * 100).toFixed(2)}%) exceeds threshold (${(this.alertThresholds.errorRate * 100).toFixed(2)}%)`,
+                        metrics,
+                        timestamp: new Date(),
+                    });
+                }
+            }
+            if (metrics.criticalErrors > this.alertThresholds.criticalErrors) {
+                alerts.push({
+                    type: 'critical_errors',
+                    severity: 'critical',
+                    message: `Critical errors (${metrics.criticalErrors}) exceed threshold (${this.alertThresholds.criticalErrors})`,
+                    metrics,
+                    timestamp: new Date(),
+                });
+            }
+            const totalRecoveries = metrics.successfulRecoveries + metrics.failedRecoveries;
+            if (totalRecoveries > 0) {
+                const failureRate = metrics.failedRecoveries / totalRecoveries;
+                if (failureRate > this.alertThresholds.recoveryFailureRate) {
+                    alerts.push({
+                        type: 'recovery_failure',
+                        severity: 'medium',
+                        message: `Recovery failure rate (${(failureRate * 100).toFixed(2)}%) exceeds threshold (${(this.alertThresholds.recoveryFailureRate * 100).toFixed(2)}%)`,
+                        metrics,
+                        timestamp: new Date(),
+                    });
+                }
+            }
+            alerts.forEach((alert) => {
+                this.alertCallbacks.forEach((callback) => {
+                    try {
+                        callback(alert);
+                    }
+                    catch (error) {
+                        console.error('Error in alert callback:', error);
+                    }
+                });
+            });
+            return alerts;
+        }
+        addAlertCallback(callback) {
+            this.alertCallbacks.push(callback);
+        }
+        removeAlertCallback(callback) {
+            const index = this.alertCallbacks.indexOf(callback);
+            if (index > -1) {
+                this.alertCallbacks.splice(index, 1);
+            }
+        }
+    }
+    const globalErrorMonitor = new ErrorMonitor();
+
+    class ErrorManager {
+        constructor(config) {
+            this.boundaries = new Map();
+            this.validator = globalValidator;
+            this.errorHandler = globalErrorHandler;
+            this.config = this.mergeConfig(config);
+            this.setupErrorHandling();
+        }
+        mergeConfig(config) {
+            return {
+                validation: {
+                    strict: false,
+                    sanitize: true,
+                    transform: true,
+                    stopOnFirstError: false,
+                    cacheResults: true,
+                    ...config?.validation,
+                },
+                handling: {
+                    enableRecovery: true,
+                    maxRecoveryAttempts: 3,
+                    enableMonitoring: true,
+                    enableAlerts: true,
+                    ...config?.handling,
+                },
+                reporting: {
+                    logLevel: 'warn',
+                    includeStackTrace: true,
+                    includeContext: true,
+                    maxHistorySize: 1000,
+                    ...config?.reporting,
+                },
+            };
+        }
+        setupErrorHandling() {
+            this.errorHandler.setMonitoringEnabled(this.config.handling.enableMonitoring);
+            this.errorHandler.setMaxHistorySize(this.config.reporting.maxHistorySize);
+        }
+        async execute(operationConfig) {
+            const startTime = performance.now();
+            const context = {
+                operation: operationConfig.name,
+                component: operationConfig.component,
+                steps: [],
+            };
+            const result = {
+                success: false,
+                performance: {
+                    validationTime: 0,
+                    handlingTime: 0,
+                    totalTime: 0,
+                },
+                context,
+            };
+            try {
+                context.steps.push('started');
+                if (!operationConfig.skipValidation && operationConfig.schema) {
+                    const validationStart = performance.now();
+                    context.steps.push('validation');
+                    const validationContext = {
+                        operation: operationConfig.name,
+                        path: operationConfig.component,
+                        strict: this.config.validation.strict,
+                        sanitize: this.config.validation.sanitize,
+                        transform: this.config.validation.transform,
+                        stopOnFirstError: this.config.validation.stopOnFirstError,
+                        ...operationConfig.validation,
+                    };
+                    result.validation = this.validator.validate(operationConfig.schema, operationConfig.input, validationContext);
+                    result.performance.validationTime = performance.now() - validationStart;
+                    if (!result.validation.valid) {
+                        const validationError = ErrorFactory.createValidationError(operationConfig.schema, operationConfig.input, result.validation.errors.map((e) => e.message).join(', '));
+                        if (this.config.reporting.logLevel !== 'none') {
+                            this.logError(validationError, context, 'validation_failed');
+                        }
+                        result.error = validationError;
+                        result.performance.totalTime = performance.now() - startTime;
+                        return result;
+                    }
+                    operationConfig.input = result.validation.data;
+                }
+                if (operationConfig.operation) {
+                    const operationStart = performance.now();
+                    context.steps.push('execution');
+                    const boundary = this.getBoundary(operationConfig.component);
+                    let operationPromise = boundary.execute(() => operationConfig.operation(operationConfig.input), this.createErrorContext(operationConfig));
+                    if (operationConfig.timeout) {
+                        operationPromise = this.withTimeout(operationPromise, operationConfig.timeout, `Operation ${operationConfig.name} timed out`);
+                    }
+                    try {
+                        result.data = await operationPromise;
+                        context.steps.push('completed');
+                        result.success = true;
+                    }
+                    catch (error) {
+                        context.steps.push('failed');
+                        const kairosError = this.normalizeError(error);
+                        if (this.config.reporting.logLevel !== 'none') {
+                            this.logError(kairosError, context, 'operation_failed');
+                        }
+                        result.error = kairosError;
+                        if (this.config.handling.enableRecovery) {
+                            context.steps.push('recovery');
+                            result.recovery = await this.errorHandler.handleError(kairosError, this.createErrorContext(operationConfig), () => operationConfig.operation(operationConfig.input));
+                            if (result.recovery.recovered) {
+                                result.data = result.recovery.result;
+                                result.success = true;
+                                context.steps.push('recovered');
+                                this.logInfo(context, 'operation_recovered');
+                            }
+                            else if (operationConfig.fallback) {
+                                context.steps.push('fallback');
+                                try {
+                                    result.data = await operationConfig.fallback(kairosError, operationConfig.input);
+                                    result.success = true;
+                                    context.steps.push('fallback_succeeded');
+                                    this.logInfo(context, 'fallback_succeeded');
+                                }
+                                catch (fallbackError) {
+                                    result.error = this.normalizeError(fallbackError);
+                                    context.steps.push('fallback_failed');
+                                    this.logError(result.error, context, 'fallback_failed');
+                                }
+                            }
+                        }
+                        result.performance.handlingTime = performance.now() - operationStart;
+                    }
+                }
+            }
+            catch (error) {
+                context.steps.push('system_error');
+                result.error = this.normalizeError(error);
+                this.logError(result.error, context, 'system_error');
+            }
+            result.performance.totalTime = performance.now() - startTime;
+            return result;
+        }
+        validate(schemaName, data, context) {
+            const startTime = performance.now();
+            const operationContext = {
+                operation: 'validate',
+                component: 'validator',
+                steps: [],
+            };
+            const result = {
+                success: false,
+                performance: {
+                    validationTime: 0,
+                    handlingTime: 0,
+                    totalTime: 0,
+                },
+                context: operationContext,
+            };
+            try {
+                operationContext.steps.push('validation_started');
+                const validationContext = {
+                    operation: 'validate',
+                    strict: this.config.validation.strict,
+                    sanitize: this.config.validation.sanitize,
+                    transform: this.config.validation.transform,
+                    stopOnFirstError: this.config.validation.stopOnFirstError,
+                    ...context,
+                };
+                result.validation = this.validator.validate(schemaName, data, validationContext);
+                result.performance.validationTime = performance.now() - startTime;
+                if (result.validation.valid) {
+                    result.success = true;
+                    result.data = result.validation.data;
+                    operationContext.steps.push('validation_succeeded');
+                }
+                else {
+                    result.error = ErrorFactory.createValidationError(schemaName, data, result.validation.errors.map((e) => e.message).join(', '));
+                    operationContext.steps.push('validation_failed');
+                    this.logError(result.error, operationContext, 'validation_failed');
+                }
+            }
+            catch (error) {
+                result.error = this.normalizeError(error);
+                operationContext.steps.push('validation_system_error');
+                this.logError(result.error, operationContext, 'validation_system_error');
+            }
+            result.performance.totalTime = performance.now() - startTime;
+            return result;
+        }
+        async handleError(error, context, originalFunction) {
+            const startTime = performance.now();
+            const operationContext = {
+                operation: context.operation,
+                component: context.component,
+                steps: ['error_handling_started'],
+            };
+            const result = {
+                success: false,
+                performance: {
+                    validationTime: 0,
+                    handlingTime: 0,
+                    totalTime: 0,
+                },
+                context: operationContext,
+            };
+            try {
+                const kairosError = this.normalizeError(error);
+                result.error = kairosError;
+                if (this.config.handling.enableRecovery) {
+                    operationContext.steps.push('recovery_attempted');
+                    result.recovery = await this.errorHandler.handleError(kairosError, context, originalFunction);
+                    result.performance.handlingTime = performance.now() - startTime;
+                    if (result.recovery.recovered) {
+                        result.success = true;
+                        result.data = result.recovery.result;
+                        operationContext.steps.push('recovery_succeeded');
+                        this.logInfo(operationContext, 'error_recovery_succeeded');
+                    }
+                    else {
+                        operationContext.steps.push('recovery_failed');
+                        this.logError(kairosError, operationContext, 'error_recovery_failed');
+                    }
+                }
+                else {
+                    operationContext.steps.push('recovery_disabled');
+                    this.logError(kairosError, operationContext, 'recovery_disabled');
+                }
+            }
+            catch (handlingError) {
+                result.error = this.normalizeError(handlingError);
+                operationContext.steps.push('error_handling_failed');
+                this.logError(result.error, operationContext, 'error_handling_failed');
+            }
+            result.performance.totalTime = performance.now() - startTime;
+            return result;
+        }
+        getBoundary(component) {
+            if (!this.boundaries.has(component)) {
+                this.boundaries.set(component, new ErrorBoundary({
+                    errorHandler: this.errorHandler,
+                }));
+            }
+            return this.boundaries.get(component);
+        }
+        createErrorContext(operationConfig) {
+            return {
+                operation: operationConfig.name,
+                component: operationConfig.component,
+                input: operationConfig.input,
+                timestamp: new Date(),
+                metadata: {
+                    schema: operationConfig.schema,
+                    timeout: operationConfig.timeout,
+                    retries: operationConfig.retries,
+                },
+            };
+        }
+        normalizeError(error) {
+            if (error instanceof KairosBaseError) {
+                return error;
+            }
+            if (error instanceof Error) {
+                if (error.name === 'TypeError') {
+                    return ErrorFactory.createValidationError('unknown', {}, error.message);
+                }
+                if (error.name === 'RangeError') {
+                    return ErrorFactory.createValidationError('range', {}, error.message);
+                }
+                return ErrorFactory.createParsingError(error.message, error);
+            }
+            return ErrorFactory.createParsingError(String(error), new Error(String(error)));
+        }
+        async withTimeout(promise, timeoutMs, timeoutMessage) {
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => {
+                    reject(new Error(timeoutMessage));
+                }, timeoutMs);
+            });
+            return Promise.race([promise, timeoutPromise]);
+        }
+        logError(error, context, step) {
+            if (this.config.reporting.logLevel === 'none')
+                return;
+            const logData = {
+                step,
+                component: context.component,
+                operation: context.operation,
+                timestamp: new Date().toISOString(),
+            };
+            if (this.config.reporting.includeStackTrace) {
+                logData.stack = error.stack;
+            }
+            if (this.config.reporting.includeContext) {
+                logData.context = context;
+            }
+            console.error(`[ERROR] ${context.component}.${context.operation}: ${error.message}`, logData);
+        }
+        logInfo(context, message) {
+            if (this.config.reporting.logLevel !== 'debug')
+                return;
+            console.info(`[INFO] ${context.component}.${context.operation}: ${message}`, {
+                steps: context.steps,
+                timestamp: new Date().toISOString(),
+            });
+        }
+        getErrorStatistics() {
+            return {
+                handler: this.errorHandler.getErrorMetrics(),
+                validator: this.validator.getPerformanceMetrics(),
+                boundaries: this.boundaries.size,
+                config: this.config,
+            };
+        }
+        updateConfig(config) {
+            this.config = this.mergeConfig({ ...this.config, ...config });
+            this.setupErrorHandling();
+        }
+        clearHistory() {
+            this.errorHandler.clearHistory();
+            this.validator.clearCache();
+        }
+        createSafeWrapper(fn, operationConfig) {
+            return async (...args) => {
+                const result = await this.execute({
+                    ...operationConfig,
+                    input: args,
+                    operation: () => fn(...args),
+                });
+                if (result.success && result.data !== undefined) {
+                    return result.data;
+                }
+                throw result.error || new Error('Operation failed');
+            };
+        }
+        async executeBatch(operations, options = {}) {
+            const { parallel = false, failFast = true, continueOnError = false } = options;
+            if (parallel) {
+                const promises = operations.map((op) => this.execute(op));
+                const results = await Promise.allSettled(promises);
+                return results.map((result, index) => {
+                    if (result.status === 'fulfilled') {
+                        return result.value;
+                    }
+                    else {
+                        const errorResult = {
+                            success: false,
+                            error: this.normalizeError(result.reason),
+                            performance: { validationTime: 0, handlingTime: 0, totalTime: 0 },
+                            context: {
+                                operation: operations[index].name,
+                                component: operations[index].component,
+                                steps: ['batch_failed'],
+                            },
+                        };
+                        if (failFast) {
+                            throw errorResult.error;
+                        }
+                        return errorResult;
+                    }
+                });
+            }
+            else {
+                const results = [];
+                for (const operation of operations) {
+                    const result = await this.execute(operation);
+                    results.push(result);
+                    if (!result.success && !continueOnError && failFast) {
+                        throw result.error;
+                    }
+                }
+                return results;
+            }
+        }
+    }
+    const globalErrorManager = new ErrorManager();
+    async function executeWithErrorHandling(config) {
+        return globalErrorManager.execute(config);
+    }
+    function validateWithErrorHandling(schema, data, context) {
+        return globalErrorManager.validate(schema, data, context);
+    }
+    async function handleWithErrorRecovery(error, context, originalFunction) {
+        return globalErrorManager.handleError(error, context, originalFunction);
+    }
+
     const VERSION = '1.1.0';
     const AUTHOR = 'Ersin Koc';
     const REPOSITORY = 'https://github.com/ersinkoc/kairos';
@@ -6193,18 +8618,28 @@ var kairos = (function (exports) {
     }
 
     exports.AUTHOR = AUTHOR;
+    exports.AdvancedErrorHandler = AdvancedErrorHandler;
+    exports.AdvancedValidator = AdvancedValidator;
     exports.BusinessDayCalculator = BusinessDayCalculator;
     exports.CalendarCalculator = CalendarCalculator;
     exports.CustomCalculator = CustomCalculator;
     exports.CustomCalculatorUtils = CustomCalculatorUtils;
     exports.DESCRIPTION = DESCRIPTION;
     exports.EasterCalculator = EasterCalculator;
+    exports.ErrorBoundary = ErrorBoundary;
+    exports.ErrorFactory = ErrorFactory;
+    exports.ErrorHandler = ErrorHandler;
+    exports.ErrorManager = ErrorManager;
+    exports.ErrorMonitor = ErrorMonitor;
+    exports.FORMAT_TOKENS = FORMAT_TOKENS;
     exports.FiscalYearCalculator = FiscalYearCalculator;
     exports.FixedCalculator = FixedCalculator;
     exports.HOMEPAGE = HOMEPAGE;
     exports.LRUCache = LRUCache;
     exports.LunarCalculator = LunarCalculator;
+    exports.MemoryMonitor = MemoryMonitor;
     exports.NthWeekdayCalculator = NthWeekdayCalculator;
+    exports.ObjectPool = ObjectPool;
     exports.REPOSITORY = REPOSITORY;
     exports.RelativeCalculator = RelativeCalculator;
     exports.RelativeTimeCalculator = RelativeTimeCalculator;
@@ -6216,25 +8651,77 @@ var kairos = (function (exports) {
     exports.businessFiscal = fiscal;
     exports.businessWorkday = workday;
     exports.calendarPlugin = calendarPlugin;
+    exports.createBusinessDayId = createBusinessDayId;
+    exports.createCustomValidator = createCustomValidator;
     exports.createDateCache = createDateCache;
+    exports.createDateString = createDateString;
+    exports.createDay = createDay;
+    exports.createDayOfWeek = createDayOfWeek;
+    exports.createDayOfYear = createDayOfYear;
+    exports.createFormatString = createFormatString;
     exports.createHolidayCache = createHolidayCache;
+    exports.createHolidayId = createHolidayId;
+    exports.createHour = createHour;
+    exports.createLocaleCode = createLocaleCode;
+    exports.createMillisecond = createMillisecond;
+    exports.createMinute = createMinute;
+    exports.createMonth = createMonth;
+    exports.createPool = createPool;
+    exports.createSecond = createSecond;
+    exports.createTimeZone = createTimeZone;
+    exports.createTimestamp = createTimestamp;
+    exports.createWeekOfYear = createWeekOfYear;
+    exports.createYear = createYear;
     exports.customCalculator = custom;
+    exports.datePool = datePool;
     exports["default"] = kairos;
     exports.easterCalculator = easter;
+    exports.executeWithErrorHandling = executeWithErrorHandling;
     exports.fixedCalculator = fixed;
     exports.germanFederalHolidays = federalHolidays;
     exports.germanHistoricalHolidays = historicalHolidays$1;
     exports.germanHolidays = holidays$7;
     exports.germanStateHolidays = stateHolidays;
+    exports.globalErrorHandler = globalErrorHandler;
+    exports.globalErrorManager = globalErrorManager;
+    exports.globalErrorMonitor = globalErrorMonitor;
+    exports.globalMemoryMonitor = globalMemoryMonitor;
+    exports.globalPoolManager = globalPoolManager;
+    exports.globalValidator = globalValidator;
+    exports.handleError = handleError;
+    exports.handleWithErrorRecovery = handleWithErrorRecovery;
     exports.holidayEngine = engine$1;
+    exports.isDay = isDay;
+    exports.isDayOfWeek = isDayOfWeek;
+    exports.isDayOfYear = isDayOfYear;
+    exports.isFormatString = isFormatString;
+    exports.isHour = isHour;
+    exports.isLocaleCode = isLocaleCode;
+    exports.isMillisecond = isMillisecond;
+    exports.isMinute = isMinute;
+    exports.isMonth = isMonth;
+    exports.isSecond = isSecond;
+    exports.isTimestamp = isTimestamp;
     exports.isValidDate = isValidDate;
-    exports.isValidDay = isValidDay;
-    exports.isValidMonth = isValidMonth;
+    exports.isValidDay = isValidDay$1;
+    exports.isValidDayOfWeek = isValidDayOfWeek;
+    exports.isValidDayOfYear = isValidDayOfYear;
+    exports.isValidFormatString = isValidFormatString;
+    exports.isValidHour = isValidHour;
+    exports.isValidLocaleCode = isValidLocaleCode;
+    exports.isValidMillisecond = isValidMillisecond;
+    exports.isValidMinute = isValidMinute;
+    exports.isValidMonth = isValidMonth$1;
     exports.isValidNth = isValidNth;
     exports.isValidNumber = isValidNumber;
+    exports.isValidSecond = isValidSecond;
     exports.isValidString = isValidString;
+    exports.isValidTimestamp = isValidTimestamp;
+    exports.isValidWeekOfYear = isValidWeekOfYear;
     exports.isValidWeekday = isValidWeekday;
-    exports.isValidYear = isValidYear;
+    exports.isValidYear = isValidYear$1;
+    exports.isWeekOfYear = isWeekOfYear;
+    exports.isYear = isYear;
     exports.japaneseGoldenWeekHolidays = goldenWeekHolidays;
     exports.japaneseHeiseiHolidays = heiseiHolidays;
     exports.japaneseHistoricalHolidays = historicalHolidays;
@@ -6262,6 +8749,19 @@ var kairos = (function (exports) {
     exports.setupWithBusiness = setupWithBusiness;
     exports.setupWithLocales = setupWithLocales;
     exports.throwError = throwError;
+    exports.toDay = toDay;
+    exports.toDayOfWeek = toDayOfWeek;
+    exports.toDayOfYear = toDayOfYear;
+    exports.toFormatString = toFormatString;
+    exports.toHour = toHour;
+    exports.toLocaleCode = toLocaleCode;
+    exports.toMillisecond = toMillisecond;
+    exports.toMinute = toMinute;
+    exports.toMonth = toMonth;
+    exports.toSecond = toSecond;
+    exports.toTimestamp = toTimestamp;
+    exports.toWeekOfYear = toWeekOfYear;
+    exports.toYear = toYear;
     exports.turkishHistoricalHolidays = historicalHolidays$2;
     exports.turkishHolidays = holidays$8;
     exports.turkishObservances = observances$7;
@@ -6269,11 +8769,14 @@ var kairos = (function (exports) {
     exports.usFederalHolidays = federalHolidays$1;
     exports.usHolidays = holidays$9;
     exports.usStateHolidays = stateHolidays$1;
-    exports.validateHolidayRule = validateHolidayRule;
+    exports.validateDateComponents = validateDateComponents;
+    exports.validateHolidayRule = validateHolidayRule$1;
+    exports.validateHolidayRuleAdvanced = validateHolidayRule;
+    exports.validateWithErrorHandling = validateWithErrorHandling;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
     return exports;
 
-})({});
+})({}, events);
 //# sourceMappingURL=kairos.iife.js.map

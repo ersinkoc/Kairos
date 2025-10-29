@@ -75,13 +75,16 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "npm run clean && npm run build:lib && npm run build:browser",
+    "build": "npm run clean && npm run build:lib && npm run build:modern",
     "build:lib": "tsc",
     "build:types": "tsc --emitDeclarationOnly",
     "build:esm": "tsc --module es2020 --outDir dist",
     "build:cjs": "tsc --module commonjs --outDir dist/cjs",
     "build:browser": "rollup -c",
-    "build:prod": "npm run clean && npm run build:lib && npm run build:browser && npm run build:minify",
+    "build:modern": "cross-env NODE_ENV=production rollup -c rollup.config.modern.js",
+    "build:modern:dev": "cross-env NODE_ENV=development rollup -c rollup.config.modern.js",
+    "build:modern:analyze": "cross-env ANALYZE=true NODE_ENV=production rollup -c rollup.config.modern.js",
+    "build:prod": "npm run clean && npm run build:lib && npm run build:modern && npm run build:minify",
     "build:minify": "terser dist/index.js -o dist/index.min.js --compress --mangle",
     "clean": "rimraf dist",
     "test": "cross-env JEST_SILENT=true jest --config jest.config.cjs --testPathPattern=\".*\" --silent --verbose=false",
@@ -95,17 +98,44 @@
     "test:integration": "jest --testMatch='**/integration/**/*.test.ts'",
     "test:unit": "jest --testMatch='**/unit/**/*.test.ts'",
     "test:all": "npm run test:unit && npm run test:integration && npm run test:performance",
+    "test:enhanced": "node tools/test-runner.cjs",
+    "test:watch": "node tools/test-runner.cjs --watch",
+    "test:verbose": "node tools/test-runner.cjs --verbose",
+    "test:quick": "node tools/test-runner.cjs --no-coverage --silent",
+    "test:enhanced": "jest --config jest.config.enhanced.cjs",
+    "test:unit:enhanced": "jest --config jest.config.enhanced.cjs --testPathPattern=tests/unit",
+    "test:integration:enhanced": "jest --config jest.config.enhanced.cjs --testPathPattern=tests/integration",
+    "test:performance:enhanced": "jest --config jest.config.enhanced.cjs --testPathPattern=tests/performance",
+    "coverage:analyze": "node tools/coverage-analyzer.cjs",
+    "coverage:html": "node tools/coverage-analyzer.cjs --format html",
+    "coverage:threshold": "node tools/coverage-analyzer.cjs --threshold 90",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
     "typecheck": "tsc --noEmit",
+    "quality": "node tools/code-quality.cjs",
+    "quality:fix": "node tools/code-quality.cjs --fix",
+    "quality:all": "node tools/code-quality.cjs --all",
+    "quality:verbose": "node tools/code-quality.cjs --verbose",
+    "quality:security": "node tools/code-quality.cjs --security",
+    "kairos": "node tools/kairos-dev.cjs",
+    "kairos:dev": "node tools/kairos-dev.cjs dev",
+    "kairos:build": "node tools/kairos-dev.cjs build",
+    "kairos:test": "node tools/kairos-dev.cjs test",
+    "kairos:quality": "node tools/kairos-dev.cjs quality",
+    "kairos:analyze": "node tools/kairos-dev.cjs analyze",
+    "kairos:setup": "node tools/kairos-dev.cjs setup",
     "size": "size-limit",
     "size:why": "size-limit --why",
     "size:analyze": "node tools/size-analyzer.js all",
     "size:core": "node tools/size-analyzer.js core",
     "size:plugins": "node tools/size-analyzer.js plugins",
     "size:build": "node tools/size-analyzer.js build",
+    "build:analyze": "node tools/build-analyzer.cjs",
+    "build:compare": "npm run build:modern && npm run size && npm run build:analyze",
+    "build:optimize": "node tools/bundle-optimizer.js --write dist/kairos.*.min.js",
+    "build:optimize:all": "npm run build:modern && npm run build:optimize && npm run size",
     "validate-holidays": "node tools/holiday-validator.js all",
     "validate-holidays:year": "node tools/holiday-validator.js year",
     "validate-holidays:locale": "node tools/holiday-validator.js locale",
@@ -114,11 +144,25 @@
     "test:browser": "playwright test",
     "test:browser:setup": "playwright install",
     "test:cross-platform": "jest --testPathPattern='cross-platform'",
-    "check": "npm run typecheck && npm run lint && npm run test:coverage && npm run size",
+    "check": "npm run typecheck && npm run lint && npm run test:coverage && npm run size && npm run build:compare",
     "prepublishOnly": "npm run check && npm run build",
     "postinstall": "node -e \"console.log('\\n🎉 Kairos installed successfully! Visit https://github.com/ersinkoc/kairos for documentation.')\"",
     "dev": "npm run build && npm run test:watch",
-    "prepare": "husky"
+    "dev:server": "node tools/dev-server.cjs",
+    "dev:server:test": "node tools/dev-server.cjs --auto-test",
+    "dev:server:verbose": "node tools/dev-server.cjs --verbose",
+    "perf:analyze": "node tools/memory-analyzer.js",
+    "perf:test": "npm run test:performance",
+    "perf:baseline": "node -e \"import('./tools/memory-analyzer.js').then(m => { const a = new m.default(); a.runComprehensiveTests(); })\"",
+    "prepare": "husky",
+    "docs": "node tools/doc-generator.cjs",
+    "docs:watch": "node tools/doc-generator.cjs --watch",
+    "docs:verbose": "node tools/doc-generator.cjs --verbose",
+    "docs:api": "node tools/api-reference.cjs",
+    "docs:website": "node tools/docs-website.cjs",
+    "docs:all": "npm run docs && npm run docs:api && npm run docs:website",
+    "docs:serve": "npx serve docs-site",
+    "docs:build": "npm run clean && npm run docs:all && npm run build"
   },
   "repository": {
     "type": "git",
@@ -168,7 +212,9 @@
     "size-limit": "^11.2.0",
     "ts-jest": "^29.1.0",
     "tslib": "^2.8.1",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "ws": "^8.14.0",
+    "chokidar": "^3.5.3"
   },
   "engines": {
     "node": ">=14.0.0"
@@ -188,27 +234,48 @@
   },
   "size-limit": [
     {
-      "name": "Core Library",
-      "path": "dist/index.js",
-      "limit": "28 KB"
-    },
-    {
-      "name": "Core + Holiday Engine",
-      "path": [
-        "dist/index.js",
-        "dist/plugins/holiday/engine.js"
-      ],
-      "limit": "30 KB"
-    },
-    {
-      "name": "Core + All Plugins",
-      "path": "dist/**/*.js",
-      "limit": "225 KB"
-    },
-    {
-      "name": "Browser Bundle (UMD)",
+      "name": "UMD Bundle (Production)",
       "path": "dist/kairos.umd.min.js",
       "limit": "60 KB"
+    },
+    {
+      "name": "UMD Bundle (Gzipped)",
+      "path": "dist/kairos.umd.min.js",
+      "limit": "20 KB",
+      "gzip": true
+    },
+    {
+      "name": "ESM Bundle (Production)",
+      "path": "dist/kairos.esm.min.js",
+      "limit": "60 KB"
+    },
+    {
+      "name": "ESM Bundle (Gzipped)",
+      "path": "dist/kairos.esm.min.js",
+      "limit": "20 KB",
+      "gzip": true
+    },
+    {
+      "name": "Modern ES2022 Bundle",
+      "path": "dist/kairos.modern.js",
+      "limit": "55 KB"
+    },
+    {
+      "name": "Modern ES2022 Bundle (Gzipped)",
+      "path": "dist/kairos.modern.js",
+      "limit": "18 KB",
+      "gzip": true
+    },
+    {
+      "name": "IIFE Bundle (Production)",
+      "path": "dist/kairos.iife.min.js",
+      "limit": "60 KB"
+    },
+    {
+      "name": "IIFE Bundle (Gzipped)",
+      "path": "dist/kairos.iife.min.js",
+      "limit": "20 KB",
+      "gzip": true
     }
   ]
 }

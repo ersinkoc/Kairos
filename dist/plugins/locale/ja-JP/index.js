@@ -160,7 +160,7 @@ export default {
                 return result.sort((a, b) => a.date.valueOf() - b.date.valueOf());
             },
             getEquinoxDays(year) {
-                const equinoxHolidays = holidays.filter((h) => ['vernal-equinox-day', 'autumnal-equinox-day'].includes(h.id));
+                const equinoxHolidays = holidays.filter((h) => ['vernal-equinox-day', 'autumnal-equinox-day'].includes(h.id || ''));
                 const result = [];
                 for (const holiday of equinoxHolidays) {
                     const dates = kairos.holidayEngine.calculate(holiday, year);

@@ -7,8 +7,8 @@ export type {
   KairosInstance,
   KairosStatic,
   KairosInput,
-  KairosConfig,
-  TimeUnit,
+  KairosConfig as BaseKairosConfig,
+  TimeUnit as BaseTimeUnit,
 } from './core/types/base.js';
 
 export type {
@@ -38,6 +38,137 @@ export type {
   BusinessDayConfig,
 } from './core/types/holiday.js';
 
+export type { PoolableObject } from './core/utils/object-pool.js';
+export type { MemorySnapshot, MemoryAlert, MemoryThresholds } from './core/utils/memory-monitor.js';
+
+// Advanced type exports
+export type {
+  // Branded types
+  Timestamp,
+  Year,
+  Month,
+  Day,
+  Hour,
+  Minute,
+  Second,
+  Millisecond,
+  DayOfWeek,
+  DayOfYear,
+  WeekOfYear,
+  LocaleCode,
+  TimeZone,
+  FormatString,
+  DateString,
+  HolidayId,
+  BusinessDayId,
+} from './core/types/brands.js';
+
+// Branded type utility functions
+export {
+  createTimestamp,
+  createYear,
+  createMonth,
+  createDay,
+  createHour,
+  createMinute,
+  createSecond,
+  createMillisecond,
+  createDayOfWeek,
+  createDayOfYear,
+  createWeekOfYear,
+  createLocaleCode,
+  createTimeZone,
+  createFormatString,
+  createDateString,
+  createHolidayId,
+  createBusinessDayId,
+  isValidTimestamp,
+  isValidHour,
+  isValidMinute,
+  isValidSecond,
+  isValidMillisecond,
+  isValidDayOfWeek,
+  isValidDayOfYear,
+  isValidWeekOfYear,
+  isValidLocaleCode,
+  isValidFormatString,
+  toTimestamp,
+  toYear,
+  toMonth,
+  toDay,
+  toHour,
+  toMinute,
+  toSecond,
+  toMillisecond,
+  toDayOfWeek,
+  toDayOfYear,
+  toWeekOfYear,
+  toLocaleCode,
+  toFormatString,
+  isTimestamp,
+  isYear,
+  isMonth,
+  isDay,
+  isHour,
+  isMinute,
+  isSecond,
+  isMillisecond,
+  isDayOfWeek,
+  isDayOfYear,
+  isWeekOfYear,
+  isLocaleCode,
+  isFormatString,
+} from './core/types/brands.js';
+
+export type {
+  // Format types
+  FormatString as DateFormatString,
+  StandardFormats,
+  FormatToken,
+  FormatValidator,
+  FormatCompiler,
+  CompiledFormat,
+  DateOnlyFormat,
+  TimeOnlyFormat,
+  ISOFormat,
+  LocaleFormat,
+} from './core/types/format.js';
+
+// Format token registry
+export { FORMAT_TOKENS } from './core/types/format.js';
+
+export type {
+  // Utility types (avoiding duplicates with other imports)
+  StrictDateComponents,
+  PartialDateComponents,
+  DateArithmeticOperation,
+  DateValidation,
+  DateParser,
+  DateFormatter,
+  Duration,
+  DeepPartial,
+  DeepRequired,
+} from './core/types/utilities.js';
+
+export type {
+  // Error types
+  ParsingError,
+  ConfigurationError,
+} from './core/types/errors.js';
+
+// Error handling classes
+export {
+  ErrorFactory,
+  ErrorHandler,
+  InvalidDateError,
+  ValidationError,
+  InvalidFormatError,
+  PluginError,
+  InvalidLocaleError,
+  InvalidTimezoneError,
+  KairosBaseError
+} from './core/types/errors.js';
+
 // Plugin exports
 export { default as holidayEngine } from './plugins/holiday/engine.js';
 export { default as fixedCalculator } from './plugins/holiday/calculators/fixed.js';
@@ -66,6 +197,8 @@ export { default as localeCN } from './plugins/locale/zh-CN/index.js';
 
 // Utility exports
 export { LRUCache, memoize, createDateCache, createHolidayCache } from './core/utils/cache.js';
+export { ObjectPool, createPool, globalPoolManager, datePool } from './core/utils/object-pool.js';
+export { MemoryMonitor, globalMemoryMonitor } from './core/utils/memory-monitor.js';
 export {
   isValidDate,
   isValidNumber,
@@ -78,6 +211,48 @@ export {
   validateHolidayRule,
   throwError,
 } from './core/utils/validators.js';
+
+// Advanced validation and error handling system
+export {
+  AdvancedValidator,
+  globalValidator,
+  validateDateComponents,
+  validateHolidayRule as validateHolidayRuleAdvanced,
+  createCustomValidator,
+  type ValidationContext,
+  type ValidationRule,
+  type EnhancedValidationResult,
+  type EnhancedValidationSchema,
+  type ValidationErrorDetail,
+  type ValidationWarning,
+} from './core/utils/validation-framework.js';
+
+export {
+  AdvancedErrorHandler,
+  globalErrorHandler,
+  ErrorBoundary,
+  ErrorMonitor,
+  globalErrorMonitor,
+  handleError,
+  type RecoveryStrategy,
+  type ErrorSeverity,
+  type ErrorContext,
+  type ErrorRecoveryResult,
+  type RecoveryConfig,
+  type ErrorMetrics,
+  type ErrorAlert,
+} from './core/utils/error-handling.js';
+
+export {
+  ErrorManager,
+  globalErrorManager,
+  executeWithErrorHandling,
+  validateWithErrorHandling,
+  handleWithErrorRecovery,
+  type ErrorManagerConfig,
+  type ErrorManagerResult,
+  type OperationConfig,
+} from './core/utils/error-manager.js';
 
 // Calculator classes
 export { FixedCalculator } from './plugins/holiday/calculators/fixed.js';

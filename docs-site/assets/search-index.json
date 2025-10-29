@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "title": "Getting Started",
+      "description": "Learn how to install and use Kairos",
+      "url": "getting-started.html",
+      "category": "guide"
+    },
+    {
+      "title": "API Reference",
+      "description": "Complete API documentation",
+      "url": "api.html",
+      "category": "api"
+    },
+    {
+      "title": "Plugins",
+      "description": "Available plugins and their documentation",
+      "url": "plugins.html",
+      "category": "plugin"
+    },
+    {
+      "title": "Examples",
+      "description": "Interactive examples and code samples",
+      "url": "examples.html",
+      "category": "example"
+    }
+  ]
+}

@@ -63,7 +63,7 @@ The library follows a plugin-based architecture where the core (`src/core/plugin
 - **Plugins** (`src/plugins/`): Modular extensions
   - `business/`: Business day calculations and fiscal year support
   - `holiday/`: Dynamic holiday calculation with multiple calculator strategies
-  - `locale/`: Locale-specific data (en-US, de-DE, ja-JP, tr-TR)
+  - `locale/`: Locale-specific data (en-US, de-DE, ja-JP, tr-TR, etc.)
   - `parse/`: Various parsing strategies (ISO, RFC2822, Unix, flexible)
   - `format/`: Date formatting with token support
   - `duration/`, `range/`, `relative/`, `timezone/`, `calendar/`: Additional functionality

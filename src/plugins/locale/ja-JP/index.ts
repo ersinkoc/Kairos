@@ -202,7 +202,7 @@ export default {
 
       getEquinoxDays(year: number): any[] {
         const equinoxHolidays = holidays.filter((h) =>
-          ['vernal-equinox-day', 'autumnal-equinox-day'].includes(h.id!)
+          ['vernal-equinox-day', 'autumnal-equinox-day'].includes(h.id || '')
         );
 
         const result = [];

@@ -232,7 +232,7 @@ export const federalHolidays = holidays.filter((h) =>
     'veterans-day',
     'thanksgiving',
     'christmas-day',
-  ].includes(h.id!)
+  ].includes(h.id || '')
 );
 
 // All holidays including state-specific ones

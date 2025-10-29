@@ -260,14 +260,16 @@ const calendarPlugin: KairosPlugin = {
       startOfWeek(startDay = 0): KairosInstance {
         const clone = this.clone();
         const day = clone.day();
-        const diff = (day < startDay ? -7 : 0) + startDay - day;
+        // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+        const diff = (day < startDay ? -7 : 0) + startDay - (day as number);
         return clone.add(diff, 'days').startOf('day');
       },
 
       endOfWeek(startDay = 0): KairosInstance {
         const clone = this.clone();
         const day = clone.day();
-        const diff = (day < startDay ? -7 : 0) + startDay - day + 6;
+        // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+        const diff = (day < startDay ? -7 : 0) + startDay - (day as number) + 6;
         return clone.add(diff, 'days').endOf('day');
       },
 

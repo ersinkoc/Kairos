@@ -211,5 +211,5 @@ export const publicHolidays = holidays.filter((h) => [
     'republic-day',
     'ramadan-feast',
     'sacrifice-feast',
-].includes(h.id));
+].includes(h.id || ''));
 //# sourceMappingURL=holidays.js.map

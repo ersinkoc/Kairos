@@ -9,7 +9,9 @@ import type {
   PluginUtils,
 } from './types/plugin.js';
 import type { DateLike } from './types/base.js';
-import { LRUCache, memoize } from './utils/cache.js';
+import { LRUCache, memoize, memoizeDate } from './utils/cache.js';
+import { globalPoolManager, datePool } from './utils/object-pool.js';
+import { globalMemoryMonitor, type MemoryThresholds } from './utils/memory-monitor.js';
 import { throwError } from './utils/validators.js';
 
 // Type guards
@@ -33,6 +35,82 @@ const isDateLike = (obj: unknown): obj is DateLike => {
 
 const globalCache = new LRUCache<string, unknown>(1000);
 
+// Performance optimization: Cache compiled regex patterns
+const REGEX_CACHE = {
+  dateOnly: /^\d{4}-\d{2}-\d{2}$/,
+  european: /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/,
+  iso8601: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,
+  usFormat: /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
+} as const;
+
+// Performance optimization: Cache parsing results for string inputs
+const parseCache = new LRUCache<string, Date>(5000);
+
+// Optimized date validation function
+const isValidDateComponents = (year: number, month: number, day: number): boolean => {
+  // Quick range checks first
+  if (year < 1 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) {
+    return false;
+  }
+
+  // Create date and validate
+  const date = new Date(year, month - 1, day, 0, 0, 0, 0);
+
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+};
+
+// Memoized parsing functions for performance
+const parseISODate = memoizeDate(
+  (input: string): Date | null => {
+    if (REGEX_CACHE.dateOnly.test(input)) {
+      const [year, month, day] = input.split('-').map(Number);
+
+      if (isValidDateComponents(year, month, day)) {
+        return new Date(year, month - 1, day, 0, 0, 0, 0);
+      }
+      return null;
+    }
+    return null;
+  },
+  (input) => input
+);
+
+const parseEuropeanDate = memoizeDate(
+  (input: string): Date | null => {
+    const match = input.match(REGEX_CACHE.european);
+    if (match) {
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10);
+      const year = parseInt(match[3], 10);
+
+      if (isValidDateComponents(year, month, day)) {
+        return new Date(year, month - 1, day, 0, 0, 0, 0);
+      }
+      return null;
+    }
+    return null;
+  },
+  (input) => input
+);
+
+const parseUSDate = memoizeDate(
+  (input: string): Date | null => {
+    const match = input.match(REGEX_CACHE.usFormat);
+    if (match) {
+      const month = parseInt(match[1], 10);
+      const day = parseInt(match[2], 10);
+      const year = parseInt(match[3], 10);
+
+      if (isValidDateComponents(year, month, day)) {
+        return new Date(year, month - 1, day, 0, 0, 0, 0);
+      }
+      return null;
+    }
+    return null;
+  },
+  (input) => input
+);
+
 /**
  * Core Kairos class providing immutable date manipulation methods.
  * All methods return new instances rather than modifying the current instance.
@@ -53,6 +131,78 @@ export class KairosCore {
     strict: false,
     suppressDeprecationWarnings: false,
   };
+
+  // Memory management
+  private static _memoryMonitorEnabled = false;
+  private static _objectPoolEnabled = true;
+
+  // Static memory management methods
+  static enableMemoryMonitoring(thresholds?: MemoryThresholds): void {
+    if (!this._memoryMonitorEnabled) {
+      if (thresholds) {
+        globalMemoryMonitor.updateThresholds(thresholds);
+      }
+
+      globalMemoryMonitor.start();
+      this._memoryMonitorEnabled = true;
+
+      // Set up alert listeners
+      globalMemoryMonitor.on('emergency', (alert) => {
+        console.error(`🚨 Memory Emergency: ${alert.message}`);
+        // Force garbage collection if available
+        globalMemoryMonitor.forceGC();
+      });
+
+      globalMemoryMonitor.on('critical', (alert) => {
+        console.warn(`⚠️ Memory Critical: ${alert.message}`);
+      });
+
+      globalMemoryMonitor.on('memory-leak-detected', (info) => {
+        console.error(
+          `💧 Memory Leak Detected: Growth ratio: ${(info.growthRatio * 100).toFixed(1)}%`
+        );
+      });
+    }
+  }
+
+  static disableMemoryMonitoring(): void {
+    if (this._memoryMonitorEnabled) {
+      globalMemoryMonitor.stop();
+      this._memoryMonitorEnabled = false;
+    }
+  }
+
+  static isMemoryMonitoringEnabled(): boolean {
+    return this._memoryMonitorEnabled;
+  }
+
+  static enableObjectPooling(): void {
+    this._objectPoolEnabled = true;
+    // Pre-warm object pools
+    globalPoolManager.preWarmAll({
+      date: 20,
+      array: 10,
+      map: 5,
+      set: 5,
+    });
+  }
+
+  static disableObjectPooling(): void {
+    this._objectPoolEnabled = false;
+    globalPoolManager.clearAll();
+  }
+
+  static isObjectPoolingEnabled(): boolean {
+    return this._objectPoolEnabled;
+  }
+
+  static getMemoryStats() {
+    return globalMemoryMonitor.getStats();
+  }
+
+  static getObjectPoolStats() {
+    return globalPoolManager.getAllStats();
+  }
 
   /**
    * Creates a new Kairos instance.
@@ -82,86 +232,66 @@ export class KairosCore {
       return new Date();
     }
 
+    // Fast path: Date instance
     if (input instanceof Date) {
       return new Date(input.getTime());
     }
 
+    // Fast path: Number timestamp
     if (typeof input === 'number') {
-      if (isNaN(input)) {
-        return new Date(NaN);
-      }
-      return new Date(input);
+      return isNaN(input) ? new Date(NaN) : new Date(input);
     }
 
+    // Fast path: String input with caching
     if (typeof input === 'string') {
-      // Check for obviously invalid strings first
-      if (input.toLowerCase() === 'invalid' || input === '') {
-        return new Date(NaN);
+      // Check cache first for performance
+      if (parseCache.has(input)) {
+        const cached = parseCache.get(input)!;
+        return new Date(cached.getTime());
       }
 
-      // Check if the input is a date-only string (YYYY-MM-DD)
-      const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
-      if (dateOnlyPattern.test(input)) {
-        // Parse as local date by adding time component
-        const [year, month, day] = input.split('-').map(Number);
-
-        // Validate month and day ranges
-        if (month < 1 || month > 12) {
-          return new Date(NaN);
-        }
-
-        // Create the date and check if it's valid
-        const date = new Date(year, month - 1, day, 0, 0, 0, 0);
-
-        // Check if the date components match what we input
-        // This catches invalid dates like Feb 29 on non-leap years
-        if (
-          date.getFullYear() !== year ||
-          date.getMonth() !== month - 1 ||
-          date.getDate() !== day
-        ) {
-          return new Date(NaN);
-        }
-
-        return date;
+      // Quick invalid string check
+      if (input.length === 0 || input.toLowerCase() === 'invalid') {
+        const invalid = new Date(NaN);
+        parseCache.set(input, invalid);
+        return invalid;
       }
 
-      // Try European date format DD.MM.YYYY
-      const europeanPattern = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/;
-      if (europeanPattern.test(input)) {
-        const match = input.match(europeanPattern);
-        if (match) {
-          const day = parseInt(match[1], 10);
-          const month = parseInt(match[2], 10);
-          const year = parseInt(match[3], 10);
+      // Try optimized parsing functions
+      let result: Date | null = null;
 
-          // Validate
-          if (month < 1 || month > 12 || day < 1 || day > 31) {
-            return new Date(NaN);
-          }
-
-          const date = new Date(year, month - 1, day, 0, 0, 0, 0);
-
-          // Verify date didn't roll over
-          if (
-            date.getFullYear() !== year ||
-            date.getMonth() !== month - 1 ||
-            date.getDate() !== day
-          ) {
-            return new Date(NaN);
-          }
-
-          return date;
-        }
+      // ISO date format (YYYY-MM-DD)
+      result = parseISODate(input);
+      if (result) {
+        parseCache.set(input, result);
+        return result;
       }
 
+      // European format (DD.MM.YYYY)
+      result = parseEuropeanDate(input);
+      if (result) {
+        parseCache.set(input, result);
+        return result;
+      }
+
+      // US format (MM/DD/YYYY)
+      result = parseUSDate(input);
+      if (result) {
+        parseCache.set(input, result);
+        return result;
+      }
+
+      // Fallback to native Date parsing for other formats
       const parsed = new Date(input);
       if (isNaN(parsed.getTime())) {
         if (KairosCore.config.strict) {
           throwError(`Invalid date string: ${input}`, 'INVALID_DATE');
         }
+        parseCache.set(input, new Date(NaN));
         return new Date(NaN);
       }
+
+      parseCache.set(input, parsed);
       return parsed;
     }
 
@@ -283,6 +413,24 @@ export class KairosCore {
    * ```
    */
   clone(): KairosInstance {
+    // Use object pool for Date instances if enabled
+    if (KairosCore._objectPoolEnabled) {
+      const pooledDate = datePool.acquire();
+      pooledDate.setTime(this._date.getTime());
+      const instance = new KairosCore(pooledDate) as any;
+
+      // Set up cleanup on instance disposal (when GC'd)
+      if (typeof globalThis !== 'undefined' && 'FinalizationRegistry' in globalThis) {
+        const FinalizationRegistry = (globalThis as any).FinalizationRegistry;
+        const registry = new FinalizationRegistry((date: Date) => {
+          datePool.release(date);
+        });
+        registry.register(instance, pooledDate);
+      }
+
+      return instance;
+    }
+
     return new KairosCore(this._date) as any;
   }
 
@@ -881,7 +1029,7 @@ export class PluginSystem {
     Object.assign(this.extensionMethods, methods);
 
     for (const [name, method] of Object.entries(methods)) {
-      KairosCore.prototype[name as keyof KairosCore] = method as any;
+      KairosCore.prototype[name as keyof KairosCore] = method;
     }
   }
 

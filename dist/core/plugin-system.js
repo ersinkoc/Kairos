@@ -1,4 +1,6 @@
-import { LRUCache, memoize } from './utils/cache.js';
+import { LRUCache, memoize, memoizeDate } from './utils/cache.js';
+import { globalPoolManager, datePool } from './utils/object-pool.js';
+import { globalMemoryMonitor } from './utils/memory-monitor.js';
 import { throwError } from './utils/validators.js';
 const isKairosInstance = (obj) => {
     return obj !== null && typeof obj === 'object' && '_date' in obj && obj._date instanceof Date;
@@ -12,7 +14,107 @@ const isDateLike = (obj) => {
         (('year' in obj && 'month' in obj && 'day' in obj) || 'date' in obj));
 };
 const globalCache = new LRUCache(1000);
+const REGEX_CACHE = {
+    dateOnly: /^\d{4}-\d{2}-\d{2}$/,
+    european: /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/,
+    iso8601: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/,
+    usFormat: /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
+};
+const parseCache = new LRUCache(5000);
+const isValidDateComponents = (year, month, day) => {
+    if (year < 1 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) {
+        return false;
+    }
+    const date = new Date(year, month - 1, day, 0, 0, 0, 0);
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+};
+const parseISODate = memoizeDate((input) => {
+    if (REGEX_CACHE.dateOnly.test(input)) {
+        const [year, month, day] = input.split('-').map(Number);
+        if (isValidDateComponents(year, month, day)) {
+            return new Date(year, month - 1, day, 0, 0, 0, 0);
+        }
+        return null;
+    }
+    return null;
+}, (input) => input);
+const parseEuropeanDate = memoizeDate((input) => {
+    const match = input.match(REGEX_CACHE.european);
+    if (match) {
+        const day = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10);
+        const year = parseInt(match[3], 10);
+        if (isValidDateComponents(year, month, day)) {
+            return new Date(year, month - 1, day, 0, 0, 0, 0);
+        }
+        return null;
+    }
+    return null;
+}, (input) => input);
+const parseUSDate = memoizeDate((input) => {
+    const match = input.match(REGEX_CACHE.usFormat);
+    if (match) {
+        const month = parseInt(match[1], 10);
+        const day = parseInt(match[2], 10);
+        const year = parseInt(match[3], 10);
+        if (isValidDateComponents(year, month, day)) {
+            return new Date(year, month - 1, day, 0, 0, 0, 0);
+        }
+        return null;
+    }
+    return null;
+}, (input) => input);
 export class KairosCore {
+    static enableMemoryMonitoring(thresholds) {
+        if (!this._memoryMonitorEnabled) {
+            if (thresholds) {
+                globalMemoryMonitor.updateThresholds(thresholds);
+            }
+            globalMemoryMonitor.start();
+            this._memoryMonitorEnabled = true;
+            globalMemoryMonitor.on('emergency', (alert) => {
+                console.error(`🚨 Memory Emergency: ${alert.message}`);
+                globalMemoryMonitor.forceGC();
+            });
+            globalMemoryMonitor.on('critical', (alert) => {
+                console.warn(`⚠️ Memory Critical: ${alert.message}`);
+            });
+            globalMemoryMonitor.on('memory-leak-detected', (info) => {
+                console.error(`💧 Memory Leak Detected: Growth ratio: ${(info.growthRatio * 100).toFixed(1)}%`);
+            });
+        }
+    }
+    static disableMemoryMonitoring() {
+        if (this._memoryMonitorEnabled) {
+            globalMemoryMonitor.stop();
+            this._memoryMonitorEnabled = false;
+        }
+    }
+    static isMemoryMonitoringEnabled() {
+        return this._memoryMonitorEnabled;
+    }
+    static enableObjectPooling() {
+        this._objectPoolEnabled = true;
+        globalPoolManager.preWarmAll({
+            date: 20,
+            array: 10,
+            map: 5,
+            set: 5,
+        });
+    }
+    static disableObjectPooling() {
+        this._objectPoolEnabled = false;
+        globalPoolManager.clearAll();
+    }
+    static isObjectPoolingEnabled() {
+        return this._objectPoolEnabled;
+    }
+    static getMemoryStats() {
+        return globalMemoryMonitor.getStats();
+    }
+    static getObjectPoolStats() {
+        return globalPoolManager.getAllStats();
+    }
     constructor(input) {
         this._date = this.parseInput(input);
     }
@@ -24,55 +126,43 @@ export class KairosCore {
             return new Date(input.getTime());
         }
         if (typeof input === 'number') {
-            if (isNaN(input)) {
-                return new Date(NaN);
-            }
-            return new Date(input);
+            return isNaN(input) ? new Date(NaN) : new Date(input);
         }
         if (typeof input === 'string') {
-            if (input.toLowerCase() === 'invalid' || input === '') {
-                return new Date(NaN);
+            if (parseCache.has(input)) {
+                const cached = parseCache.get(input);
+                return new Date(cached.getTime());
             }
-            const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
-            if (dateOnlyPattern.test(input)) {
-                const [year, month, day] = input.split('-').map(Number);
-                if (month < 1 || month > 12) {
-                    return new Date(NaN);
-                }
-                const date = new Date(year, month - 1, day, 0, 0, 0, 0);
-                if (date.getFullYear() !== year ||
-                    date.getMonth() !== month - 1 ||
-                    date.getDate() !== day) {
-                    return new Date(NaN);
-                }
-                return date;
+            if (input.length === 0 || input.toLowerCase() === 'invalid') {
+                const invalid = new Date(NaN);
+                parseCache.set(input, invalid);
+                return invalid;
             }
-            const europeanPattern = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/;
-            if (europeanPattern.test(input)) {
-                const match = input.match(europeanPattern);
-                if (match) {
-                    const day = parseInt(match[1], 10);
-                    const month = parseInt(match[2], 10);
-                    const year = parseInt(match[3], 10);
-                    if (month < 1 || month > 12 || day < 1 || day > 31) {
-                        return new Date(NaN);
-                    }
-                    const date = new Date(year, month - 1, day, 0, 0, 0, 0);
-                    if (date.getFullYear() !== year ||
-                        date.getMonth() !== month - 1 ||
-                        date.getDate() !== day) {
-                        return new Date(NaN);
-                    }
-                    return date;
-                }
+            let result = null;
+            result = parseISODate(input);
+            if (result) {
+                parseCache.set(input, result);
+                return result;
+            }
+            result = parseEuropeanDate(input);
+            if (result) {
+                parseCache.set(input, result);
+                return result;
+            }
+            result = parseUSDate(input);
+            if (result) {
+                parseCache.set(input, result);
+                return result;
             }
             const parsed = new Date(input);
             if (isNaN(parsed.getTime())) {
                 if (KairosCore.config.strict) {
                     throwError(`Invalid date string: ${input}`, 'INVALID_DATE');
                 }
+                parseCache.set(input, new Date(NaN));
                 return new Date(NaN);
             }
+            parseCache.set(input, parsed);
             return parsed;
         }
         if (input && typeof input === 'object') {
@@ -124,6 +214,19 @@ export class KairosCore {
         return new Date(this._date.getTime());
     }
     clone() {
+        if (KairosCore._objectPoolEnabled) {
+            const pooledDate = datePool.acquire();
+            pooledDate.setTime(this._date.getTime());
+            const instance = new KairosCore(pooledDate);
+            if (typeof globalThis !== 'undefined' && 'FinalizationRegistry' in globalThis) {
+                const FinalizationRegistry = globalThis.FinalizationRegistry;
+                const registry = new FinalizationRegistry((date) => {
+                    datePool.release(date);
+                });
+                registry.register(instance, pooledDate);
+            }
+            return instance;
+        }
         return new KairosCore(this._date);
     }
     year(value) {
@@ -385,6 +488,8 @@ KairosCore.config = {
     strict: false,
     suppressDeprecationWarnings: false,
 };
+KairosCore._memoryMonitorEnabled = false;
+KairosCore._objectPoolEnabled = true;
 export class PluginSystem {
     static use(plugin) {
         const plugins = Array.isArray(plugin) ? plugin : [plugin];

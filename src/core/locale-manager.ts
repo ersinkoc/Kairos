@@ -31,7 +31,7 @@ export interface LocaleConfig extends LocaleData {
 
 export class LocaleManager {
   private static instance: LocaleManager;
-  private locales: Map<string, LocaleConfig> = new Map();
+  private locales: Map<string, LocaleConfig> = new Map<string, LocaleConfig>();
   private currentLocale: string = 'en-US';
   private defaultLocale: string = 'en-US';
 

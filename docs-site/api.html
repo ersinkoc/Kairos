@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference - Kairos</title>
+    <meta name="description" content="Kairos - Revolutionary zero-dependency JavaScript date/time library with modular architecture">
+    <meta name="keywords" content="javascript, date, time, library, zero-dependency, modular, plugin">
+
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/theme.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="assets/images/favicon.ico">
+
+    <!-- Open Graph meta tags -->
+    <meta property="og:title" content="{{TITLE}}">
+    <meta property="og:description" content="Kairos - Revolutionary zero-dependency JavaScript date/time library">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kairos.js.org">
+    <meta property="og:image" content="https://kairos.js.org/assets/images/og-image.png">
+
+    <!-- Twitter Card meta tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{TITLE}}">
+    <meta name="twitter:description" content="Kairos - Revolutionary zero-dependency JavaScript date/time library">
+    <meta name="twitter:image" content="https://kairos.js.org/assets/images/twitter-card.png">
+</head>
+<body class="api">
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-container">
+                <div class="nav-brand">
+                    <a href="index.html" class="brand-link">
+                        <img src="assets/images/logo.svg" alt="Kairos" class="brand-logo">
+                        <span class="brand-name">Kairos</span>
+                    </a>
+                </div>
+
+                <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+                    <span class="hamburger"></span>
+                    <span class="hamburger"></span>
+                    <span class="hamburger"></span>
+                </button>
+
+                <div class="nav-menu">
+                    <ul class="nav-list">
+                        <li class="nav-item">
+                            <a href="index.html" class="nav-link {{#if (eq PAGE_NAME 'index')}}active{{/if}}">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="getting-started.html" class="nav-link {{#if (eq PAGE_NAME 'getting-started')}}active{{/if}}">Getting Started</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a href="#" class="nav-link dropdown-toggle" role="button" aria-expanded="false">
+                                Documentation
+                                <svg class="dropdown-icon" width="12" height="12" viewBox="0 0 12 12">
+                                    <path d="M6 9L1 4h10L6 9z" fill="currentColor"/>
+                                </svg>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="api.html" class="dropdown-link">API Reference</a></li>
+                                <li><a href="plugins.html" class="dropdown-link">Plugins</a></li>
+                                <li><a href="examples.html" class="dropdown-link">Examples</a></li>
+                                <li><a href="guides.html" class="dropdown-link">Guides</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            <a href="https://github.com/ersinkoc/kairos" class="nav-link external" target="_blank" rel="noopener noreferrer">
+                                GitHub
+                                <svg class="external-icon" width="14" height="14" viewBox="0 0 14 14">
+                                    <path d="M7 0C3.13 0 0 3.13 0 7c0 3.09 2.01 5.71 4.79 6.64.35.06.48-.15.48-.33v-1.16c-1.95.42-2.36-.94-2.36-.94-.32-.81-.78-1.03-.78-1.03-.64-.44.05-.43.05-.43.71.05 1.08.73 1.08.73.63 1.08 1.65.77 2.05.59.06-.46.25-.77.45-.95-1.57-.18-3.22-.78-3.22-3.48 0-.77.27-1.4.73-1.89-.07-.18-.32-.91.07-1.89 0 0 .59-.19 1.93.73.56-.16 1.16-.23 1.76-.23s1.2.08 1.76.23c1.34-.92 1.93-.73 1.93-.73.39.98.14 1.71.07 1.89.46.49.73 1.12.73 1.89 0 2.71-1.65 3.3-3.22 3.48.25.22.48.65.48 1.31v1.94c0 .18.13.39.48.33C11.99 12.71 14 10.09 14 7c0-3.87-3.13-7-7-7z" fill="currentColor"/>
+                                </svg>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="nav-actions">
+                    <button class="theme-toggle" aria-label="Toggle theme" title="Toggle dark/light mode">
+                        <svg class="theme-icon sun-icon" width="20" height="20" viewBox="0 0 20 20">
+                            <circle cx="10" cy="10" r="4" fill="currentColor"/>
+                            <path d="M10 1v2m0 14v2m9-9h-2m-14 0H1m15.364-6.364l-1.414 1.414M5.05 5.05L3.636 3.636m12.728 12.728l-1.414-1.414m-8.486 0L3.636 16.364" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <svg class="theme-icon moon-icon" width="20" height="20" viewBox="0 0 20 20" style="display: none;">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" fill="currentColor"/>
+                        </svg>
+                    </button>
+
+                    <div class="search-container">
+                        <input type="search" class="search-input" placeholder="Search documentation..." aria-label="Search">
+                        <button class="search-button" aria-label="Search">
+                            <svg width="16" height="16" viewBox="0 0 16 16">
+                                <circle cx="6" cy="6" r="4" stroke="currentColor" stroke-width="2" fill="none"/>
+                                <path d="M11 11l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main content -->
+    <main id="main-content" class="main">
+        <div class="container">
+    <div class="page-header">
+        <h1>API Reference</h1>
+        <p class="page-description">
+            Complete API reference for Kairos date library.
+        </p>
+    </div>
+
+    <div class="api-layout">
+        <aside class="api-sidebar">
+            <nav class="api-nav">
+                <div class="api-nav-group">
+                    <h3>Core API</h3>
+                    <ul>
+                        <li><a href="#kairos" class="api-nav-link">Kairos</a></li>
+                        <li><a href="#kairosdate" class="api-nav-link">KairosDate</a></li>
+                        <li><a href="#formatting" class="api-nav-link">Formatting</a></li>
+                        <li><a href="#manipulation" class="api-nav-link">Manipulation</a></li>
+                        <li><a href="#query" class="api-nav-link">Query</a></li>
+                    </ul>
+                </div>
+                <div class="api-nav-group">
+                    <h3>Plugin API</h3>
+                    <ul>
+                        <li><a href="#business" class="api-nav-link">Business Days</a></li>
+                        <li><a href="#holidays" class="api-nav-link">Holidays</a></li>
+                        <li><a href="#locale" class="api-nav-link">Localization</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="api-content">
+            <section id="kairos" class="api-section">
+                <h2>Kairos</h2>
+                <p>Main constructor function for creating date instances.</p>
+
+                <div class="api-signature">
+                    <code>kairos(input?: DateInput, options?: KairosOptions): KairosDate</code>
+                </div>
+
+                <h3>Parameters</h3>
+                <div class="api-params">
+                    <div class="param">
+                        <code class="param-name">input</code>
+                        <span class="param-type">DateInput</span>
+                        <p class="param-description">Date input (string, Date, number, array, or object)</p>
+                    </div>
+                    <div class="param">
+                        <code class="param-name">options</code>
+                        <span class="param-type">KairosOptions</span>
+                        <p class="param-description">Configuration options</p>
+                    </div>
+                </div>
+
+                <h3>Examples</h3>
+                <div class="code-block">
+                    <pre><code>// Current date
+const now = kairos();
+
+// From string
+const date = kairos('2024-06-15');
+
+// From Date object
+const fromDate = kairos(new Date());
+
+// From components
+const fromComponents = kairos({ year: 2024, month: 5, day: 15 });</code></pre>
+                </div>
+            </section>
+
+            <section id="kairosdate" class="api-section">
+                <h2>KairosDate</h2>
+                <p>Main date instance class with all manipulation and formatting methods.</p>
+
+                <h3>Methods</h3>
+
+                <div class="api-method">
+                    <h4>format(format: string): string</h4>
+                    <p>Format date according to specified format string.</p>
+                    <div class="code-block">
+                        <pre><code>const date = kairos('2024-06-15');
+console.log(date.format('YYYY-MM-DD')); // 2024-06-15
+console.log(date.format('MMMM Do, YYYY')); // June 15th, 2024</code></pre>
+                    </div>
+                </div>
+
+                <div class="api-method">
+                    <h4>add(amount: number, unit: TimeUnit): KairosDate</h4>
+                    <p>Add specified amount of time units to the date.</p>
+                    <div class="code-block">
+                        <pre><code>const date = kairos('2024-06-15');
+const tomorrow = date.add(1, 'day');
+const nextMonth = date.add(1, 'month');</code></pre>
+                    </div>
+                </div>
+
+                <div class="api-method">
+                    <h4>subtract(amount: number, unit: TimeUnit): KairosDate</h4>
+                    <p>Subtract specified amount of time units from the date.</p>
+                    <div class="code-block">
+                        <pre><code>const date = kairos('2024-06-15');
+const yesterday = date.subtract(1, 'day');</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="formatting" class="api-section">
+                <h2>Formatting</h2>
+                <p>Kairos provides comprehensive date formatting with various tokens:</p>
+
+                <div class="format-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Token</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>YYYY</code></td>
+                                <td>4-digit year</td>
+                                <td>2024</td>
+                            </tr>
+                            <tr>
+                                <td><code>MM</code></td>
+                                <td>2-digit month</td>
+                                <td>06</td>
+                            </tr>
+                            <tr>
+                                <td><code>DD</code></td>
+                                <td>2-digit day</td>
+                                <td>15</td>
+                            </tr>
+                            <tr>
+                                <td><code>MMMM</code></td>
+                                <td>Full month name</td>
+                                <td>June</td>
+                            </tr>
+                            <tr>
+                                <td><code>dddd</code></td>
+                                <td>Full day name</td>
+                                <td>Saturday</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+    <div class="footer-content">
+        <div class="footer-section">
+            <h4>Kairos</h4>
+            <p>Revolutionary zero-dependency JavaScript date/time library.</p>
+            <div class="footer-social">
+                <a href="https://github.com/ersinkoc/kairos" aria-label="GitHub">
+                    <svg width="20" height="20" viewBox="0 0 20 20">
+                        <path d="M10 0C4.477 0 0 4.477 0 10c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.341-3.369-1.341-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0110 4.844c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C17.137 18.163 20 14.418 20 10c0-5.523-4.477-10-10-10z" fill="currentColor"/>
+                    </svg>
+                </a>
+                <a href="https://www.npmjs.com/package/@oxog/kairos" aria-label="npm">
+                    <svg width="20" height="20" viewBox="0 0 20 20">
+                        <path d="M1 0h18l-1 18-8 2-8-2z" fill="#CB3837"/>
+                        <path d="M10 2l7 1v11l-7 2z" fill="#fff"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="footer-section">
+            <h4>Documentation</h4>
+            <ul>
+                <li><a href="getting-started.html">Getting Started</a></li>
+                <li><a href="api.html">API Reference</a></li>
+                <li><a href="examples.html">Examples</a></li>
+                <li><a href="guides.html">Guides</a></li>
+            </ul>
+        </div>
+
+        <div class="footer-section">
+            <h4>Resources</h4>
+            <ul>
+                <li><a href="https://github.com/ersinkoc/kairos">GitHub</a></li>
+                <li><a href="https://www.npmjs.com/package/@oxog/kairos">npm</a></li>
+                <li><a href="https://github.com/ersinkoc/kairos/issues">Issues</a></li>
+                <li><a href="https://github.com/ersinkoc/kairos/blob/main/LICENSE">License</a></li>
+            </ul>
+        </div>
+
+        <div class="footer-section">
+            <h4>Community</h4>
+            <ul>
+                <li><a href="https://github.com/ersinkoc/kairos/discussions">Discussions</a></li>
+                <li><a href="https://github.com/ersinkoc/kairos/pulls">Pull Requests</a></li>
+                <li><a href="https://github.com/ersinkoc/kairos/releases">Releases</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        <p>&copy; 2024 Ersin Koc. Licensed under MIT.</p>
+    </div>
+</div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="assets/js/main.js"></script>
+    <script src="assets/js/search.js"></script>
+    <script src="assets/js/theme.js"></script>
+    <script src="assets/js/interactive-examples.js"></script>
+</body>
+</html>

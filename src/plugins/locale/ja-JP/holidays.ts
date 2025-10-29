@@ -231,7 +231,7 @@ export const goldenWeekHolidays = holidays.filter((h) =>
     'greenery-day',
     'childrens-day',
     'golden-week-substitute',
-  ].includes(h.id!)
+  ].includes(h.id || '')
 );
 
 // Public holidays only

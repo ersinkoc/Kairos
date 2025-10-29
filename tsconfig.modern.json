@@ -1,0 +1,57 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Modern target for modern bundlers
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": ["ES2022", "DOM"],
+
+    // Enhanced type checking
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": false,
+
+    // Performance optimizations
+    "incremental": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo-modern",
+    "assumeChangesOnlyAffectDirectDependencies": true,
+
+    // Output optimizations
+    "removeComments": true,
+    "stripInternal": true,
+    "isolatedModules": true,
+
+    // Advanced features
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": false,
+    "resolvePackageJsonExports": true,
+    "resolvePackageJsonImports": true,
+
+    // Path mappings for cleaner imports
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@/core/*": ["src/core/*"],
+      "@/plugins/*": ["src/plugins/*"],
+      "@/utils/*": ["src/core/utils/*"],
+      "@/types/*": ["src/core/types/*"]
+    }
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ],
+  "ts-node": {
+    "compilerOptions": {
+      "target": "ES2022",
+      "module": "CommonJS"
+    }
+  }
+}

@@ -220,7 +220,7 @@ export const goldenWeekHolidays = holidays.filter((h) => [
     'greenery-day',
     'childrens-day',
     'golden-week-substitute',
-].includes(h.id));
+].includes(h.id || ''));
 export const publicHolidays = holidays.filter((h) => h.id !== 'golden-week-substitute');
 export const allHolidays = [...holidays, ...observances, ...historicalHolidays];
 export const reiwaHolidays = holidays.filter((h) => h.id !== 'emperors-birthday-showa' && h.id !== 'emperors-birthday-heisei');

@@ -1,7 +1,41 @@
 import type { KairosPlugin, KairosStatic, KairosInstance, KairosInput, ExtensionMethods, StaticMethods } from './types/plugin.js';
+import { type MemoryThresholds } from './utils/memory-monitor.js';
 export declare class KairosCore {
     private _date;
     private static config;
+    private static _memoryMonitorEnabled;
+    private static _objectPoolEnabled;
+    static enableMemoryMonitoring(thresholds?: MemoryThresholds): void;
+    static disableMemoryMonitoring(): void;
+    static isMemoryMonitoringEnabled(): boolean;
+    static enableObjectPooling(): void;
+    static disableObjectPooling(): void;
+    static isObjectPoolingEnabled(): boolean;
+    static getMemoryStats(): {
+        snapshotCount: number;
+        monitoring: boolean;
+        checkInterval: number;
+        timeRange: {
+            start: number;
+            end: number;
+            duration: number;
+        };
+        heap: {
+            current: number;
+            min: number;
+            max: number;
+            avg: number;
+            growth: number;
+        };
+        rss: {
+            current: number;
+            min: number;
+            max: number;
+            avg: number;
+            growth: number;
+        };
+    } | null;
+    static getObjectPoolStats(): Record<string, any>;
     constructor(input?: KairosInput);
     private parseInput;
     valueOf(): number;
