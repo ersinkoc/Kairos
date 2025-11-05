@@ -380,6 +380,7 @@ export class Duration {
     return {
       years: this.years,
       months: this.months,
+      weeks: this.weeks,
       days: this.days,
       hours: this.hours,
       minutes: this.minutes,
