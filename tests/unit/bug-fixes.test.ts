@@ -12,17 +12,25 @@ import formatPlugin from '../../src/plugins/format/tokens.js';
 import timezonePlugin from '../../src/plugins/timezone/timezone.js';
 import calendarPlugin from '../../src/plugins/calendar/calendar.js';
 import fiscalPlugin from '../../src/plugins/fiscal/fiscal.js';
+import isoPlugin from '../../src/plugins/parse/iso.js';
+import relativeTimePlugin from '../../src/plugins/relative/relative-time.js';
+import customCalculatorPlugin from '../../src/plugins/holiday/calculators/custom.js';
 import { DateRange } from '../../src/plugins/range/range.js';
 
 // Install plugins
+// Note: relativeTimePlugin must be loaded AFTER durationPlugin
+// to ensure the relative time methods (fromNow, toNow) override duration's versions
 kairos.use([
   easterPlugin,
   lunarPlugin,
-  durationPlugin,
   formatPlugin,
   timezonePlugin,
   calendarPlugin,
   fiscalPlugin,
+  isoPlugin,
+  customCalculatorPlugin,
+  durationPlugin,
+  relativeTimePlugin, // Load last to ensure its methods take precedence
 ]);
 
 describe('Bug Fixes Verification', () => {
@@ -554,6 +562,128 @@ describe('Bug Fixes Verification', () => {
 
       expect(result1.valueOf()).toBe(result2.valueOf());
       expect(result2.valueOf()).toBe(result3.valueOf());
+    });
+  });
+
+  describe('Bug 16: ISO Parser Timezone Offset Minutes Sign', () => {
+    it('should correctly parse timezone offsets with negative hours and minutes', () => {
+      // Test -05:30 offset
+      const date1 = kairos.parseISO('2024-01-01T12:00:00-05:30');
+
+      expect(date1).not.toBeNull();
+      if (date1) {
+        // The date should be parsed correctly
+        // 12:00 -05:30 means 12:00 is 5.5 hours behind UTC
+        // So UTC time is 12:00 + 5:30 = 17:30
+        const utcHours = date1.toDate().getUTCHours();
+        const utcMinutes = date1.toDate().getUTCMinutes();
+        expect(utcHours).toBe(17);
+        expect(utcMinutes).toBe(30);
+      }
+    });
+
+    it('should correctly parse timezone offsets with positive hours and minutes', () => {
+      // Test +05:30 offset
+      const date1 = kairos.parseISO('2024-01-01T12:00:00+05:30');
+
+      expect(date1).not.toBeNull();
+      if (date1) {
+        // 12:00 +05:30 means 12:00 is 5.5 hours ahead of UTC
+        // So UTC time is 12:00 - 5:30 = 06:30
+        const utcHours = date1.toDate().getUTCHours();
+        const utcMinutes = date1.toDate().getUTCMinutes();
+        expect(utcHours).toBe(6);
+        expect(utcMinutes).toBe(30);
+      }
+    });
+
+    it('should handle timezone offsets with only hours', () => {
+      const date1 = kairos.parseISO('2024-01-01T12:00:00-05:00');
+
+      expect(date1).not.toBeNull();
+      if (date1) {
+        const utcHours = date1.toDate().getUTCHours();
+        expect(utcHours).toBe(17);
+      }
+    });
+  });
+
+  describe('Bug 17: ISO Parser Z Suffix Not Converted to UTC', () => {
+    it('should parse Z suffix as UTC time', () => {
+      const date = kairos.parseISO('2024-01-01T12:00:00Z');
+
+      expect(date).not.toBeNull();
+      if (date) {
+        // The Z suffix means UTC time
+        const utcHours = date.toDate().getUTCHours();
+        const utcMinutes = date.toDate().getUTCMinutes();
+        expect(utcHours).toBe(12);
+        expect(utcMinutes).toBe(0);
+      }
+    });
+
+    it('should parse Z suffix with milliseconds correctly', () => {
+      const date = kairos.parseISO('2024-01-01T12:00:00.123Z');
+
+      expect(date).not.toBeNull();
+      if (date) {
+        const utcHours = date.toDate().getUTCHours();
+        const utcMilliseconds = date.toDate().getUTCMilliseconds();
+        expect(utcHours).toBe(12);
+        expect(utcMilliseconds).toBe(123);
+      }
+    });
+
+    it('should produce consistent results when parsing with Z suffix', () => {
+      const date1 = kairos.parseISO('2024-06-15T14:30:25.123Z');
+      const date2 = kairos.parseISO('2024-06-15T14:30:25.123Z');
+
+      expect(date1).not.toBeNull();
+      expect(date2).not.toBeNull();
+      if (date1 && date2) {
+        expect(date1.toDate().getTime()).toBe(date2.toDate().getTime());
+      }
+    });
+  });
+
+  describe('Bug 18: Custom Calculator DST Spring Transition', () => {
+    it('should calculate second Sunday in March for US DST spring transition', () => {
+      // 2024 DST starts on March 10 (second Sunday)
+      const springDST = kairos.customCalculatorUtils.getDSTTransition(2024, 'spring');
+
+      expect(springDST.getFullYear()).toBe(2024);
+      expect(springDST.getMonth()).toBe(2); // March (0-indexed)
+      expect(springDST.getDate()).toBe(10); // Second Sunday
+      expect(springDST.getDay()).toBe(0); // Sunday
+    });
+
+    it('should calculate first Sunday in November for US DST fall transition', () => {
+      // 2024 DST ends on November 3 (first Sunday)
+      const fallDST = kairos.customCalculatorUtils.getDSTTransition(2024, 'fall');
+
+      expect(fallDST.getFullYear()).toBe(2024);
+      expect(fallDST.getMonth()).toBe(10); // November (0-indexed)
+      expect(fallDST.getDate()).toBe(3); // First Sunday
+      expect(fallDST.getDay()).toBe(0); // Sunday
+    });
+
+    it('should correctly identify the second Sunday across different years', () => {
+      // Test multiple years to ensure consistency
+      const years = [2023, 2024, 2025, 2026];
+
+      for (const year of years) {
+        const springDST = kairos.customCalculatorUtils.getDSTTransition(year, 'spring');
+
+        // Should be a Sunday
+        expect(springDST.getDay()).toBe(0);
+
+        // Should be in March
+        expect(springDST.getMonth()).toBe(2);
+
+        // Should be between 8th and 14th (second Sunday range)
+        expect(springDST.getDate()).toBeGreaterThanOrEqual(8);
+        expect(springDST.getDate()).toBeLessThanOrEqual(14);
+      }
     });
   });
 });

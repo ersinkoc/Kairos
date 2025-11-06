@@ -30,7 +30,7 @@ export class ISOParser {
 
   private parseISOMatch(match: RegExpMatchArray): Date {
     const [
-      ,
+      fullMatch,
       year,
       month,
       day,
@@ -42,6 +42,24 @@ export class ISOParser {
       tzMinute,
     ] = match;
 
+    // Check if the input has a 'Z' suffix (UTC indicator)
+    const hasZSuffix = fullMatch.endsWith('Z');
+
+    // If Z suffix is present, create date in UTC
+    if (hasZSuffix) {
+      return new Date(
+        Date.UTC(
+          parseInt(year, 10),
+          parseInt(month, 10) - 1,
+          parseInt(day, 10),
+          parseInt(hour, 10),
+          parseInt(minute, 10),
+          parseInt(second, 10),
+          parseInt(millisecond.padEnd(3, '0'), 10)
+        )
+      );
+    }
+
     const date = new Date(
       parseInt(year, 10),
       parseInt(month, 10) - 1,
@@ -52,9 +70,12 @@ export class ISOParser {
       parseInt(millisecond.padEnd(3, '0'), 10)
     );
 
-    // Handle timezone offset
+    // Handle timezone offset (e.g., +05:30 or -05:30)
     if (tzHour !== undefined && tzMinute !== undefined) {
-      const offsetMinutes = parseInt(tzHour, 10) * 60 + parseInt(tzMinute, 10);
+      const hours = parseInt(tzHour, 10);
+      const minutes = parseInt(tzMinute, 10);
+      // Apply sign to both hours and minutes
+      const offsetMinutes = hours * 60 + (hours < 0 ? -minutes : minutes);
       date.setMinutes(date.getMinutes() - offsetMinutes);
     }
 

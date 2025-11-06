@@ -162,7 +162,10 @@ export const CustomCalculatorUtils = {
   getDSTTransition(year: number, type: 'spring' | 'fall'): Date {
     if (type === 'spring') {
       // Second Sunday in March (US)
-      return this.findWeekdayInMonth(year, 2, 0, 'first');
+      const firstSunday = this.findWeekdayInMonth(year, 2, 0, 'first');
+      const secondSunday = new Date(firstSunday);
+      secondSunday.setDate(secondSunday.getDate() + 7);
+      return secondSunday;
     } else {
       // First Sunday in November (US)
       return this.findWeekdayInMonth(year, 10, 0, 'first');
