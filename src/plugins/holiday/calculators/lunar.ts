@@ -116,11 +116,11 @@ class IslamicConverter implements CalendarConverter {
   private julianDayToGregorian(jd: number): Date {
     // Simplified Julian Day to Gregorian conversion
     const a = jd + 32044;
-    const b = (4 * a + 3) / 146097;
+    const b = Math.floor((4 * a + 3) / 146097);
     const c = a - Math.floor((146097 * b) / 4);
-    const d = (4 * c + 3) / 1461;
+    const d = Math.floor((4 * c + 3) / 1461);
     const e = c - Math.floor((1461 * d) / 4);
-    const m = (5 * e + 2) / 153;
+    const m = Math.floor((5 * e + 2) / 153);
 
     const day = e - Math.floor((153 * m + 2) / 5) + 1;
     const month = m + 3 - 12 * Math.floor(m / 10);
@@ -159,7 +159,8 @@ class ChineseConverter implements CalendarConverter {
     const gregorianYear = chineseYear + epochYear;
 
     // Chinese New Year typically falls between Jan 21 and Feb 20
-    const newYearOffset = Math.floor(Math.random() * 30) + 21; // Simplified
+    // Use a deterministic calculation based on the year cycle (19-year Metonic cycle approximation)
+    const newYearOffset = 21 + ((gregorianYear * 11) % 30);
     const baseDate = new Date(gregorianYear, 0, newYearOffset);
 
     // Add lunar months (29.5 days average)

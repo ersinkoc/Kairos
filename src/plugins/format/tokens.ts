@@ -126,7 +126,9 @@ export class TokenFormatter {
     let result = template;
 
     for (const token of tokenKeys) {
-      const regex = new RegExp(`\\b${token}\\b`, 'g');
+      // Escape special regex characters and use global replace without word boundaries
+      const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escapedToken, 'g');
       result = result.replace(regex, TokenFormatter.TOKENS[token](date, locale));
     }
 
