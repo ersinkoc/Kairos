@@ -205,13 +205,11 @@ export class DateRange {
 
   // Check if ranges are adjacent
   private isAdjacent(other: DateRange): boolean {
-    const nextDay = new Date(this.end);
-    nextDay.setDate(nextDay.getDate() + 1);
+    // Calculate next and previous dates using the range's unit and step
+    const next = this.addUnit(new Date(this.end), this.unit, this.step);
+    const prev = this.addUnit(new Date(this.start), this.unit, -this.step);
 
-    const prevDay = new Date(this.start);
-    prevDay.setDate(prevDay.getDate() - 1);
-
-    return nextDay.getTime() === other.start.getTime() || prevDay.getTime() === other.end.getTime();
+    return next.getTime() === other.start.getTime() || prev.getTime() === other.end.getTime();
   }
 
   // Get range duration

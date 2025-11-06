@@ -143,7 +143,8 @@ export class Duration {
     if (obj.seconds) milliseconds += obj.seconds * 1000;
     if (obj.milliseconds) milliseconds += obj.milliseconds;
 
-    return milliseconds;
+    // Round to avoid floating point precision errors
+    return Math.round(milliseconds);
   }
 
   private normalizeUnit(unit: string): string {

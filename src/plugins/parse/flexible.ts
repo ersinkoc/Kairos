@@ -31,16 +31,16 @@ export class FlexibleParser {
       european: true,
     },
 
-    // Ambiguous format - could be US or European
+    // Ambiguous format - DD-MM-YYYY or MM-DD-YYYY based on options
     {
       regex: /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
-      parse: (m: RegExpMatchArray) => new Date(+m[3], +m[1] - 1, +m[2]), // Default to US
-      us: true,
+      parse: (m: RegExpMatchArray) => new Date(+m[3], +m[2] - 1, +m[1]), // European: DD-MM-YYYY
+      european: true,
     },
     {
       regex: /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
-      parse: (m: RegExpMatchArray) => new Date(+m[3], +m[2] - 1, +m[1]), // European interpretation
-      european: true,
+      parse: (m: RegExpMatchArray) => new Date(+m[3], +m[1] - 1, +m[2]), // US: MM-DD-YYYY
+      us: true,
     },
 
     // With time
@@ -61,18 +61,16 @@ export class FlexibleParser {
       parse: (m: RegExpMatchArray) => new Date(+m[3], +m[1] - 1, +m[2], +m[4], +m[5], +m[6]),
     },
 
-    // European date format DD.MM.YYYY
-    {
-      regex: /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/,
-      parse: (m: RegExpMatchArray) => new Date(+m[3], +m[2] - 1, +m[1]),
-    },
+    // European date format DD.MM.YYYY with time
     {
       regex: /^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2})$/,
       parse: (m: RegExpMatchArray) => new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]),
+      european: true,
     },
     {
       regex: /^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/,
       parse: (m: RegExpMatchArray) => new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +m[6]),
+      european: true,
     },
 
     // Natural language

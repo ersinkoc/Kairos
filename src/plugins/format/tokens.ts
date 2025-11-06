@@ -201,15 +201,31 @@ export class TokenFormatter {
   }
 
   private static getWeekOfYear(date: Date): number {
-    const start = new Date(date.getFullYear(), 0, 1);
-    const diff = date.getTime() - start.getTime();
-    const oneWeek = 1000 * 60 * 60 * 24 * 7;
-    return Math.floor(diff / oneWeek) + 1;
+    // ISO 8601 week number calculation
+    // Week 1 is the first week with a Thursday in it
+    const target = new Date(date.getTime());
+    target.setHours(0, 0, 0, 0);
+
+    // Set to nearest Thursday: current date + 4 - current day number
+    // Make Sunday's day number 7
+    const dayNumber = (target.getDay() + 6) % 7;
+    target.setDate(target.getDate() - dayNumber + 3);
+
+    // Get first Thursday of year
+    const firstThursday = new Date(target.getFullYear(), 0, 4);
+    const firstThursdayDay = (firstThursday.getDay() + 6) % 7;
+    firstThursday.setDate(firstThursday.getDate() - firstThursdayDay + 3);
+
+    // Calculate week number
+    const weekDiff = (target.getTime() - firstThursday.getTime()) / (1000 * 60 * 60 * 24 * 7);
+    return Math.floor(weekDiff) + 1;
   }
 
   private static getDayOfYear(date: Date): number {
-    const start = new Date(date.getFullYear(), 0, 1);
-    const diff = date.getTime() - start.getTime();
+    // Use UTC to avoid DST issues
+    const start = new Date(Date.UTC(date.getFullYear(), 0, 1));
+    const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const diff = target.getTime() - start.getTime();
     const oneDay = 1000 * 60 * 60 * 24;
     return Math.floor(diff / oneDay) + 1;
   }
