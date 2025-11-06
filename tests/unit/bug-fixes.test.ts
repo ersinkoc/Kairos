@@ -10,10 +10,20 @@ import lunarPlugin from '../../src/plugins/holiday/calculators/lunar.js';
 import durationPlugin from '../../src/plugins/duration/duration.js';
 import formatPlugin from '../../src/plugins/format/tokens.js';
 import timezonePlugin from '../../src/plugins/timezone/timezone.js';
+import calendarPlugin from '../../src/plugins/calendar/calendar.js';
+import fiscalPlugin from '../../src/plugins/fiscal/fiscal.js';
 import { DateRange } from '../../src/plugins/range/range.js';
 
 // Install plugins
-kairos.use([easterPlugin, lunarPlugin, durationPlugin, formatPlugin, timezonePlugin]);
+kairos.use([
+  easterPlugin,
+  lunarPlugin,
+  durationPlugin,
+  formatPlugin,
+  timezonePlugin,
+  calendarPlugin,
+  fiscalPlugin,
+]);
 
 describe('Bug Fixes Verification', () => {
   describe('Bug 1: Easter Calculator Integer Division', () => {
@@ -439,6 +449,111 @@ describe('Bug Fixes Verification', () => {
       // All conversions should produce the same result
       expect(result1.toDate().getTime()).toBe(result2.toDate().getTime());
       expect(result2.toDate().getTime()).toBe(result3.toDate().getTime());
+    });
+  });
+
+  describe('Bug 14: Calendar getDayOfYear DST Issues', () => {
+    it('should calculate day of year consistently regardless of DST', () => {
+      // March 10, 2024 is when DST starts in US
+      const date1 = kairos('2024-03-10');
+      const doy1 = date1.dayOfYear();
+
+      // Verify it's a valid day of year
+      expect(typeof doy1).toBe('number');
+      expect(doy1).toBeGreaterThan(0);
+      expect(doy1).toBeLessThanOrEqual(366);
+
+      // Day of year should match manual calculation
+      // March 10 = 31 (Jan) + 29 (Feb, leap year) + 10 (Mar) = 70
+      expect(doy1).toBe(70);
+    });
+
+    it('should match the format token implementation', () => {
+      // Test that calendar.getDayOfYear() matches format DDD token
+      const date = kairos('2024-06-15');
+      const doyFromCalendar = date.dayOfYear();
+      const doyFromFormat = parseInt(date.format('DDD'), 10);
+
+      expect(doyFromCalendar).toBe(doyFromFormat);
+    });
+
+    it('should calculate day of year correctly for leap years', () => {
+      // December 31 in a leap year should be 366
+      const date = kairos('2024-12-31');
+      const doy = date.dayOfYear();
+      expect(doy).toBe(366);
+
+      // December 31 in a non-leap year should be 365
+      const date2 = kairos('2023-12-31');
+      const doy2 = date2.dayOfYear();
+      expect(doy2).toBe(365);
+    });
+  });
+
+  describe('Bug 15: Fiscal Year Methods Create Dates from Now', () => {
+    it('should create fiscal year start date directly without depending on current time', () => {
+      const date = kairos('2024-06-15');
+
+      // Test with fiscal year starting in April
+      const fiscalStart = date.startOfFiscalYear({ startMonth: 4 });
+
+      expect(fiscalStart.year()).toBe(2024);
+      expect(fiscalStart.month()).toBe(4); // April
+      expect(fiscalStart.date()).toBe(1);
+      expect(fiscalStart.hour()).toBe(0);
+      expect(fiscalStart.minute()).toBe(0);
+      expect(fiscalStart.second()).toBe(0);
+    });
+
+    it('should create fiscal year end date correctly', () => {
+      const date = kairos('2024-06-15');
+
+      // Test with fiscal year starting in April (ends March 31 next year)
+      const fiscalEnd = date.endOfFiscalYear({ startMonth: 4 });
+
+      expect(fiscalEnd.year()).toBe(2025);
+      expect(fiscalEnd.month()).toBe(3); // March
+      expect(fiscalEnd.date()).toBe(31); // Last day of March
+      expect(fiscalEnd.hour()).toBe(23);
+      expect(fiscalEnd.minute()).toBe(59);
+      expect(fiscalEnd.second()).toBe(59);
+    });
+
+    it('should create fiscal quarter start date correctly', () => {
+      const date = kairos('2024-06-15');
+
+      // Test with fiscal year starting in April, Q1 should be Apr-Jun
+      const quarterStart = date.startOfFiscalQuarter({ startMonth: 4 });
+
+      expect(quarterStart.year()).toBe(2024);
+      expect(quarterStart.month()).toBe(4); // April (Q1 start for fiscal year starting in April)
+      expect(quarterStart.date()).toBe(1);
+      expect(quarterStart.hour()).toBe(0);
+    });
+
+    it('should create fiscal quarter end date correctly', () => {
+      const date = kairos('2024-06-15');
+
+      // Test with fiscal year starting in April, Q1 ends June 30
+      const quarterEnd = date.endOfFiscalQuarter({ startMonth: 4 });
+
+      expect(quarterEnd.year()).toBe(2024);
+      expect(quarterEnd.month()).toBe(6); // June
+      expect(quarterEnd.date()).toBe(30); // Last day of June
+      expect(quarterEnd.hour()).toBe(23);
+      expect(quarterEnd.minute()).toBe(59);
+    });
+
+    it('should produce consistent results regardless of execution time', () => {
+      const date = kairos('2024-06-15');
+
+      // Call the method multiple times and ensure consistent results
+      const result1 = date.startOfFiscalYear({ startMonth: 4 });
+      const result2 = date.startOfFiscalYear({ startMonth: 4 });
+      const result3 = date.startOfFiscalYear({ startMonth: 4 });
+
+      expect(result1.valueOf()).toBe(result2.valueOf());
+      expect(result2.valueOf()).toBe(result3.valueOf());
     });
   });
 });
