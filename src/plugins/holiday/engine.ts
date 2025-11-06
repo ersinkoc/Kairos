@@ -69,7 +69,9 @@ export class HolidayEngine implements IHolidayEngine {
 
     for (const date of dates) {
       const weekday = date.getDay();
-      const isWeekend = observedRule.weekends?.includes(weekday) || weekday === 0 || weekday === 6;
+      const isWeekend = observedRule.weekends
+        ? observedRule.weekends.includes(weekday)
+        : (weekday === 0 || weekday === 6);
 
       if (!isWeekend) {
         result.push(date);

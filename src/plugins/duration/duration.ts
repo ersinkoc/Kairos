@@ -96,16 +96,26 @@ export class Duration {
 
   private parseStringToObject(input: string): DurationObject {
     // Parse ISO 8601 duration format: P[n]Y[n]M[n]DT[n]H[n]M[n]S
+    // Note: Per ISO 8601, weeks cannot be combined with other date components
+
+    // Try week-only format first (P[n]W)
+    const weekOnlyMatch = input.match(/^P(\d+)W$/);
+    if (weekOnlyMatch) {
+      return {
+        weeks: parseInt(weekOnlyMatch[1], 10),
+      };
+    }
+
+    // Try standard format without weeks
     const isoMatch = input.match(
-      /^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?$/
+      /^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?$/
     );
 
     if (isoMatch) {
-      const [, years, months, weeks, days, hours, minutes, seconds] = isoMatch;
+      const [, years, months, days, hours, minutes, seconds] = isoMatch;
       return {
         years: years ? parseInt(years, 10) : 0,
         months: months ? parseInt(months, 10) : 0,
-        weeks: weeks ? parseInt(weeks, 10) : 0,
         days: days ? parseInt(days, 10) : 0,
         hours: hours ? parseInt(hours, 10) : 0,
         minutes: minutes ? parseInt(minutes, 10) : 0,

@@ -1106,7 +1106,14 @@ function kairos(input?: KairosInput): KairosInstance {
  * @param input - Input to parse as UTC date
  * @returns New KairosInstance in UTC
  */
-(kairos as any).utc = (input?: KairosInput) => {
+(kairos as any).utc = function (input?: KairosInput) {
+  // Handle no arguments case - return current UTC time
+  if (arguments.length === 0) {
+    const instance = new KairosCore(new Date()) as any;
+    instance._isUTC = true;
+    return instance;
+  }
+
   let utcDate: Date;
 
   if (
