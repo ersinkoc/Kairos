@@ -1,4 +1,5 @@
 import type { KairosPlugin, KairosStatic, KairosInstance } from '../../core/types/plugin.js';
+import { throwError } from '../../core/utils/validators.js';
 
 interface CalendarInfo {
   year: number;
@@ -222,8 +223,19 @@ const calendarPlugin: KairosPlugin = {
           return current;
         }
 
+        // Validate input range
         const clone = this.clone();
-        const yearStart = new Date(clone.year() as number, 0, 1);
+        const year = clone.year() as number;
+        const daysInYear = CalendarCalculator.getDaysInYear(year);
+
+        if (value < 1 || value > daysInYear) {
+          throwError(
+            `Day of year must be between 1 and ${daysInYear} for year ${year}`,
+            'INVALID_DAY_OF_YEAR'
+          );
+        }
+
+        const yearStart = new Date(year, 0, 1);
         yearStart.setDate(value);
         return kairos(yearStart);
       },

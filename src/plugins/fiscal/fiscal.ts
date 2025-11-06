@@ -90,7 +90,9 @@ const fiscalPlugin: KairosPlugin = {
         const year = quarterEndMonth > 12 ? fiscalYear + 1 : fiscalYear;
         const month = quarterEndMonth > 12 ? quarterEndMonth - 12 : quarterEndMonth;
 
-        // Create date directly for the last day of the end month
+        // Get last day of month using Date(year, monthIndex, 0) where monthIndex = month (1-indexed)
+        // This works because day=0 gives last day of previous month, and month (1-indexed) equals
+        // the 0-indexed month AFTER the target month (e.g., month=3 gives last day of March)
         const date = new Date(year, month, 0, 23, 59, 59, 999);
         return kairos(date);
       },

@@ -2,7 +2,7 @@ import type { KairosPlugin } from '../../core/types/plugin.js';
 
 export class ISOParser {
   static readonly ISO_REGEX =
-    /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?(?:Z|([+-]\d{2}):?(\d{2}))?)?$/;
+    /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?(?:Z|([+-]\d{2}):?(\d{2}))?)?$/;
   static readonly DATE_ONLY_REGEX = /^(\d{4})-(\d{2})-(\d{2})$/;
   // private static readonly _TIME_REGEX = /^(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?$/;
 
