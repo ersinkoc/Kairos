@@ -65,7 +65,12 @@ export class BusinessDayCalculator {
    * ```
    */
   isBusinessDay(date: Date): boolean {
-    const cacheKey = date.toISOString().split('T')[0];
+    // Use local date for cache key to match calculateIsBusinessDay which uses local time
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const cacheKey = `${year}-${month}-${day}`;
+
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey)!;
     }

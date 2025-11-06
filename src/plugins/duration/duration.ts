@@ -1,4 +1,5 @@
 import type { KairosPlugin } from '../../core/types/plugin.js';
+import { throwError } from '../../core/utils/validators.js';
 
 /**
  * Object representation of duration components.
@@ -259,6 +260,9 @@ export class Duration {
   }
 
   divide(divisor: number): Duration {
+    if (divisor === 0) {
+      throwError('Cannot divide duration by zero', 'DIVISION_BY_ZERO');
+    }
     return new Duration(this.ms / divisor);
   }
 
