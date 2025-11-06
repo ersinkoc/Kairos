@@ -440,7 +440,10 @@ describe('Kairos Index Module', () => {
       expect(nullDate.isValid()).toBe(false); // Null creates invalid date
 
       const undefinedDate = kairos(undefined);
-      expect(undefinedDate.isValid()).toBe(true); // Undefined creates current date
+      expect(undefinedDate.isValid()).toBe(false); // Explicit undefined creates invalid date
+
+      const noArgDate = kairos(); // No argument creates current date
+      expect(noArgDate.isValid()).toBe(true);
     });
 
     it('should handle edge cases in date arithmetic', () => {

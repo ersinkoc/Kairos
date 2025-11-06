@@ -208,11 +208,12 @@ export class KairosCore {
    * Creates a new Kairos instance.
    *
    * @param input - The input to parse into a date. Can be:
-   *   - `undefined`: Creates instance with current date/time
+   *   - (no argument): Creates instance with current date/time
    *   - `Date`: Creates instance from Date object
    *   - `number`: Creates instance from timestamp (milliseconds since Unix epoch)
    *   - `string`: Parses date string (ISO 8601, YYYY-MM-DD, etc.)
    *   - `KairosInstance`: Creates instance from another Kairos instance
+   *   - `null` or explicit `undefined`: Creates invalid date
    *
    * @example
    * ```typescript
@@ -221,15 +222,22 @@ export class KairosCore {
    * kairos(1640995200000);       // From timestamp
    * kairos('2024-01-01');        // From ISO date string
    * kairos('2024-01-01T12:00');  // From ISO datetime string
+   * kairos(null);                // Invalid date
    * ```
    */
-  constructor(input?: KairosInput) {
+  constructor(input?: KairosInput | typeof NO_ARG) {
     this._date = this.parseInput(input);
   }
 
-  private parseInput(input?: KairosInput): Date {
-    if (input === undefined) {
+  private parseInput(input?: KairosInput | typeof NO_ARG): Date {
+    // If NO_ARG sentinel was passed, kairos() was called with no arguments
+    if (input === NO_ARG) {
       return new Date();
+    }
+
+    // If null or explicit undefined was passed, return invalid date
+    if (input === null || input === undefined) {
+      return new Date(NaN);
     }
 
     // Fast path: Date instance
@@ -1054,10 +1062,13 @@ export class PluginSystem {
   }
 }
 
+// Internal sentinel value to distinguish "no argument" from "explicit undefined"
+const NO_ARG = Symbol('NO_ARG');
+
 /**
  * Main Kairos function for creating date instances.
  *
- * @param input - Optional input to create date from (undefined = now, Date, number, string, or KairosInstance)
+ * @param input - Optional input to create date from (no arg = now, Date, number, string, or KairosInstance)
  * @returns A new KairosInstance
  *
  * @example
@@ -1076,7 +1087,13 @@ export class PluginSystem {
  * console.log(date.isBusinessDay());
  * ```
  */
-const kairos = (input?: KairosInput) => new KairosCore(input) as KairosInstance;
+function kairos(input?: KairosInput): KairosInstance {
+  // Use arguments.length to distinguish kairos() from kairos(undefined)
+  if (arguments.length === 0) {
+    return new KairosCore(NO_ARG as any) as KairosInstance;
+  }
+  return new KairosCore(input) as KairosInstance;
+}
 
 // Bind plugin system methods
 (kairos as any).use = PluginSystem.use.bind(PluginSystem);
