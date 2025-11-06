@@ -50,7 +50,9 @@ const fiscalPlugin: KairosPlugin = {
         const startMonth = config?.startMonth || 1;
         const fiscalYear = this.fiscalYear(config);
 
-        return kairos().year(fiscalYear).month(startMonth).date(1).startOf('day');
+        // Create date directly instead of modifying current date
+        const date = new Date(fiscalYear, startMonth - 1, 1, 0, 0, 0, 0);
+        return kairos(date);
       },
 
       endOfFiscalYear(config?: FiscalConfig): any {
@@ -60,7 +62,9 @@ const fiscalPlugin: KairosPlugin = {
         const endYear = startMonth === 1 ? fiscalYear : fiscalYear + 1;
         const endMonth = startMonth === 1 ? 12 : startMonth - 1;
 
-        return kairos().year(endYear).month(endMonth).endOf('month');
+        // Create date directly for the last day of the end month
+        const date = new Date(endYear, endMonth, 0, 23, 59, 59, 999);
+        return kairos(date);
       },
 
       startOfFiscalQuarter(config?: FiscalConfig): any {
@@ -72,7 +76,9 @@ const fiscalPlugin: KairosPlugin = {
         const year = quarterStartMonth > 12 ? fiscalYear + 1 : fiscalYear;
         const month = quarterStartMonth > 12 ? quarterStartMonth - 12 : quarterStartMonth;
 
-        return kairos().year(year).month(month).date(1).startOf('day');
+        // Create date directly instead of modifying current date
+        const date = new Date(year, month - 1, 1, 0, 0, 0, 0);
+        return kairos(date);
       },
 
       endOfFiscalQuarter(config?: FiscalConfig): any {
@@ -84,7 +90,9 @@ const fiscalPlugin: KairosPlugin = {
         const year = quarterEndMonth > 12 ? fiscalYear + 1 : fiscalYear;
         const month = quarterEndMonth > 12 ? quarterEndMonth - 12 : quarterEndMonth;
 
-        return kairos().year(year).month(month).endOf('month');
+        // Create date directly for the last day of the end month
+        const date = new Date(year, month, 0, 23, 59, 59, 999);
+        return kairos(date);
       },
     });
 

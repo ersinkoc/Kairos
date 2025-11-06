@@ -94,9 +94,12 @@ class CalendarCalculator {
    * Get day of year (1-366)
    */
   static getDayOfYear(date: Date): number {
-    const start = new Date(date.getFullYear(), 0, 0);
-    const diff = date.getTime() - start.getTime();
-    return Math.floor(diff / 86400000);
+    // Use UTC to avoid DST issues
+    const start = new Date(Date.UTC(date.getFullYear(), 0, 1));
+    const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const diff = target.getTime() - start.getTime();
+    const oneDay = 1000 * 60 * 60 * 24;
+    return Math.floor(diff / oneDay) + 1;
   }
 
   /**
