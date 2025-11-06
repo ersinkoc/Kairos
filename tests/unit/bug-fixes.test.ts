@@ -686,4 +686,59 @@ describe('Bug Fixes Verification', () => {
       }
     });
   });
+
+  describe('Bug 19: ISO Parser Date Validation', () => {
+    it('should reject invalid dates like Feb 30', () => {
+      // Feb 30 doesn't exist - should return null
+      expect(kairos.parseISO('2024-02-30')).toBeNull();
+      expect(kairos.parseISO('2024-13-01')).toBeNull(); // Month 13 doesn't exist
+      expect(kairos.parseISO('2023-02-29')).toBeNull(); // Feb 29 in non-leap year
+    });
+
+    it('should accept valid dates including Feb 29 in leap years', () => {
+      const leapDay = kairos.parseISO('2024-02-29');
+      expect(leapDay).not.toBeNull();
+      if (leapDay) {
+        expect(leapDay.date()).toBe(29);
+        expect(leapDay.month()).toBe(2);
+      }
+    });
+
+    it('should validate dates with time components', () => {
+      expect(kairos.parseISO('2024-02-30T12:00:00')).toBeNull();
+      expect(kairos.parseISO('2024-13-01T00:00:00Z')).toBeNull();
+
+      // Valid date with time should work
+      const validDateTime = kairos.parseISO('2024-06-15T12:00:00');
+      expect(validDateTime).not.toBeNull();
+    });
+  });
+
+  describe('Bug 21: kairos(undefined) and kairos(null) Handling', () => {
+    it('should return invalid date for explicit undefined', () => {
+      const date = kairos(undefined as any);
+      expect(date.isValid()).toBe(false);
+    });
+
+    it('should return invalid date for null', () => {
+      const date = kairos(null as any);
+      expect(date.isValid()).toBe(false);
+    });
+
+    it('should return current date when called with no arguments', () => {
+      const date = kairos();
+      expect(date.isValid()).toBe(true);
+
+      // Should be within a few seconds of now
+      const now = Date.now();
+      const diff = Math.abs(date.valueOf() - now);
+      expect(diff).toBeLessThan(1000); // Within 1 second
+    });
+
+    it('should handle other invalid inputs', () => {
+      expect(kairos(NaN as any).isValid()).toBe(false);
+      expect(kairos({} as any).isValid()).toBe(false);
+      expect(kairos('invalid string').isValid()).toBe(false);
+    });
+  });
 });

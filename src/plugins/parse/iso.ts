@@ -28,7 +28,7 @@ export class ISOParser {
     return null;
   }
 
-  private parseISOMatch(match: RegExpMatchArray): Date {
+  private parseISOMatch(match: RegExpMatchArray): Date | null {
     const [
       fullMatch,
       year,
@@ -42,33 +42,61 @@ export class ISOParser {
       tzMinute,
     ] = match;
 
+    const parsedYear = parseInt(year, 10);
+    const parsedMonth = parseInt(month, 10);
+    const parsedDay = parseInt(day, 10);
+    const parsedHour = parseInt(hour, 10);
+    const parsedMinute = parseInt(minute, 10);
+    const parsedSecond = parseInt(second, 10);
+    const parsedMillisecond = parseInt(millisecond.padEnd(3, '0'), 10);
+
     // Check if the input has a 'Z' suffix (UTC indicator)
     const hasZSuffix = fullMatch.endsWith('Z');
 
     // If Z suffix is present, create date in UTC
     if (hasZSuffix) {
-      return new Date(
+      const date = new Date(
         Date.UTC(
-          parseInt(year, 10),
-          parseInt(month, 10) - 1,
-          parseInt(day, 10),
-          parseInt(hour, 10),
-          parseInt(minute, 10),
-          parseInt(second, 10),
-          parseInt(millisecond.padEnd(3, '0'), 10)
+          parsedYear,
+          parsedMonth - 1,
+          parsedDay,
+          parsedHour,
+          parsedMinute,
+          parsedSecond,
+          parsedMillisecond
         )
       );
+
+      // Validate that the date components match the input (reject invalid dates like Feb 30)
+      if (
+        date.getUTCFullYear() !== parsedYear ||
+        date.getUTCMonth() !== parsedMonth - 1 ||
+        date.getUTCDate() !== parsedDay
+      ) {
+        return null;
+      }
+
+      return date;
     }
 
     const date = new Date(
-      parseInt(year, 10),
-      parseInt(month, 10) - 1,
-      parseInt(day, 10),
-      parseInt(hour, 10),
-      parseInt(minute, 10),
-      parseInt(second, 10),
-      parseInt(millisecond.padEnd(3, '0'), 10)
+      parsedYear,
+      parsedMonth - 1,
+      parsedDay,
+      parsedHour,
+      parsedMinute,
+      parsedSecond,
+      parsedMillisecond
     );
+
+    // Validate that the date components match the input (before timezone adjustment)
+    if (
+      date.getFullYear() !== parsedYear ||
+      date.getMonth() !== parsedMonth - 1 ||
+      date.getDate() !== parsedDay
+    ) {
+      return null;
+    }
 
     // Handle timezone offset (e.g., +05:30 or -05:30)
     if (tzHour !== undefined && tzMinute !== undefined) {
@@ -82,10 +110,25 @@ export class ISOParser {
     return date;
   }
 
-  private parseDateOnly(match: RegExpMatchArray): Date {
+  private parseDateOnly(match: RegExpMatchArray): Date | null {
     const [, year, month, day] = match;
 
-    return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+    const parsedYear = parseInt(year, 10);
+    const parsedMonth = parseInt(month, 10);
+    const parsedDay = parseInt(day, 10);
+
+    const date = new Date(parsedYear, parsedMonth - 1, parsedDay);
+
+    // Validate that the date components match the input (reject invalid dates like Feb 30)
+    if (
+      date.getFullYear() !== parsedYear ||
+      date.getMonth() !== parsedMonth - 1 ||
+      date.getDate() !== parsedDay
+    ) {
+      return null;
+    }
+
+    return date;
   }
 
   // Format date to ISO string
