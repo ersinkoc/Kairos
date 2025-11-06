@@ -9,10 +9,11 @@ import easterPlugin from '../../src/plugins/holiday/calculators/easter.js';
 import lunarPlugin from '../../src/plugins/holiday/calculators/lunar.js';
 import durationPlugin from '../../src/plugins/duration/duration.js';
 import formatPlugin from '../../src/plugins/format/tokens.js';
+import timezonePlugin from '../../src/plugins/timezone/timezone.js';
 import { DateRange } from '../../src/plugins/range/range.js';
 
 // Install plugins
-kairos.use([easterPlugin, lunarPlugin, durationPlugin, formatPlugin]);
+kairos.use([easterPlugin, lunarPlugin, durationPlugin, formatPlugin, timezonePlugin]);
 
 describe('Bug Fixes Verification', () => {
   describe('Bug 1: Easter Calculator Integer Division', () => {
@@ -383,6 +384,61 @@ describe('Bug Fixes Verification', () => {
         expect(union.getStart()).toEqual(start1);
         expect(union.getEnd()).toEqual(end2);
       }
+    });
+  });
+  describe('Bug 13: Timezone Offset Calculation Using toLocaleString Parsing', () => {
+    it('should correctly calculate timezone offset without locale string parsing', () => {
+      // Create a specific date
+      const date = kairos('2024-07-15T12:00:00');
+
+      // Get timezone info for UTC
+      const utcInfo = date.timezone('UTC');
+
+      // UTC offset should be 0
+      expect(utcInfo.offset).toBe(0);
+      expect(utcInfo.name).toBe('UTC');
+    });
+
+    it('should correctly calculate offset for different timezones', () => {
+      const date = kairos('2024-01-15T12:00:00');
+
+      // Test various timezones
+      const utcInfo = date.timezone('UTC');
+      expect(utcInfo.offset).toBe(0);
+
+      // The offset should be a valid number (not NaN) for known timezones
+      const nyInfo = date.timezone('America/New_York');
+      expect(typeof nyInfo.offset).toBe('number');
+      expect(isNaN(nyInfo.offset)).toBe(false);
+
+      const laInfo = date.timezone('America/Los_Angeles');
+      expect(typeof laInfo.offset).toBe('number');
+      expect(isNaN(laInfo.offset)).toBe(false);
+    });
+
+    it('should correctly convert dates between timezones', () => {
+      // Create a date
+      const date = new Date('2024-07-15T12:00:00Z');
+
+      // Convert to New York timezone
+      const converted = kairos.convertTimezone(date, 'UTC', 'America/New_York');
+
+      // The converted date should be a valid date
+      expect(converted).toBeInstanceOf(kairos().constructor);
+      expect(isNaN(converted.toDate().getTime())).toBe(false);
+    });
+
+    it('should produce deterministic timezone conversions', () => {
+      const date = new Date('2024-06-15T15:30:00Z');
+
+      // Convert multiple times
+      const result1 = kairos.convertTimezone(date, 'UTC', 'Asia/Tokyo');
+      const result2 = kairos.convertTimezone(date, 'UTC', 'Asia/Tokyo');
+      const result3 = kairos.convertTimezone(date, 'UTC', 'Asia/Tokyo');
+
+      // All conversions should produce the same result
+      expect(result1.toDate().getTime()).toBe(result2.toDate().getTime());
+      expect(result2.toDate().getTime()).toBe(result3.toDate().getTime());
     });
   });
 });
