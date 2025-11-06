@@ -49,7 +49,9 @@ export class RelativeCalculator implements HolidayCalculator {
 
     if (!baseHoliday) {
       // Try case-insensitive match
-      baseHoliday = this.allHolidays.find((h) => h.name.toLowerCase() === relativeTo.toLowerCase());
+      baseHoliday = this.allHolidays.find(
+        (h) => h.name && h.name.toLowerCase() === relativeTo.toLowerCase()
+      );
     }
 
     return baseHoliday || null;

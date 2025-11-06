@@ -51,16 +51,7 @@ export class UnixTimestampParser {
     // Check if the date is in a reasonable range (1970-2099)
     const year = date.getFullYear();
     if (year < 1970 || year >= 2100) {
-      // Try alternative interpretation
-      if (timestamp > 1000000000000) {
-        // Maybe it's milliseconds
-        date = new Date(timestamp);
-        if (isNaN(date.getTime()) || date.getFullYear() < 1970 || date.getFullYear() >= 2100) {
-          return null;
-        }
-      } else {
-        return null;
-      }
+      return null;
     }
 
     return date;
