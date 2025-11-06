@@ -148,7 +148,9 @@ export class BusinessDayCalculator {
 
   businessDaysBetween(start: Date, end: Date): number {
     const startDate = new Date(start);
+    startDate.setHours(0, 0, 0, 0);
     const endDate = new Date(end);
+    endDate.setHours(0, 0, 0, 0);
 
     if (startDate.getTime() === endDate.getTime()) {
       return 0;
@@ -159,29 +161,55 @@ export class BusinessDayCalculator {
     let count = 0;
     const current = new Date(startDate);
 
-    while (current.getTime() !== endDate.getTime()) {
-      current.setDate(current.getDate() + direction);
+    // Move to next/previous day first (don't count start date)
+    current.setDate(current.getDate() + direction);
 
+    while (
+      isForward
+        ? current.getTime() <= endDate.getTime()
+        : current.getTime() >= endDate.getTime()
+    ) {
       if (this.isBusinessDay(current)) {
         count++;
       }
+      current.setDate(current.getDate() + direction);
     }
 
-    return count * direction;
+    return isForward ? count : -count;
   }
 
   businessDaysInMonth(year: number, month: number): number {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
 
-    return this.businessDaysBetween(firstDay, lastDay) + (this.isBusinessDay(firstDay) ? 1 : 0);
+    let count = 0;
+    const current = new Date(firstDay);
+
+    while (current <= lastDay) {
+      if (this.isBusinessDay(current)) {
+        count++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    return count;
   }
 
   businessDaysInYear(year: number): number {
     const firstDay = new Date(year, 0, 1);
     const lastDay = new Date(year, 11, 31);
 
-    return this.businessDaysBetween(firstDay, lastDay) + (this.isBusinessDay(firstDay) ? 1 : 0);
+    let count = 0;
+    const current = new Date(firstDay);
+
+    while (current <= lastDay) {
+      if (this.isBusinessDay(current)) {
+        count++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    return count;
   }
 
   // Settlement date calculation (T+N business days)

@@ -9,6 +9,7 @@ import easterPlugin from '../../src/plugins/holiday/calculators/easter.js';
 import lunarPlugin from '../../src/plugins/holiday/calculators/lunar.js';
 import durationPlugin from '../../src/plugins/duration/duration.js';
 import formatPlugin from '../../src/plugins/format/tokens.js';
+import { DateRange } from '../../src/plugins/range/range.js';
 
 // Install plugins
 kairos.use([easterPlugin, lunarPlugin, durationPlugin, formatPlugin]);
@@ -240,6 +241,148 @@ describe('Bug Fixes Verification', () => {
       // Should not throw an error and should contain expected parts
       expect(formatted).toContain('2024-06-15');
       expect(formatted).toContain('14:30:25');
+    });
+  });
+
+  describe('Bug 6: Week of Year Calculation (ISO 8601)', () => {
+    it('should calculate week number correctly for early January dates', () => {
+      // January 1, 2024 is a Monday (week 1 of 2024)
+      const date1 = kairos('2024-01-01');
+      const week1 = date1.format('ww');
+      expect(week1).toBe('01');
+
+      // January 1, 2023 is a Sunday (week 52 of 2022)
+      const date2 = kairos('2023-01-01');
+      const week2 = date2.format('ww');
+      // Should be last week of 2022
+      expect(parseInt(week2)).toBeGreaterThan(50);
+    });
+
+    it('should handle week 53 correctly', () => {
+      // 2020 has 53 weeks
+      const date = kairos('2020-12-31');
+      const week = date.format('ww');
+      expect(week).toBe('53');
+    });
+  });
+
+  describe('Bug 7: BusinessDaysBetween Off-by-One Error', () => {
+    it('should correctly count business days between two dates', () => {
+      // Monday Jan 1 to Friday Jan 5 (5 business days inclusive)
+      const start = kairos('2024-01-01'); // Monday
+      const end = kairos('2024-01-05'); // Friday
+
+      const calc = kairos.businessDayCalculator;
+      const count = calc.businessDaysBetween(start.toDate(), end.toDate());
+
+      // Should be 4 business days (Tue, Wed, Thu, Fri) - not including start
+      expect(count).toBe(4);
+    });
+
+    it('should return 0 for same date', () => {
+      const date = kairos('2024-01-01');
+      const calc = kairos.businessDayCalculator;
+      const count = calc.businessDaysBetween(date.toDate(), date.toDate());
+      expect(count).toBe(0);
+    });
+  });
+
+  describe('Bug 8: BusinessDaysInMonth Incorrect Calculation', () => {
+    it('should correctly count all business days in a month', () => {
+      const calc = kairos.businessDayCalculator;
+      // January 2024 has 23 business days (31 days - 8 weekend days)
+      const count = calc.businessDaysInMonth(2024, 0); // 0 = January
+      expect(count).toBeGreaterThan(20);
+      expect(count).toBeLessThan(24);
+    });
+  });
+
+  describe('Bug 9: Duration Floating Point Precision', () => {
+    it('should not accumulate floating point errors', () => {
+      const duration = kairos.duration({ years: 1, months: 1 });
+      const ms = duration.asMilliseconds();
+
+      // Should be an integer (rounded)
+      expect(Number.isInteger(ms)).toBe(true);
+    });
+  });
+
+  describe('Bug 10: GetDayOfYear Timezone Issues', () => {
+    it('should calculate day of year consistently regardless of time', () => {
+      const date1 = kairos('2024-03-15T00:00:00');
+      const date2 = kairos('2024-03-15T23:59:59');
+
+      const doy1 = date1.format('DDD');
+      const doy2 = date2.format('DDD');
+
+      // Both should return same day of year
+      expect(doy1).toBe(doy2);
+    });
+  });
+
+  describe('Bug 11: Circular Dependency Detection in Relative Holidays', () => {
+    it('should detect circular dependencies in holiday chains', () => {
+      if (kairos.holidayEngine) {
+        const holidays = [
+          {
+            id: 'base',
+            name: 'Base Holiday',
+            type: 'fixed' as const,
+            rule: {
+              month: 1,
+              day: 1,
+            },
+          },
+          {
+            id: 'holiday-a',
+            name: 'Holiday A',
+            type: 'relative' as const,
+            rule: {
+              relativeTo: 'Holiday B',
+              offset: 1,
+            },
+          },
+          {
+            id: 'holiday-b',
+            name: 'Holiday B',
+            type: 'relative' as const,
+            rule: {
+              relativeTo: 'Holiday A',
+              offset: 1,
+            },
+          },
+        ];
+
+        // The circular dependency should be detected
+        expect(() => {
+          const engine = kairos.holidayEngine;
+          const relativeCalc = engine.calculators?.get?.('relative');
+          if (relativeCalc) {
+            relativeCalc.calculate(holidays[1], 2024, { holidays });
+          }
+        }).toThrow();
+      }
+    });
+  });
+
+  describe('Bug 12: DateRange isAdjacent Ignores Unit and Step', () => {
+    it('should check adjacency using range unit and step', () => {
+      // Create two hourly ranges directly
+      const start1 = new Date('2024-01-01T10:00:00');
+      const end1 = new Date('2024-01-01T12:00:00');
+      const range1 = new DateRange(start1, end1, 'hour', 1);
+
+      const start2 = new Date('2024-01-01T12:00:00');
+      const end2 = new Date('2024-01-01T14:00:00');
+      const range2 = new DateRange(start2, end2, 'hour', 1);
+
+      // Ranges should be adjacent - union should work
+      const union = range1.union(range2);
+      expect(union).not.toBeNull();
+      if (union) {
+        expect(union.getStart()).toEqual(start1);
+        expect(union.getEnd()).toEqual(end2);
+      }
     });
   });
 });

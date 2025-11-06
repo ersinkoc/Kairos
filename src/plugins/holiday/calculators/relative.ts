@@ -4,6 +4,7 @@ import type { KairosPlugin } from '../../../core/types/plugin.js';
 export class RelativeCalculator implements HolidayCalculator {
   private holidayCache = new Map<string, Date[]>();
   private allHolidays: HolidayRule[] = [];
+  private visitedHolidays: Set<string> = new Set();
 
   calculate(rule: HolidayRule, year: number, context?: { holidays: HolidayRule[] }): Date[] {
     const { relativeTo, offset } = rule.rule as RelativeRule;
@@ -12,6 +13,10 @@ export class RelativeCalculator implements HolidayCalculator {
     if (context?.holidays) {
       this.allHolidays = context.holidays;
     }
+
+    // Reset visited set for each top-level calculation
+    this.visitedHolidays = new Set();
+    this.visitedHolidays.add(rule.name);
 
     // Find the base holiday
     const baseHoliday = this.findBaseHoliday(relativeTo);
@@ -51,12 +56,16 @@ export class RelativeCalculator implements HolidayCalculator {
   }
 
   private calculateBaseHolidayDates(baseHoliday: HolidayRule, year: number): Date[] {
-    // Avoid circular dependencies
-    if (baseHoliday.type === 'relative') {
+    // Check for circular dependency
+    if (this.visitedHolidays.has(baseHoliday.name)) {
+      const chain = Array.from(this.visitedHolidays).join(' -> ');
       throw new Error(
-        `Circular dependency detected: ${baseHoliday.name} cannot be relative to another relative holiday`
+        `Circular dependency detected in holiday chain: ${chain} -> ${baseHoliday.name}`
       );
     }
+
+    // Mark as visited
+    this.visitedHolidays.add(baseHoliday.name);
 
     // Check cache first
     const cacheKey = `${baseHoliday.name}-${year}`;
