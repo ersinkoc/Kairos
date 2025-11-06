@@ -100,10 +100,12 @@ export class ISOParser {
 
     // Handle timezone offset (e.g., +05:30 or -05:30)
     if (tzHour !== undefined && tzMinute !== undefined) {
-      const hours = parseInt(tzHour, 10);
+      // Extract sign separately to handle -00:XX case correctly
+      const sign = tzHour.startsWith('-') ? -1 : 1;
+      const hours = Math.abs(parseInt(tzHour, 10));
       const minutes = parseInt(tzMinute, 10);
-      // Apply sign to both hours and minutes
-      const offsetMinutes = hours * 60 + (hours < 0 ? -minutes : minutes);
+      // Apply sign to the total offset
+      const offsetMinutes = sign * (hours * 60 + minutes);
       date.setMinutes(date.getMinutes() - offsetMinutes);
     }
 

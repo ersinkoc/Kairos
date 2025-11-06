@@ -66,7 +66,9 @@ export class TimezoneManager {
       const julOffset = this.getOffset(jul, tz);
       const currentOffset = this.getOffset(date, tz);
 
-      return currentOffset < Math.max(janOffset, julOffset);
+      // DST has a greater offset (less negative, more positive) than standard time
+      // For example: EDT (UTC-4, offset=-240) > EST (UTC-5, offset=-300)
+      return currentOffset > Math.min(janOffset, julOffset);
     } catch (error) {
       return false;
     }
@@ -97,8 +99,9 @@ export class TimezoneManager {
     // Create a UTC timestamp for the timezone's local time
     const tzTime = Date.UTC(tzYear, tzMonth, tzDay, tzHour, tzMinute, tzSecond);
 
-    // The offset is the difference between the original UTC timestamp and the timezone's UTC representation
-    const offset = (date.getTime() - tzTime) / (1000 * 60);
+    // The offset is the difference between the timezone's UTC representation and the original UTC timestamp
+    // Positive offset means timezone is ahead of UTC (east), negative means behind UTC (west)
+    const offset = (tzTime - date.getTime()) / (1000 * 60);
 
     return offset;
   }
