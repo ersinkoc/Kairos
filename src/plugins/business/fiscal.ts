@@ -80,22 +80,23 @@ export class FiscalYearCalculator {
 
   getFiscalQuarterStart(fiscalYear: number, quarter: number): Date {
     const startMonth = this.getStartMonth();
-    const quarterStartMonth = (startMonth - 1 + (quarter - 1) * 3) % 12;
-    const quarterStartYear =
-      quarter === 1
-        ? fiscalYear
-        : startMonth + (quarter - 1) * 3 > 12
-          ? fiscalYear + 1
-          : fiscalYear;
+    const quarterMonthOffset = (quarter - 1) * 3;
+    const quarterStartMonth = (startMonth - 1 + quarterMonthOffset) % 12;
+
+    // Calculate how many months from fiscal year start to quarter start
+    // If we've gone past 12 months from startMonth, we're in next calendar year
+    const quarterStartYear = fiscalYear + Math.floor((startMonth - 1 + quarterMonthOffset) / 12);
 
     return new Date(quarterStartYear, quarterStartMonth, 1);
   }
 
   getFiscalQuarterEnd(fiscalYear: number, quarter: number): Date {
     const startMonth = this.getStartMonth();
-    const quarterEndMonth = (startMonth - 1 + quarter * 3 - 1) % 12;
-    const quarterEndYear =
-      quarter === 1 ? fiscalYear : startMonth + quarter * 3 - 1 > 12 ? fiscalYear + 1 : fiscalYear;
+    const quarterEndMonthOffset = quarter * 3 - 1;
+    const quarterEndMonth = (startMonth - 1 + quarterEndMonthOffset) % 12;
+
+    // Calculate which calendar year the quarter ends in
+    const quarterEndYear = fiscalYear + Math.floor((startMonth - 1 + quarterEndMonthOffset) / 12);
 
     const lastDay = new Date(quarterEndYear, quarterEndMonth + 1, 0).getDate();
     return new Date(quarterEndYear, quarterEndMonth, lastDay);
