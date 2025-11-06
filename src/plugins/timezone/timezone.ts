@@ -159,6 +159,9 @@ export class TimezoneManager {
 
   // Normalize timezone name
   static normalizeTimezone(timezone: string): string {
+    if (!timezone || typeof timezone !== 'string') {
+      return 'UTC'; // Default to UTC for invalid input
+    }
     return this.TIMEZONE_MAP[timezone.toUpperCase()] || timezone;
   }
 

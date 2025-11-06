@@ -222,9 +222,11 @@ const calendarPlugin: KairosPlugin = {
           return current;
         }
 
-        const clone = this.clone();
-        const yearStart = new Date(clone.year() as number, 0, 1);
-        yearStart.setDate(value);
+        // Create date for the given day of year
+        const year = this.year() as number;
+        const yearStart = new Date(year, 0, 1);
+        // Add (value - 1) days to January 1st
+        yearStart.setDate(yearStart.getDate() + value - 1);
         return kairos(yearStart);
       },
 

@@ -140,6 +140,11 @@ export class DateRange {
 
   // Split range into chunks
   chunk(size: number): DateRange[] {
+    // Validate size parameter
+    if (size <= 0 || !Number.isFinite(size)) {
+      throw new Error('Chunk size must be a positive finite number');
+    }
+
     const dates = this.toArray();
     const chunks: DateRange[] = [];
 
