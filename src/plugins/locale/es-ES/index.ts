@@ -91,7 +91,7 @@ export default {
     // Add Spanish-specific holiday methods
     kairos.extend({
       getSpanishHolidays(region?: string): any[] {
-        if (region) {
+        if (region && typeof region === 'string') {
           const regionLower = region.toLowerCase().replace(/\s/g, '');
           const regionHols = regionalHolidays[regionLower];
           if (regionHols) {
@@ -106,6 +106,9 @@ export default {
       },
 
       getRegionalSpanishHolidays(region: string): any[] {
+        if (!region || typeof region !== 'string') {
+          return [];
+        }
         return regionalHolidays[region.toLowerCase().replace(/\s/g, '')] || [];
       },
 

@@ -119,8 +119,11 @@ export class KairosCore {
         this._date = this.parseInput(input);
     }
     parseInput(input) {
-        if (input === undefined) {
+        if (input === NO_ARG) {
             return new Date();
+        }
+        if (input === null || input === undefined) {
+            return new Date(NaN);
         }
         if (input instanceof Date) {
             return new Date(input.getTime());
@@ -556,12 +559,23 @@ PluginSystem.plugins = new Map();
 PluginSystem.installedPlugins = new Set();
 PluginSystem.extensionMethods = {};
 PluginSystem.staticMethods = {};
-const kairos = (input) => new KairosCore(input);
+const NO_ARG = Symbol('NO_ARG');
+function kairos(input) {
+    if (arguments.length === 0) {
+        return new KairosCore(NO_ARG);
+    }
+    return new KairosCore(input);
+}
 kairos.use = PluginSystem.use.bind(PluginSystem);
 kairos.extend = PluginSystem.extend.bind(PluginSystem);
 kairos.addStatic = PluginSystem.addStatic.bind(PluginSystem);
 kairos.plugins = PluginSystem.plugins;
-kairos.utc = (input) => {
+kairos.utc = function (input) {
+    if (arguments.length === 0) {
+        const instance = new KairosCore(new Date());
+        instance._isUTC = true;
+        return instance;
+    }
     let utcDate;
     if (typeof input === 'string' &&
         !input.endsWith('Z') &&

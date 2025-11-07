@@ -33,13 +33,18 @@ export class Duration {
         this.ms = this.parseObject(obj);
     }
     parseStringToObject(input) {
-        const isoMatch = input.match(/^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?$/);
+        const weekOnlyMatch = input.match(/^P(\d+)W$/);
+        if (weekOnlyMatch) {
+            return {
+                weeks: parseInt(weekOnlyMatch[1], 10),
+            };
+        }
+        const isoMatch = input.match(/^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?$/);
         if (isoMatch) {
-            const [, years, months, weeks, days, hours, minutes, seconds] = isoMatch;
+            const [, years, months, days, hours, minutes, seconds] = isoMatch;
             return {
                 years: years ? parseInt(years, 10) : 0,
                 months: months ? parseInt(months, 10) : 0,
-                weeks: weeks ? parseInt(weeks, 10) : 0,
                 days: days ? parseInt(days, 10) : 0,
                 hours: hours ? parseInt(hours, 10) : 0,
                 minutes: minutes ? parseInt(minutes, 10) : 0,
@@ -75,9 +80,12 @@ export class Duration {
             milliseconds += obj.seconds * 1000;
         if (obj.milliseconds)
             milliseconds += obj.milliseconds;
-        return milliseconds;
+        return Math.round(milliseconds);
     }
     normalizeUnit(unit) {
+        if (!unit || typeof unit !== 'string') {
+            return 'milliseconds';
+        }
         const unitMap = {
             y: 'years',
             year: 'years',
@@ -263,6 +271,7 @@ export class Duration {
         return {
             years: this.years,
             months: this.months,
+            weeks: this.weeks,
             days: this.days,
             hours: this.hours,
             minutes: this.minutes,

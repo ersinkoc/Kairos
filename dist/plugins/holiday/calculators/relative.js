@@ -2,12 +2,15 @@ export class RelativeCalculator {
     constructor() {
         this.holidayCache = new Map();
         this.allHolidays = [];
+        this.visitedHolidays = new Set();
     }
     calculate(rule, year, context) {
         const { relativeTo, offset } = rule.rule;
         if (context?.holidays) {
             this.allHolidays = context.holidays;
         }
+        this.visitedHolidays = new Set();
+        this.visitedHolidays.add(rule.name);
         const baseHoliday = this.findBaseHoliday(relativeTo);
         if (!baseHoliday) {
             throw new Error(`Base holiday '${relativeTo}' not found for relative rule '${rule.name}'`);
@@ -27,14 +30,16 @@ export class RelativeCalculator {
             baseHoliday = this.allHolidays.find((h) => h.id === relativeTo);
         }
         if (!baseHoliday) {
-            baseHoliday = this.allHolidays.find((h) => h.name.toLowerCase() === relativeTo.toLowerCase());
+            baseHoliday = this.allHolidays.find((h) => h.name && h.name.toLowerCase() === relativeTo.toLowerCase());
         }
         return baseHoliday || null;
     }
     calculateBaseHolidayDates(baseHoliday, year) {
-        if (baseHoliday.type === 'relative') {
-            throw new Error(`Circular dependency detected: ${baseHoliday.name} cannot be relative to another relative holiday`);
+        if (this.visitedHolidays.has(baseHoliday.name)) {
+            const chain = Array.from(this.visitedHolidays).join(' -> ');
+            throw new Error(`Circular dependency detected in holiday chain: ${chain} -> ${baseHoliday.name}`);
         }
+        this.visitedHolidays.add(baseHoliday.name);
         const cacheKey = `${baseHoliday.name}-${year}`;
         if (this.holidayCache.has(cacheKey)) {
             return this.holidayCache.get(cacheKey);

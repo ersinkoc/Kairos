@@ -15,17 +15,51 @@ export class ISOParser {
         return null;
     }
     parseISOMatch(match) {
-        const [, year, month, day, hour = '0', minute = '0', second = '0', millisecond = '0', tzHour, tzMinute,] = match;
-        const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10), parseInt(hour, 10), parseInt(minute, 10), parseInt(second, 10), parseInt(millisecond.padEnd(3, '0'), 10));
+        const [fullMatch, year, month, day, hour = '0', minute = '0', second = '0', millisecond = '0', tzHour, tzMinute,] = match;
+        const parsedYear = parseInt(year, 10);
+        const parsedMonth = parseInt(month, 10);
+        const parsedDay = parseInt(day, 10);
+        const parsedHour = parseInt(hour, 10);
+        const parsedMinute = parseInt(minute, 10);
+        const parsedSecond = parseInt(second, 10);
+        const parsedMillisecond = parseInt(millisecond.padEnd(3, '0'), 10);
+        const hasZSuffix = fullMatch.endsWith('Z');
+        if (hasZSuffix) {
+            const date = new Date(Date.UTC(parsedYear, parsedMonth - 1, parsedDay, parsedHour, parsedMinute, parsedSecond, parsedMillisecond));
+            if (date.getUTCFullYear() !== parsedYear ||
+                date.getUTCMonth() !== parsedMonth - 1 ||
+                date.getUTCDate() !== parsedDay) {
+                return null;
+            }
+            return date;
+        }
+        const date = new Date(parsedYear, parsedMonth - 1, parsedDay, parsedHour, parsedMinute, parsedSecond, parsedMillisecond);
+        if (date.getFullYear() !== parsedYear ||
+            date.getMonth() !== parsedMonth - 1 ||
+            date.getDate() !== parsedDay) {
+            return null;
+        }
         if (tzHour !== undefined && tzMinute !== undefined) {
-            const offsetMinutes = parseInt(tzHour, 10) * 60 + parseInt(tzMinute, 10);
+            const sign = tzHour.startsWith('-') ? -1 : 1;
+            const hours = Math.abs(parseInt(tzHour, 10));
+            const minutes = parseInt(tzMinute, 10);
+            const offsetMinutes = sign * (hours * 60 + minutes);
             date.setMinutes(date.getMinutes() - offsetMinutes);
         }
         return date;
     }
     parseDateOnly(match) {
         const [, year, month, day] = match;
-        return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+        const parsedYear = parseInt(year, 10);
+        const parsedMonth = parseInt(month, 10);
+        const parsedDay = parseInt(day, 10);
+        const date = new Date(parsedYear, parsedMonth - 1, parsedDay);
+        if (date.getFullYear() !== parsedYear ||
+            date.getMonth() !== parsedMonth - 1 ||
+            date.getDate() !== parsedDay) {
+            return null;
+        }
+        return date;
     }
     format(date, includeTime = true) {
         const year = date.getFullYear().toString().padStart(4, '0');

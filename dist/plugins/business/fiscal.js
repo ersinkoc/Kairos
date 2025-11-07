@@ -6,6 +6,9 @@ export class FiscalYearCalculator {
         if (typeof this.config.start === 'number') {
             return this.config.start;
         }
+        if (typeof this.config.start !== 'string') {
+            return 1;
+        }
         const monthNames = [
             'january',
             'february',
@@ -56,18 +59,16 @@ export class FiscalYearCalculator {
     }
     getFiscalQuarterStart(fiscalYear, quarter) {
         const startMonth = this.getStartMonth();
-        const quarterStartMonth = (startMonth - 1 + (quarter - 1) * 3) % 12;
-        const quarterStartYear = quarter === 1
-            ? fiscalYear
-            : startMonth + (quarter - 1) * 3 > 12
-                ? fiscalYear + 1
-                : fiscalYear;
+        const quarterMonthOffset = (quarter - 1) * 3;
+        const quarterStartMonth = (startMonth - 1 + quarterMonthOffset) % 12;
+        const quarterStartYear = fiscalYear + Math.floor((startMonth - 1 + quarterMonthOffset) / 12);
         return new Date(quarterStartYear, quarterStartMonth, 1);
     }
     getFiscalQuarterEnd(fiscalYear, quarter) {
         const startMonth = this.getStartMonth();
-        const quarterEndMonth = (startMonth - 1 + quarter * 3 - 1) % 12;
-        const quarterEndYear = quarter === 1 ? fiscalYear : startMonth + quarter * 3 - 1 > 12 ? fiscalYear + 1 : fiscalYear;
+        const quarterEndMonthOffset = quarter * 3 - 1;
+        const quarterEndMonth = (startMonth - 1 + quarterEndMonthOffset) % 12;
+        const quarterEndYear = fiscalYear + Math.floor((startMonth - 1 + quarterEndMonthOffset) / 12);
         const lastDay = new Date(quarterEndYear, quarterEndMonth + 1, 0).getDate();
         return new Date(quarterEndYear, quarterEndMonth, lastDay);
     }

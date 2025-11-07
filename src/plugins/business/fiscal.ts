@@ -19,6 +19,10 @@ export class FiscalYearCalculator {
       return this.config.start;
     }
 
+    if (typeof this.config.start !== 'string') {
+      return 1; // Default to January if invalid type
+    }
+
     const monthNames = [
       'january',
       'february',

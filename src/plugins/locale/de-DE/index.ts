@@ -69,7 +69,7 @@ export default {
     // Add German-specific holiday methods
     kairos.extend({
       getGermanHolidays(state?: string): any[] {
-        if (state) {
+        if (state && typeof state === 'string') {
           const stateLower = state.toLowerCase();
           const stateHols = (stateHolidays as any)[stateLower];
           if (stateHols) {
@@ -84,6 +84,9 @@ export default {
       },
 
       getStateHolidays(state: string): any[] {
+        if (!state || typeof state !== 'string') {
+          return [];
+        }
         return (stateHolidays as any)[state.toLowerCase()] || [];
       },
 
@@ -151,6 +154,9 @@ export default {
       },
 
       getStateHolidaysForYear(state: string, year: number): any[] {
+        if (!state || typeof state !== 'string') {
+          return [];
+        }
         const stateHols = (stateHolidays as any)[state.toLowerCase()];
         if (!stateHols) return [];
 

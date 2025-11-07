@@ -54,7 +54,7 @@ export default {
         kairos.locales['de-DE'] = locale;
         kairos.extend({
             getGermanHolidays(state) {
-                if (state) {
+                if (state && typeof state === 'string') {
                     const stateLower = state.toLowerCase();
                     const stateHols = stateHolidays[stateLower];
                     if (stateHols) {
@@ -67,6 +67,9 @@ export default {
                 return federalHolidays;
             },
             getStateHolidays(state) {
+                if (!state || typeof state !== 'string') {
+                    return [];
+                }
                 return stateHolidays[state.toLowerCase()] || [];
             },
             getAllHolidays() {
@@ -117,6 +120,9 @@ export default {
                 return null;
             },
             getStateHolidaysForYear(state, year) {
+                if (!state || typeof state !== 'string') {
+                    return [];
+                }
                 const stateHols = stateHolidays[state.toLowerCase()];
                 if (!stateHols)
                     return [];

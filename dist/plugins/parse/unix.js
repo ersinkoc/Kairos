@@ -34,15 +34,7 @@ export class UnixTimestampParser {
         }
         const year = date.getFullYear();
         if (year < 1970 || year >= 2100) {
-            if (timestamp > 1000000000000) {
-                date = new Date(timestamp);
-                if (isNaN(date.getTime()) || date.getFullYear() < 1970 || date.getFullYear() >= 2100) {
-                    return null;
-                }
-            }
-            else {
-                return null;
-            }
+            return null;
         }
         return date;
     }

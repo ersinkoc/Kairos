@@ -106,13 +106,13 @@ FlexibleParser.FORMATS = [
     },
     {
         regex: /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
-        parse: (m) => new Date(+m[3], +m[1] - 1, +m[2]),
-        us: true,
+        parse: (m) => new Date(+m[3], +m[2] - 1, +m[1]),
+        european: true,
     },
     {
         regex: /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
-        parse: (m) => new Date(+m[3], +m[2] - 1, +m[1]),
-        european: true,
+        parse: (m) => new Date(+m[3], +m[1] - 1, +m[2]),
+        us: true,
     },
     {
         regex: /^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})$/,
@@ -131,16 +131,14 @@ FlexibleParser.FORMATS = [
         parse: (m) => new Date(+m[3], +m[1] - 1, +m[2], +m[4], +m[5], +m[6]),
     },
     {
-        regex: /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/,
-        parse: (m) => new Date(+m[3], +m[2] - 1, +m[1]),
-    },
-    {
         regex: /^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2})$/,
         parse: (m) => new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]),
+        european: true,
     },
     {
         regex: /^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})$/,
         parse: (m) => new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +m[6]),
+        european: true,
     },
     { regex: /^today$/i, parse: () => new Date() },
     {

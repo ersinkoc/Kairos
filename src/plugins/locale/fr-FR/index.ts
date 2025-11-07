@@ -90,7 +90,7 @@ export default {
     // Add French-specific holiday methods
     kairos.extend({
       getFrenchHolidays(region?: string): any[] {
-        if (region) {
+        if (region && typeof region === 'string') {
           const regionLower = region.toLowerCase();
           const regionHols = regionalHolidays[regionLower];
           if (regionHols) {
@@ -105,6 +105,9 @@ export default {
       },
 
       getRegionalHolidays(region: string): any[] {
+        if (!region || typeof region !== 'string') {
+          return [];
+        }
         return regionalHolidays[region.toLowerCase()] || [];
       },
 
