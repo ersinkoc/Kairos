@@ -166,7 +166,7 @@ export {
   PluginError,
   InvalidLocaleError,
   InvalidTimezoneError,
-  KairosBaseError
+  KairosBaseError,
 } from './core/types/errors.js';
 
 // Plugin exports

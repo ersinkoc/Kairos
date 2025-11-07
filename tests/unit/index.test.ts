@@ -219,7 +219,8 @@ describe('Kairos Index Module', () => {
       expect(validators.isValidString(123)).toBe(false);
 
       expect(validators.isValidYear(2024)).toBe(true);
-      expect(validators.isValidYear(999)).toBe(false);
+      expect(validators.isValidYear(999)).toBe(true); // Now accepts years >= 1
+      expect(validators.isValidYear(0)).toBe(false); // Year 0 is invalid
       expect(validators.isValidYear(10000)).toBe(false);
 
       expect(validators.isValidMonth(1)).toBe(true);

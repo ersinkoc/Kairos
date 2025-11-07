@@ -262,12 +262,8 @@ export class FlexibleParser {
               const parts = trimmed.split(/[/-]/).map((p) => parseInt(p, 10));
 
               // Check for obviously invalid month/day values that would cause rollover
-              if (
-                (parts[0] > 31 || parts[1] > 31) && // At least one part is > 31 (invalid day)
-                parts[0] > 12 &&
-                parts[1] > 12
-              ) {
-                // Both parts > 12 (both can't be months)
+              // Reject if any part is clearly invalid (> 31) OR both parts are > 12
+              if (parts[0] > 31 || parts[1] > 31 || (parts[0] > 12 && parts[1] > 12)) {
                 continue;
               }
             }

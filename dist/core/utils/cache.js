@@ -3,6 +3,9 @@ export class LRUCache {
         this.cache = new Map();
         this.hits = 0;
         this.misses = 0;
+        if (maxSize <= 0 || !Number.isInteger(maxSize)) {
+            throw new Error('maxSize must be a positive integer');
+        }
         this.maxSize = maxSize;
     }
     get(key) {

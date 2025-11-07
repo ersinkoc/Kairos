@@ -192,7 +192,7 @@ export class KairosCore {
                 }
                 return date;
             }
-            if (isDateLike(input) && input.date instanceof Date) {
+            if (isDateLike(input) && input.date && input.date instanceof Date) {
                 return new Date(input.date.getTime());
             }
         }

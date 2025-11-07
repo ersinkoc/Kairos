@@ -22,6 +22,14 @@ export class HolidayEngine implements IHolidayEngine {
     // Calculators are registered by their respective plugins
   }
 
+  /**
+   * Generates a unique cache key for holiday rules without names.
+   * Prevents cache collisions between different unnamed rules.
+   */
+  private generateRuleCacheKey(rule: HolidayRule): string {
+    return `${rule.type}_${JSON.stringify(rule.rule)}`;
+  }
+
   registerCalculator(type: string, calculator: HolidayCalculator): void {
     this.calculators.set(type, calculator);
   }
@@ -32,11 +40,14 @@ export class HolidayEngine implements IHolidayEngine {
       throw new Error(`Invalid holiday rule: ${errors.join(', ')}`);
     }
 
-    if (!this.ruleCache.has(rule.name || 'unnamed')) {
-      this.ruleCache.set(rule.name || 'unnamed', new Map());
+    // Generate unique cache key to avoid collisions for unnamed rules
+    const cacheKey = rule.name || this.generateRuleCacheKey(rule);
+
+    if (!this.ruleCache.has(cacheKey)) {
+      this.ruleCache.set(cacheKey, new Map());
     }
 
-    const yearCache = this.ruleCache.get(rule.name || 'unnamed')!;
+    const yearCache = this.ruleCache.get(cacheKey)!;
     if (yearCache.has(year)) {
       return yearCache.get(year)!;
     }
@@ -71,7 +82,7 @@ export class HolidayEngine implements IHolidayEngine {
       const weekday = date.getDay();
       const isWeekend = observedRule.weekends
         ? observedRule.weekends.includes(weekday)
-        : (weekday === 0 || weekday === 6);
+        : weekday === 0 || weekday === 6;
 
       if (!isWeekend) {
         result.push(date);
@@ -204,11 +215,14 @@ export class HolidayEngine implements IHolidayEngine {
       throw new Error(`Invalid holiday rule: ${errors.join(', ')}`);
     }
 
-    if (!this.ruleCache.has(rule.name || 'unnamed')) {
-      this.ruleCache.set(rule.name || 'unnamed', new Map());
+    // Generate unique cache key to avoid collisions for unnamed rules
+    const cacheKey = rule.name || this.generateRuleCacheKey(rule);
+
+    if (!this.ruleCache.has(cacheKey)) {
+      this.ruleCache.set(cacheKey, new Map());
     }
 
-    const yearCache = this.ruleCache.get(rule.name || 'unnamed')!;
+    const yearCache = this.ruleCache.get(cacheKey)!;
     if (yearCache.has(year)) {
       return yearCache.get(year)!;
     }

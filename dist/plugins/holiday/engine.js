@@ -10,6 +10,9 @@ export class HolidayEngine {
     }
     registerCalculators() {
     }
+    generateRuleCacheKey(rule) {
+        return `${rule.type}_${JSON.stringify(rule.rule)}`;
+    }
     registerCalculator(type, calculator) {
         this.calculators.set(type, calculator);
     }
@@ -18,10 +21,11 @@ export class HolidayEngine {
         if (errors.length > 0) {
             throw new Error(`Invalid holiday rule: ${errors.join(', ')}`);
         }
-        if (!this.ruleCache.has(rule.name || 'unnamed')) {
-            this.ruleCache.set(rule.name || 'unnamed', new Map());
+        const cacheKey = rule.name || this.generateRuleCacheKey(rule);
+        if (!this.ruleCache.has(cacheKey)) {
+            this.ruleCache.set(cacheKey, new Map());
         }
-        const yearCache = this.ruleCache.get(rule.name || 'unnamed');
+        const yearCache = this.ruleCache.get(cacheKey);
         if (yearCache.has(year)) {
             return yearCache.get(year);
         }
@@ -45,7 +49,7 @@ export class HolidayEngine {
             const weekday = date.getDay();
             const isWeekend = observedRule.weekends
                 ? observedRule.weekends.includes(weekday)
-                : (weekday === 0 || weekday === 6);
+                : weekday === 0 || weekday === 6;
             if (!isWeekend) {
                 result.push(date);
                 continue;
@@ -146,10 +150,11 @@ export class HolidayEngine {
         if (errors.length > 0) {
             throw new Error(`Invalid holiday rule: ${errors.join(', ')}`);
         }
-        if (!this.ruleCache.has(rule.name || 'unnamed')) {
-            this.ruleCache.set(rule.name || 'unnamed', new Map());
+        const cacheKey = rule.name || this.generateRuleCacheKey(rule);
+        if (!this.ruleCache.has(cacheKey)) {
+            this.ruleCache.set(cacheKey, new Map());
         }
-        const yearCache = this.ruleCache.get(rule.name || 'unnamed');
+        const yearCache = this.ruleCache.get(cacheKey);
         if (yearCache.has(year)) {
             return yearCache.get(year);
         }

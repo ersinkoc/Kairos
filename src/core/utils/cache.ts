@@ -5,6 +5,9 @@ export class LRUCache<K, V> {
   private misses = 0;
 
   constructor(maxSize: number = 1000) {
+    if (maxSize <= 0 || !Number.isInteger(maxSize)) {
+      throw new Error('maxSize must be a positive integer');
+    }
     this.maxSize = maxSize;
   }
 
