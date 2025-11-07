@@ -21,7 +21,7 @@ describe('Comprehensive Bug Hunt - New Bugs', () => {
       // Should throw an error for invalid size
       expect(() => {
         range.chunk(0);
-      }).toThrow('Chunk size must be a positive finite number');
+      }).toThrow('Chunk size must be a positive integer');
     });
 
     it('should throw error for negative size', () => {
@@ -32,7 +32,7 @@ describe('Comprehensive Bug Hunt - New Bugs', () => {
       // Should throw an error for invalid size
       expect(() => {
         range.chunk(-5);
-      }).toThrow('Chunk size must be a positive finite number');
+      }).toThrow('Chunk size must be a positive integer');
     });
 
     it('should handle positive size correctly', () => {

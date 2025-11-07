@@ -158,6 +158,10 @@ export class Duration {
   }
 
   private normalizeUnit(unit: string): string {
+    if (!unit || typeof unit !== 'string') {
+      return 'milliseconds'; // Default to milliseconds for invalid input
+    }
+
     const unitMap: Record<string, string> = {
       y: 'years',
       year: 'years',

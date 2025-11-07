@@ -36,7 +36,7 @@ export declare class KairosCore {
         };
     } | null;
     static getObjectPoolStats(): Record<string, any>;
-    constructor(input?: KairosInput);
+    constructor(input?: KairosInput | typeof NO_ARG);
     private parseInput;
     valueOf(): number;
     toString(): string;
@@ -76,6 +76,7 @@ export declare class PluginSystem {
     static isInstalled(name: string): boolean;
     static getInstalledPlugins(): string[];
 }
+declare const NO_ARG: unique symbol;
 declare const _default: KairosStatic;
 export default _default;
 //# sourceMappingURL=plugin-system.d.ts.map

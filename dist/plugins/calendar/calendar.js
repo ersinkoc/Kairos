@@ -35,9 +35,11 @@ class CalendarCalculator {
         return Math.floor(date.getMonth() / 3) + 1;
     }
     static getDayOfYear(date) {
-        const start = new Date(date.getFullYear(), 0, 0);
-        const diff = date.getTime() - start.getTime();
-        return Math.floor(diff / 86400000);
+        const start = new Date(Date.UTC(date.getFullYear(), 0, 1));
+        const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const diff = target.getTime() - start.getTime();
+        const oneDay = 1000 * 60 * 60 * 24;
+        return Math.floor(diff / oneDay) + 1;
     }
     static getDaysInMonth(date) {
         return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -121,9 +123,9 @@ const calendarPlugin = {
                 if (value === undefined) {
                     return current;
                 }
-                const clone = this.clone();
-                const yearStart = new Date(clone.year(), 0, 1);
-                yearStart.setDate(value);
+                const year = this.year();
+                const yearStart = new Date(year, 0, 1);
+                yearStart.setDate(yearStart.getDate() + value - 1);
                 return kairos(yearStart);
             },
             daysInMonth() {

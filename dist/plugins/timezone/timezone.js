@@ -8,9 +8,7 @@ export class TimezoneManager {
             });
             const parts = formatter.formatToParts(date);
             const timeZoneName = parts.find((part) => part.type === 'timeZoneName')?.value || '';
-            const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
-            const tzDate = new Date(date.toLocaleString('en-US', { timeZone: tz }));
-            const offset = (utcDate.getTime() - tzDate.getTime()) / (1000 * 60);
+            const offset = this.getOffset(date, tz);
             return {
                 name: tz,
                 abbreviation: timeZoneName,
@@ -35,28 +33,74 @@ export class TimezoneManager {
             const janOffset = this.getOffset(jan, tz);
             const julOffset = this.getOffset(jul, tz);
             const currentOffset = this.getOffset(date, tz);
-            return currentOffset < Math.max(janOffset, julOffset);
+            return currentOffset > Math.min(janOffset, julOffset);
         }
         catch (error) {
             return false;
         }
     }
     static getOffset(date, timezone) {
-        const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
-        const tzDate = new Date(date.toLocaleString('en-US', { timeZone: timezone }));
-        return (utcDate.getTime() - tzDate.getTime()) / (1000 * 60);
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: timezone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+        });
+        const parts = formatter.formatToParts(date);
+        const tzYear = parseInt(parts.find((p) => p.type === 'year')?.value || '0', 10);
+        const tzMonth = parseInt(parts.find((p) => p.type === 'month')?.value || '0', 10) - 1;
+        const tzDay = parseInt(parts.find((p) => p.type === 'day')?.value || '0', 10);
+        const tzHour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
+        const tzMinute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10);
+        const tzSecond = parseInt(parts.find((p) => p.type === 'second')?.value || '0', 10);
+        const tzTime = Date.UTC(tzYear, tzMonth, tzDay, tzHour, tzMinute, tzSecond);
+        const offset = (tzTime - date.getTime()) / (1000 * 60);
+        return offset;
     }
     static convertToTimezone(date, timezone) {
         const normalizedTz = this.normalizeTimezone(timezone);
-        return new Date(date.toLocaleString('en-US', { timeZone: normalizedTz }));
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: normalizedTz,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+        });
+        const parts = formatter.formatToParts(date);
+        const year = parseInt(parts.find((p) => p.type === 'year')?.value || '0', 10);
+        const month = parseInt(parts.find((p) => p.type === 'month')?.value || '0', 10) - 1;
+        const day = parseInt(parts.find((p) => p.type === 'day')?.value || '0', 10);
+        const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
+        const minute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10);
+        const second = parseInt(parts.find((p) => p.type === 'second')?.value || '0', 10);
+        return new Date(year, month, day, hour, minute, second, date.getMilliseconds());
     }
     static convertTimezone(date, fromTz, toTz) {
         const normalizedFromTz = this.normalizeTimezone(fromTz);
         const normalizedToTz = this.normalizeTimezone(toTz);
-        const sourceDate = new Date(date.toLocaleString('en-US', { timeZone: normalizedFromTz }));
-        return new Date(sourceDate.toLocaleString('en-US', { timeZone: normalizedToTz }));
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const day = date.getDate();
+        const hour = date.getHours();
+        const minute = date.getMinutes();
+        const second = date.getSeconds();
+        const ms = date.getMilliseconds();
+        const utcDate = new Date(Date.UTC(year, month, day, hour, minute, second, ms));
+        const fromOffset = this.getOffset(utcDate, normalizedFromTz);
+        const correctUTC = new Date(utcDate.getTime() - fromOffset * 60 * 1000);
+        return this.convertToTimezone(correctUTC, normalizedToTz);
     }
     static normalizeTimezone(timezone) {
+        if (!timezone || typeof timezone !== 'string') {
+            return 'UTC';
+        }
         return this.TIMEZONE_MAP[timezone.toUpperCase()] || timezone;
     }
     static getAvailableTimezones() {

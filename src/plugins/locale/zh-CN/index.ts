@@ -102,7 +102,7 @@ export default {
     // Add Chinese-specific holiday methods
     kairos.extend({
       getChineseHolidays(region?: string): any[] {
-        if (region) {
+        if (region && typeof region === 'string') {
           const regionLower = region.toLowerCase();
           const regionHols = regionalHolidays[regionLower];
           if (regionHols) {
@@ -117,6 +117,9 @@ export default {
       },
 
       getRegionalChineseHolidays(region: string): any[] {
+        if (!region || typeof region !== 'string') {
+          return [];
+        }
         return regionalHolidays[region.toLowerCase()] || [];
       },
 

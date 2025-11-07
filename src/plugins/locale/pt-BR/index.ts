@@ -99,7 +99,7 @@ export default {
     // Add Brazilian Portuguese-specific holiday methods
     kairos.extend({
       getBrazilianHolidays(region?: string): any[] {
-        if (region) {
+        if (region && typeof region === 'string') {
           const regionLower = region.toLowerCase();
           const regionHols = regionalHolidays[regionLower];
           if (regionHols) {
@@ -114,6 +114,9 @@ export default {
       },
 
       getRegionalBrazilianHolidays(region: string): any[] {
+        if (!region || typeof region !== 'string') {
+          return [];
+        }
         return regionalHolidays[region.toLowerCase()] || [];
       },
 

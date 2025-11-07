@@ -126,7 +126,7 @@ export default {
     // Add Russian-specific holiday methods
     kairos.extend({
       getRussianHolidays(region?: string): any[] {
-        if (region) {
+        if (region && typeof region === 'string') {
           const regionLower = region.toLowerCase();
           const regionHols = regionalHolidays[regionLower];
           if (regionHols) {
@@ -141,6 +141,9 @@ export default {
       },
 
       getRegionalRussianHolidays(region: string): any[] {
+        if (!region || typeof region !== 'string') {
+          return [];
+        }
         return regionalHolidays[region.toLowerCase()] || [];
       },
 

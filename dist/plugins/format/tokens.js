@@ -9,7 +9,8 @@ export class TokenFormatter {
         const tokenKeys = Object.keys(TokenFormatter.TOKENS).sort((a, b) => b.length - a.length);
         let result = template;
         for (const token of tokenKeys) {
-            const regex = new RegExp(`\\b${token}\\b`, 'g');
+            const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(escapedToken, 'g');
             result = result.replace(regex, TokenFormatter.TOKENS[token](date, locale));
         }
         return result;
@@ -75,14 +76,20 @@ export class TokenFormatter {
         }
     }
     static getWeekOfYear(date) {
-        const start = new Date(date.getFullYear(), 0, 1);
-        const diff = date.getTime() - start.getTime();
-        const oneWeek = 1000 * 60 * 60 * 24 * 7;
-        return Math.floor(diff / oneWeek) + 1;
+        const target = new Date(date.getTime());
+        target.setHours(0, 0, 0, 0);
+        const dayNumber = (target.getDay() + 6) % 7;
+        target.setDate(target.getDate() - dayNumber + 3);
+        const firstThursday = new Date(target.getFullYear(), 0, 4);
+        const firstThursdayDay = (firstThursday.getDay() + 6) % 7;
+        firstThursday.setDate(firstThursday.getDate() - firstThursdayDay + 3);
+        const weekDiff = (target.getTime() - firstThursday.getTime()) / (1000 * 60 * 60 * 24 * 7);
+        return Math.floor(weekDiff) + 1;
     }
     static getDayOfYear(date) {
-        const start = new Date(date.getFullYear(), 0, 1);
-        const diff = date.getTime() - start.getTime();
+        const start = new Date(Date.UTC(date.getFullYear(), 0, 1));
+        const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const diff = target.getTime() - start.getTime();
         const oneDay = 1000 * 60 * 60 * 24;
         return Math.floor(diff / oneDay) + 1;
     }

@@ -97,6 +97,9 @@ export class DateRange {
         return this.filter((date) => date.getFullYear() === year);
     }
     chunk(size) {
+        if (size <= 0 || !Number.isFinite(size) || !Number.isInteger(size)) {
+            throw new Error('Chunk size must be a positive integer');
+        }
         const dates = this.toArray();
         const chunks = [];
         for (let i = 0; i < dates.length; i += size) {
@@ -139,11 +142,9 @@ export class DateRange {
         return null;
     }
     isAdjacent(other) {
-        const nextDay = new Date(this.end);
-        nextDay.setDate(nextDay.getDate() + 1);
-        const prevDay = new Date(this.start);
-        prevDay.setDate(prevDay.getDate() - 1);
-        return nextDay.getTime() === other.start.getTime() || prevDay.getTime() === other.end.getTime();
+        const next = this.addUnit(new Date(this.end), this.unit, this.step);
+        const prev = this.addUnit(new Date(this.start), this.unit, -this.step);
+        return next.getTime() === other.start.getTime() || prev.getTime() === other.end.getTime();
     }
     duration() {
         return this.end.getTime() - this.start.getTime();

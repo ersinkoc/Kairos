@@ -69,6 +69,9 @@ export class LocaleManager {
         if (!locale || !locale.stateHolidays) {
             return [];
         }
+        if (!state || typeof state !== 'string') {
+            return [];
+        }
         const stateLower = state.toLowerCase();
         return locale.stateHolidays[stateLower] || [];
     }

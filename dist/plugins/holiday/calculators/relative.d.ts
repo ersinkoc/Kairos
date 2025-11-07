@@ -3,6 +3,7 @@ import type { KairosPlugin } from '../../../core/types/plugin.js';
 export declare class RelativeCalculator implements HolidayCalculator {
     private holidayCache;
     private allHolidays;
+    private visitedHolidays;
     calculate(rule: HolidayRule, year: number, context?: {
         holidays: HolidayRule[];
     }): Date[];

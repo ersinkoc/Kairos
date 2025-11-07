@@ -91,7 +91,7 @@ export default {
     // Add Italian-specific holiday methods
     kairos.extend({
       getItalianHolidays(region?: string): any[] {
-        if (region) {
+        if (region && typeof region === 'string') {
           const regionLower = region.toLowerCase();
           const regionHols = regionalHolidays[regionLower];
           if (regionHols) {
@@ -106,6 +106,9 @@ export default {
       },
 
       getRegionalItalianHolidays(region: string): any[] {
+        if (!region || typeof region !== 'string') {
+          return [];
+        }
         return regionalHolidays[region.toLowerCase()] || [];
       },
 
