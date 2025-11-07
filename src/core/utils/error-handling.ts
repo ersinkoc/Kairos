@@ -270,8 +270,9 @@ export class AdvancedErrorHandler {
         }
 
         if (result === undefined && config.sanitizeFunction && context.input !== undefined) {
-          // Sanitize strategy
-          config.sanitizeFunction(context.input);
+          // Sanitize strategy - capture return value and update context
+          const sanitizedInput = config.sanitizeFunction(context.input);
+          context.input = sanitizedInput;
           if (originalFunction) {
             result = await originalFunction();
           }
@@ -279,8 +280,9 @@ export class AdvancedErrorHandler {
         }
 
         if (result === undefined && config.transformFunction && context.input !== undefined) {
-          // Transform strategy
-          config.transformFunction(context.input);
+          // Transform strategy - capture return value and update context
+          const transformedInput = config.transformFunction(context.input);
+          context.input = transformedInput;
           if (originalFunction) {
             result = await originalFunction();
           }

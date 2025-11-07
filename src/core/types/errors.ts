@@ -34,8 +34,9 @@ export abstract class KairosBaseError extends Error {
     this.locale = locale;
 
     // Maintains proper stack trace for where our error was thrown (only available on V8)
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
+    // Type guard for V8-specific Error.captureStackTrace
+    if (typeof (Error as any).captureStackTrace === 'function') {
+      (Error as any).captureStackTrace(this, this.constructor);
     }
   }
 

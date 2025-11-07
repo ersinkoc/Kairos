@@ -317,7 +317,10 @@ export const HOMEPAGE = 'https://github.com/ersinkoc/kairos#readme';
 export const DESCRIPTION =
   'Revolutionary zero-dependency JavaScript date/time library with modular architecture and dynamic holiday system';
 
-// Convenience setup functions
+// Type declaration for Node.js require (used in CommonJS convenience functions)
+declare const require: (path: string) => any;
+
+// Convenience setup functions (CommonJS/Node.js only)
 export function setupBasic() {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const kairos = require('./core/plugin-system.js').default;

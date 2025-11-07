@@ -6,6 +6,28 @@ import type {
 } from '../../../core/types/holiday.js';
 import type { KairosPlugin } from '../../../core/types/plugin.js';
 
+/**
+ * WARNING: Lunar Calendar Calculation Limitations
+ *
+ * This calculator uses simplified approximations for lunar calendar conversions.
+ * Actual lunar calendar calculations are extremely complex and require:
+ * - Precise astronomical calculations
+ * - Historical calendar reform adjustments
+ * - Regional variations
+ *
+ * The current implementation may be off by several days or weeks for:
+ * - Islamic/Hijri calendar holidays
+ * - Chinese New Year and lunar festivals
+ * - Hebrew calendar holidays
+ * - Persian calendar holidays
+ *
+ * For production use with lunar calendars, consider:
+ * 1. Using specialized lunar calendar libraries (e.g., hijri.js, @hebcal/core)
+ * 2. Implementing proper astronomical algorithms
+ * 3. Using pre-calculated holiday tables
+ *
+ * See https://github.com/ersinkoc/kairos/issues for more information
+ */
 export class LunarCalculator implements HolidayCalculator {
   private converters: Record<string, CalendarConverter> = {
     islamic: new IslamicConverter(),
