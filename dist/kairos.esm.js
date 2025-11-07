@@ -11,6 +11,9 @@ class LRUCache {
         this.cache = new Map();
         this.hits = 0;
         this.misses = 0;
+        if (maxSize <= 0 || !Number.isInteger(maxSize)) {
+            throw new Error('maxSize must be a positive integer');
+        }
         this.maxSize = maxSize;
     }
     get(key) {
@@ -511,7 +514,7 @@ function isValidString(value) {
     return typeof value === 'string' && value.length > 0;
 }
 function isValidYear$1(year) {
-    return isValidNumber(year) && year >= 1000 && year <= 9999;
+    return isValidNumber(year) && year >= 1 && year <= 9999;
 }
 function isValidMonth$1(month) {
     return isValidNumber(month) && month >= 1 && month <= 12;
@@ -721,8 +724,11 @@ class KairosCore {
         this._date = this.parseInput(input);
     }
     parseInput(input) {
-        if (input === undefined) {
+        if (input === NO_ARG) {
             return new Date();
+        }
+        if (input === null || input === undefined) {
+            return new Date(NaN);
         }
         if (input instanceof Date) {
             return new Date(input.getTime());
@@ -791,7 +797,7 @@ class KairosCore {
                 }
                 return date;
             }
-            if (isDateLike(input) && input.date instanceof Date) {
+            if (isDateLike(input) && input.date && input.date instanceof Date) {
                 return new Date(input.date.getTime());
             }
         }
@@ -1158,12 +1164,23 @@ PluginSystem.plugins = new Map();
 PluginSystem.installedPlugins = new Set();
 PluginSystem.extensionMethods = {};
 PluginSystem.staticMethods = {};
-const kairos = (input) => new KairosCore(input);
+const NO_ARG = Symbol('NO_ARG');
+function kairos(input) {
+    if (arguments.length === 0) {
+        return new KairosCore(NO_ARG);
+    }
+    return new KairosCore(input);
+}
 kairos.use = PluginSystem.use.bind(PluginSystem);
 kairos.extend = PluginSystem.extend.bind(PluginSystem);
 kairos.addStatic = PluginSystem.addStatic.bind(PluginSystem);
 kairos.plugins = PluginSystem.plugins;
-kairos.utc = (input) => {
+kairos.utc = function (input) {
+    if (arguments.length === 0) {
+        const instance = new KairosCore(new Date());
+        instance._isUTC = true;
+        return instance;
+    }
     let utcDate;
     if (typeof input === 'string' &&
         !input.endsWith('Z') &&
@@ -1856,6 +1873,9 @@ class LocaleManager {
         if (!locale || !locale.stateHolidays) {
             return [];
         }
+        if (!state || typeof state !== 'string') {
+            return [];
+        }
         const stateLower = state.toLowerCase();
         return locale.stateHolidays[stateLower] || [];
     }
@@ -1913,6 +1933,9 @@ class HolidayEngine {
     }
     registerCalculators() {
     }
+    generateRuleCacheKey(rule) {
+        return `${rule.type}_${JSON.stringify(rule.rule)}`;
+    }
     registerCalculator(type, calculator) {
         this.calculators.set(type, calculator);
     }
@@ -1921,10 +1944,11 @@ class HolidayEngine {
         if (errors.length > 0) {
             throw new Error(`Invalid holiday rule: ${errors.join(', ')}`);
         }
-        if (!this.ruleCache.has(rule.name || 'unnamed')) {
-            this.ruleCache.set(rule.name || 'unnamed', new Map());
+        const cacheKey = rule.name || this.generateRuleCacheKey(rule);
+        if (!this.ruleCache.has(cacheKey)) {
+            this.ruleCache.set(cacheKey, new Map());
         }
-        const yearCache = this.ruleCache.get(rule.name || 'unnamed');
+        const yearCache = this.ruleCache.get(cacheKey);
         if (yearCache.has(year)) {
             return yearCache.get(year);
         }
@@ -1946,7 +1970,9 @@ class HolidayEngine {
         const result = [];
         for (const date of dates) {
             const weekday = date.getDay();
-            const isWeekend = observedRule.weekends?.includes(weekday) || weekday === 0 || weekday === 6;
+            const isWeekend = observedRule.weekends
+                ? observedRule.weekends.includes(weekday)
+                : weekday === 0 || weekday === 6;
             if (!isWeekend) {
                 result.push(date);
                 continue;
@@ -2047,10 +2073,11 @@ class HolidayEngine {
         if (errors.length > 0) {
             throw new Error(`Invalid holiday rule: ${errors.join(', ')}`);
         }
-        if (!this.ruleCache.has(rule.name || 'unnamed')) {
-            this.ruleCache.set(rule.name || 'unnamed', new Map());
+        const cacheKey = rule.name || this.generateRuleCacheKey(rule);
+        if (!this.ruleCache.has(cacheKey)) {
+            this.ruleCache.set(cacheKey, new Map());
         }
-        const yearCache = this.ruleCache.get(rule.name || 'unnamed');
+        const yearCache = this.ruleCache.get(cacheKey);
         if (yearCache.has(year)) {
             return yearCache.get(year);
         }
@@ -2331,11 +2358,11 @@ class EasterCalculator {
     }
     julianDayToDate(jdn) {
         const a = jdn + 32044;
-        const b = (4 * a + 3) / 146097;
+        const b = Math.floor((4 * a + 3) / 146097);
         const c = a - Math.floor((146097 * b) / 4);
-        const d = (4 * c + 3) / 1461;
+        const d = Math.floor((4 * c + 3) / 1461);
         const e = c - Math.floor((1461 * d) / 4);
-        const m = (5 * e + 2) / 153;
+        const m = Math.floor((5 * e + 2) / 153);
         const day = e - Math.floor((153 * m + 2) / 5) + 1;
         const month = m + 3 - 12 * Math.floor(m / 10);
         const year = 100 * b + d - 4800 + Math.floor(m / 10);
@@ -2468,11 +2495,11 @@ class IslamicConverter {
     }
     julianDayToGregorian(jd) {
         const a = jd + 32044;
-        const b = (4 * a + 3) / 146097;
+        const b = Math.floor((4 * a + 3) / 146097);
         const c = a - Math.floor((146097 * b) / 4);
-        const d = (4 * c + 3) / 1461;
+        const d = Math.floor((4 * c + 3) / 1461);
         const e = c - Math.floor((1461 * d) / 4);
-        const m = (5 * e + 2) / 153;
+        const m = Math.floor((5 * e + 2) / 153);
         const day = e - Math.floor((153 * m + 2) / 5) + 1;
         const month = m + 3 - 12 * Math.floor(m / 10);
         const year = 100 * b + d - 4800 + Math.floor(m / 10);
@@ -2498,7 +2525,7 @@ class ChineseConverter {
     toGregorian(chineseYear, chineseMonth, chineseDay) {
         const epochYear = 2637;
         const gregorianYear = chineseYear + epochYear;
-        const newYearOffset = Math.floor(Math.random() * 30) + 21;
+        const newYearOffset = 21 + ((gregorianYear * 11) % 30);
         const baseDate = new Date(gregorianYear, 0, newYearOffset);
         const lunarMonthLength = 29.5;
         const totalDays = (chineseMonth - 1) * lunarMonthLength + chineseDay - 1;
@@ -2573,12 +2600,15 @@ class RelativeCalculator {
     constructor() {
         this.holidayCache = new Map();
         this.allHolidays = [];
+        this.visitedHolidays = new Set();
     }
     calculate(rule, year, context) {
         const { relativeTo, offset } = rule.rule;
         if (context?.holidays) {
             this.allHolidays = context.holidays;
         }
+        this.visitedHolidays = new Set();
+        this.visitedHolidays.add(rule.name);
         const baseHoliday = this.findBaseHoliday(relativeTo);
         if (!baseHoliday) {
             throw new Error(`Base holiday '${relativeTo}' not found for relative rule '${rule.name}'`);
@@ -2598,14 +2628,16 @@ class RelativeCalculator {
             baseHoliday = this.allHolidays.find((h) => h.id === relativeTo);
         }
         if (!baseHoliday) {
-            baseHoliday = this.allHolidays.find((h) => h.name.toLowerCase() === relativeTo.toLowerCase());
+            baseHoliday = this.allHolidays.find((h) => h.name && h.name.toLowerCase() === relativeTo.toLowerCase());
         }
         return baseHoliday || null;
     }
     calculateBaseHolidayDates(baseHoliday, year) {
-        if (baseHoliday.type === 'relative') {
-            throw new Error(`Circular dependency detected: ${baseHoliday.name} cannot be relative to another relative holiday`);
+        if (this.visitedHolidays.has(baseHoliday.name)) {
+            const chain = Array.from(this.visitedHolidays).join(' -> ');
+            throw new Error(`Circular dependency detected in holiday chain: ${chain} -> ${baseHoliday.name}`);
         }
+        this.visitedHolidays.add(baseHoliday.name);
         const cacheKey = `${baseHoliday.name}-${year}`;
         if (this.holidayCache.has(cacheKey)) {
             return this.holidayCache.get(cacheKey);
@@ -2800,11 +2832,31 @@ const CustomCalculatorUtils = {
         return prev;
     },
     getDateInTimezone(date, timezone) {
-        return new Date(date.toLocaleString('en-US', { timeZone: timezone }));
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: timezone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+        });
+        const parts = formatter.formatToParts(date);
+        const year = parseInt(parts.find((p) => p.type === 'year')?.value || '0', 10);
+        const month = parseInt(parts.find((p) => p.type === 'month')?.value || '0', 10) - 1;
+        const day = parseInt(parts.find((p) => p.type === 'day')?.value || '0', 10);
+        const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
+        const minute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10);
+        const second = parseInt(parts.find((p) => p.type === 'second')?.value || '0', 10);
+        return new Date(year, month, day, hour, minute, second, date.getMilliseconds());
     },
     getDSTTransition(year, type) {
         if (type === 'spring') {
-            return this.findWeekdayInMonth(year, 2, 0, 'first');
+            const firstSunday = this.findWeekdayInMonth(year, 2, 0, 'first');
+            const secondSunday = new Date(firstSunday);
+            secondSunday.setDate(secondSunday.getDate() + 7);
+            return secondSunday;
         }
         else {
             return this.findWeekdayInMonth(year, 10, 0, 'first');
@@ -2897,30 +2949,42 @@ class BusinessDayCalculator {
         }
         return true;
     }
-    nextBusinessDay(date) {
+    nextBusinessDay(date, maxIterations = 1000) {
         const next = new Date(date);
         next.setDate(next.getDate() + 1);
+        let iterations = 0;
         while (!this.isBusinessDay(next)) {
+            if (++iterations > maxIterations) {
+                throw new Error('No business day found within reasonable range (1000 days). Check your business day configuration.');
+            }
             next.setDate(next.getDate() + 1);
         }
         return next;
     }
-    previousBusinessDay(date) {
+    previousBusinessDay(date, maxIterations = 1000) {
         const prev = new Date(date);
         prev.setDate(prev.getDate() - 1);
+        let iterations = 0;
         while (!this.isBusinessDay(prev)) {
+            if (++iterations > maxIterations) {
+                throw new Error('No business day found within reasonable range (1000 days). Check your business day configuration.');
+            }
             prev.setDate(prev.getDate() - 1);
         }
         return prev;
     }
-    addBusinessDays(date, days) {
+    addBusinessDays(date, days, maxIterations = 10000) {
         if (days === 0)
             return new Date(date);
         const current = new Date(date);
         let count = 0;
         const direction = days > 0 ? 1 : -1;
         const target = Math.abs(days);
+        let iterations = 0;
         while (count < target) {
+            if (++iterations > maxIterations) {
+                throw new Error(`Unable to add ${days} business days within ${maxIterations} iterations. Check your business day configuration.`);
+            }
             current.setDate(current.getDate() + direction);
             if (this.isBusinessDay(current)) {
                 count++;
@@ -2930,7 +2994,9 @@ class BusinessDayCalculator {
     }
     businessDaysBetween(start, end) {
         const startDate = new Date(start);
+        startDate.setHours(0, 0, 0, 0);
         const endDate = new Date(end);
+        endDate.setHours(0, 0, 0, 0);
         if (startDate.getTime() === endDate.getTime()) {
             return 0;
         }
@@ -2938,23 +3004,40 @@ class BusinessDayCalculator {
         const direction = isForward ? 1 : -1;
         let count = 0;
         const current = new Date(startDate);
-        while (current.getTime() !== endDate.getTime()) {
-            current.setDate(current.getDate() + direction);
+        current.setDate(current.getDate() + direction);
+        while (isForward ? current.getTime() <= endDate.getTime() : current.getTime() >= endDate.getTime()) {
             if (this.isBusinessDay(current)) {
                 count++;
             }
+            current.setDate(current.getDate() + direction);
         }
-        return count * direction;
+        return isForward ? count : -count;
     }
     businessDaysInMonth(year, month) {
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
-        return this.businessDaysBetween(firstDay, lastDay) + (this.isBusinessDay(firstDay) ? 1 : 0);
+        let count = 0;
+        const current = new Date(firstDay);
+        while (current <= lastDay) {
+            if (this.isBusinessDay(current)) {
+                count++;
+            }
+            current.setDate(current.getDate() + 1);
+        }
+        return count;
     }
     businessDaysInYear(year) {
         const firstDay = new Date(year, 0, 1);
         const lastDay = new Date(year, 11, 31);
-        return this.businessDaysBetween(firstDay, lastDay) + (this.isBusinessDay(firstDay) ? 1 : 0);
+        let count = 0;
+        const current = new Date(firstDay);
+        while (current <= lastDay) {
+            if (this.isBusinessDay(current)) {
+                count++;
+            }
+            current.setDate(current.getDate() + 1);
+        }
+        return count;
     }
     settlementDate(date, days) {
         return this.addBusinessDays(date, days);
@@ -3134,6 +3217,9 @@ class FiscalYearCalculator {
         if (typeof this.config.start === 'number') {
             return this.config.start;
         }
+        if (typeof this.config.start !== 'string') {
+            return 1;
+        }
         const monthNames = [
             'january',
             'february',
@@ -3184,18 +3270,16 @@ class FiscalYearCalculator {
     }
     getFiscalQuarterStart(fiscalYear, quarter) {
         const startMonth = this.getStartMonth();
-        const quarterStartMonth = (startMonth - 1 + (quarter - 1) * 3) % 12;
-        const quarterStartYear = quarter === 1
-            ? fiscalYear
-            : startMonth + (quarter - 1) * 3 > 12
-                ? fiscalYear + 1
-                : fiscalYear;
+        const quarterMonthOffset = (quarter - 1) * 3;
+        const quarterStartMonth = (startMonth - 1 + quarterMonthOffset) % 12;
+        const quarterStartYear = fiscalYear + Math.floor((startMonth - 1 + quarterMonthOffset) / 12);
         return new Date(quarterStartYear, quarterStartMonth, 1);
     }
     getFiscalQuarterEnd(fiscalYear, quarter) {
         const startMonth = this.getStartMonth();
-        const quarterEndMonth = (startMonth - 1 + quarter * 3 - 1) % 12;
-        const quarterEndYear = quarter === 1 ? fiscalYear : startMonth + quarter * 3 - 1 > 12 ? fiscalYear + 1 : fiscalYear;
+        const quarterEndMonthOffset = quarter * 3 - 1;
+        const quarterEndMonth = (startMonth - 1 + quarterEndMonthOffset) % 12;
+        const quarterEndYear = fiscalYear + Math.floor((startMonth - 1 + quarterEndMonthOffset) / 12);
         const lastDay = new Date(quarterEndYear, quarterEndMonth + 1, 0).getDate();
         return new Date(quarterEndYear, quarterEndMonth, lastDay);
     }
@@ -3681,9 +3765,11 @@ class CalendarCalculator {
         return Math.floor(date.getMonth() / 3) + 1;
     }
     static getDayOfYear(date) {
-        const start = new Date(date.getFullYear(), 0, 0);
-        const diff = date.getTime() - start.getTime();
-        return Math.floor(diff / 86400000);
+        const start = new Date(Date.UTC(date.getFullYear(), 0, 1));
+        const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const diff = target.getTime() - start.getTime();
+        const oneDay = 1000 * 60 * 60 * 24;
+        return Math.floor(diff / oneDay) + 1;
     }
     static getDaysInMonth(date) {
         return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -3767,9 +3853,9 @@ const calendarPlugin = {
                 if (value === undefined) {
                     return current;
                 }
-                const clone = this.clone();
-                const yearStart = new Date(clone.year(), 0, 1);
-                yearStart.setDate(value);
+                const year = this.year();
+                const yearStart = new Date(year, 0, 1);
+                yearStart.setDate(yearStart.getDate() + value - 1);
                 return kairos(yearStart);
             },
             daysInMonth() {
@@ -4136,7 +4222,7 @@ var index$9 = {
         kairos.locales['en-US'] = locale$9;
         kairos.extend({
             getUSHolidays(state) {
-                if (state) {
+                if (state && typeof state === 'string') {
                     const stateLower = state.toLowerCase();
                     const stateHols = stateHolidays$1[stateLower];
                     if (stateHols) {
@@ -4149,6 +4235,9 @@ var index$9 = {
                 return federalHolidays$1;
             },
             getStateHolidays(state) {
+                if (!state || typeof state !== 'string') {
+                    return [];
+                }
                 return stateHolidays$1[state.toLowerCase()] || [];
             },
             getAllUSHolidays() {
@@ -4930,7 +5019,7 @@ var index$7 = {
         kairos.locales['de-DE'] = locale$7;
         kairos.extend({
             getGermanHolidays(state) {
-                if (state) {
+                if (state && typeof state === 'string') {
                     const stateLower = state.toLowerCase();
                     const stateHols = stateHolidays[stateLower];
                     if (stateHols) {
@@ -4943,6 +5032,9 @@ var index$7 = {
                 return federalHolidays;
             },
             getStateHolidays(state) {
+                if (!state || typeof state !== 'string') {
+                    return [];
+                }
                 return stateHolidays[state.toLowerCase()] || [];
             },
             getAllHolidays() {
@@ -4993,6 +5085,9 @@ var index$7 = {
                 return null;
             },
             getStateHolidaysForYear(state, year) {
+                if (!state || typeof state !== 'string') {
+                    return [];
+                }
                 const stateHols = stateHolidays[state.toLowerCase()];
                 if (!stateHols)
                     return [];
@@ -5707,7 +5802,7 @@ var index$5 = {
         kairos.locales['fr-FR'] = locale$5;
         kairos.extend({
             getFrenchHolidays(region) {
-                if (region) {
+                if (region && typeof region === 'string') {
                     const regionLower = region.toLowerCase();
                     const regionHols = regionalHolidays$5[regionLower];
                     if (regionHols) {
@@ -5720,6 +5815,9 @@ var index$5 = {
                 return observances$5;
             },
             getRegionalHolidays(region) {
+                if (!region || typeof region !== 'string') {
+                    return [];
+                }
                 return regionalHolidays$5[region.toLowerCase()] || [];
             },
             getAllFrenchHolidays() {
@@ -6067,7 +6165,7 @@ var index$4 = {
         kairos.locales['es-ES'] = locale$4;
         kairos.extend({
             getSpanishHolidays(region) {
-                if (region) {
+                if (region && typeof region === 'string') {
                     const regionLower = region.toLowerCase().replace(/\s/g, '');
                     const regionHols = regionalHolidays$4[regionLower];
                     if (regionHols) {
@@ -6080,6 +6178,9 @@ var index$4 = {
                 return observances$4;
             },
             getRegionalSpanishHolidays(region) {
+                if (!region || typeof region !== 'string') {
+                    return [];
+                }
                 return regionalHolidays$4[region.toLowerCase().replace(/\s/g, '')] || [];
             },
             getAllSpanishHolidays() {
@@ -6307,7 +6408,7 @@ var index$3 = {
         kairos.locales['it-IT'] = locale$3;
         kairos.extend({
             getItalianHolidays(region) {
-                if (region) {
+                if (region && typeof region === 'string') {
                     const regionLower = region.toLowerCase();
                     const regionHols = regionalHolidays$3[regionLower];
                     if (regionHols) {
@@ -6320,6 +6421,9 @@ var index$3 = {
                 return observances$3;
             },
             getRegionalItalianHolidays(region) {
+                if (!region || typeof region !== 'string') {
+                    return [];
+                }
                 return regionalHolidays$3[region.toLowerCase()] || [];
             },
             getAllItalianHolidays() {
@@ -6592,7 +6696,7 @@ var index$2 = {
         kairos.locales['pt-BR'] = locale$2;
         kairos.extend({
             getBrazilianHolidays(region) {
-                if (region) {
+                if (region && typeof region === 'string') {
                     const regionLower = region.toLowerCase();
                     const regionHols = regionalHolidays$2[regionLower];
                     if (regionHols) {
@@ -6605,6 +6709,9 @@ var index$2 = {
                 return observances$2;
             },
             getRegionalBrazilianHolidays(region) {
+                if (!region || typeof region !== 'string') {
+                    return [];
+                }
                 return regionalHolidays$2[region.toLowerCase()] || [];
             },
             getAllBrazilianHolidays() {
@@ -6895,7 +7002,7 @@ var index$1 = {
         kairos.locales['ru-RU'] = locale$1;
         kairos.extend({
             getRussianHolidays(region) {
-                if (region) {
+                if (region && typeof region === 'string') {
                     const regionLower = region.toLowerCase();
                     const regionHols = regionalHolidays$1[regionLower];
                     if (regionHols) {
@@ -6908,6 +7015,9 @@ var index$1 = {
                 return observances$1;
             },
             getRegionalRussianHolidays(region) {
+                if (!region || typeof region !== 'string') {
+                    return [];
+                }
                 return regionalHolidays$1[region.toLowerCase()] || [];
             },
             getAllRussianHolidays() {
@@ -7189,7 +7299,7 @@ var index = {
         kairos.locales['zh-CN'] = locale;
         kairos.extend({
             getChineseHolidays(region) {
-                if (region) {
+                if (region && typeof region === 'string') {
                     const regionLower = region.toLowerCase();
                     const regionHols = regionalHolidays[regionLower];
                     if (regionHols) {
@@ -7202,6 +7312,9 @@ var index = {
                 return observances;
             },
             getRegionalChineseHolidays(region) {
+                if (!region || typeof region !== 'string') {
+                    return [];
+                }
                 return regionalHolidays[region.toLowerCase()] || [];
             },
             getAllChineseHolidays() {

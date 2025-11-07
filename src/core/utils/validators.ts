@@ -11,7 +11,7 @@ export function isValidString(value: any): value is string {
 }
 
 export function isValidYear(year: any): year is number {
-  return isValidNumber(year) && year >= 1000 && year <= 9999;
+  return isValidNumber(year) && year >= 1 && year <= 9999;
 }
 
 export function isValidMonth(month: any): month is number {

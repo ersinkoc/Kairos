@@ -1,5 +1,8 @@
 export class DateRange {
     constructor(start, end, unit = 'day', step = 1) {
+        if (step <= 0 || !Number.isFinite(step)) {
+            throw new Error('Step must be a positive finite number');
+        }
         this.start = new Date(start);
         this.end = new Date(end);
         this.unit = unit;

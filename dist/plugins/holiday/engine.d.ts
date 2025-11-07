@@ -6,6 +6,7 @@ export declare class HolidayEngine implements IHolidayEngine {
     private ruleCache;
     constructor();
     private registerCalculators;
+    private generateRuleCacheKey;
     registerCalculator(type: string, calculator: HolidayCalculator): void;
     calculate(rule: HolidayRule, year: number): Date[];
     private applyObservedRules;

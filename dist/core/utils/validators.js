@@ -8,7 +8,7 @@ export function isValidString(value) {
     return typeof value === 'string' && value.length > 0;
 }
 export function isValidYear(year) {
-    return isValidNumber(year) && year >= 1000 && year <= 9999;
+    return isValidNumber(year) && year >= 1 && year <= 9999;
 }
 export function isValidMonth(month) {
     return isValidNumber(month) && month >= 1 && month <= 12;

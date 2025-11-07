@@ -105,37 +105,56 @@ export class BusinessDayCalculator {
     return true;
   }
 
-  nextBusinessDay(date: Date): Date {
+  nextBusinessDay(date: Date, maxIterations: number = 1000): Date {
     const next = new Date(date);
     next.setDate(next.getDate() + 1);
 
+    let iterations = 0;
     while (!this.isBusinessDay(next)) {
+      if (++iterations > maxIterations) {
+        throw new Error(
+          'No business day found within reasonable range (1000 days). Check your business day configuration.'
+        );
+      }
       next.setDate(next.getDate() + 1);
     }
 
     return next;
   }
 
-  previousBusinessDay(date: Date): Date {
+  previousBusinessDay(date: Date, maxIterations: number = 1000): Date {
     const prev = new Date(date);
     prev.setDate(prev.getDate() - 1);
 
+    let iterations = 0;
     while (!this.isBusinessDay(prev)) {
+      if (++iterations > maxIterations) {
+        throw new Error(
+          'No business day found within reasonable range (1000 days). Check your business day configuration.'
+        );
+      }
       prev.setDate(prev.getDate() - 1);
     }
 
     return prev;
   }
 
-  addBusinessDays(date: Date, days: number): Date {
+  addBusinessDays(date: Date, days: number, maxIterations: number = 10000): Date {
     if (days === 0) return new Date(date);
 
     const current = new Date(date);
     let count = 0;
     const direction = days > 0 ? 1 : -1;
     const target = Math.abs(days);
+    let iterations = 0;
 
     while (count < target) {
+      if (++iterations > maxIterations) {
+        throw new Error(
+          `Unable to add ${days} business days within ${maxIterations} iterations. Check your business day configuration.`
+        );
+      }
+
       current.setDate(current.getDate() + direction);
 
       if (this.isBusinessDay(current)) {
@@ -165,9 +184,7 @@ export class BusinessDayCalculator {
     current.setDate(current.getDate() + direction);
 
     while (
-      isForward
-        ? current.getTime() <= endDate.getTime()
-        : current.getTime() >= endDate.getTime()
+      isForward ? current.getTime() <= endDate.getTime() : current.getTime() >= endDate.getTime()
     ) {
       if (this.isBusinessDay(current)) {
         count++;

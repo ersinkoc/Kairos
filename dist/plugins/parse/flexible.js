@@ -24,9 +24,7 @@ export class FlexibleParser {
                         }
                         if (match.length >= 4 && /^\d{1,2}[/-]\d{1,2}[/-]\d{4}$/.test(trimmed)) {
                             const parts = trimmed.split(/[/-]/).map((p) => parseInt(p, 10));
-                            if ((parts[0] > 31 || parts[1] > 31) &&
-                                parts[0] > 12 &&
-                                parts[1] > 12) {
+                            if (parts[0] > 31 || parts[1] > 31 || (parts[0] > 12 && parts[1] > 12)) {
                                 continue;
                             }
                         }

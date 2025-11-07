@@ -7,9 +7,9 @@ export declare class BusinessDayCalculator {
     updateConfig(config: Partial<BusinessDayConfig>): void;
     isBusinessDay(date: Date): boolean;
     private calculateIsBusinessDay;
-    nextBusinessDay(date: Date): Date;
-    previousBusinessDay(date: Date): Date;
-    addBusinessDays(date: Date, days: number): Date;
+    nextBusinessDay(date: Date, maxIterations?: number): Date;
+    previousBusinessDay(date: Date, maxIterations?: number): Date;
+    addBusinessDays(date: Date, days: number, maxIterations?: number): Date;
     businessDaysBetween(start: Date, end: Date): number;
     businessDaysInMonth(year: number, month: number): number;
     businessDaysInYear(year: number): number;

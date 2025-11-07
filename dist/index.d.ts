@@ -10,7 +10,7 @@ export type { FormatString as DateFormatString, StandardFormats, FormatToken, Fo
 export { FORMAT_TOKENS } from './core/types/format.js';
 export type { StrictDateComponents, PartialDateComponents, DateArithmeticOperation, DateValidation, DateParser, DateFormatter, Duration, DeepPartial, DeepRequired, } from './core/types/utilities.js';
 export type { ParsingError, ConfigurationError, } from './core/types/errors.js';
-export { ErrorFactory, ErrorHandler, InvalidDateError, ValidationError, InvalidFormatError, PluginError, InvalidLocaleError, InvalidTimezoneError, KairosBaseError } from './core/types/errors.js';
+export { ErrorFactory, ErrorHandler, InvalidDateError, ValidationError, InvalidFormatError, PluginError, InvalidLocaleError, InvalidTimezoneError, KairosBaseError, } from './core/types/errors.js';
 export { default as holidayEngine } from './plugins/holiday/engine.js';
 export { default as fixedCalculator } from './plugins/holiday/calculators/fixed.js';
 export { default as nthWeekdayCalculator } from './plugins/holiday/calculators/nth-weekday.js';
