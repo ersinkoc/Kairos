@@ -74,9 +74,20 @@ export class HolidayEngine {
     findSubstituteDate(date, observedRule) {
         const direction = observedRule.direction || 'forward';
         const weekends = observedRule.weekends || [0, 6];
+        const uniqueWeekends = new Set(weekends);
+        if (uniqueWeekends.size >= 7) {
+            throw new Error('Invalid observed rule configuration: weekends array cannot include all days (0-6). ' +
+                'There must be at least one non-weekend day available for substitution.');
+        }
         const current = new Date(date);
         const increment = direction === 'forward' ? 1 : -1;
+        let iterations = 0;
+        const maxIterations = 7;
         while (weekends.includes(current.getDay())) {
+            if (++iterations > maxIterations) {
+                throw new Error(`Unable to find substitute date within ${maxIterations} days. ` +
+                    'This indicates a configuration error in the observed rule.');
+            }
             current.setDate(current.getDate() + increment);
         }
         return current;

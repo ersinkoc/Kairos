@@ -112,10 +112,30 @@ export class HolidayEngine implements IHolidayEngine {
     const direction = observedRule.direction || 'forward';
     const weekends = observedRule.weekends || [0, 6];
 
+    // Validation: Ensure weekends array doesn't include all days (0-6)
+    // If it does, there's no valid non-weekend day to substitute
+    const uniqueWeekends = new Set(weekends);
+    if (uniqueWeekends.size >= 7) {
+      throw new Error(
+        'Invalid observed rule configuration: weekends array cannot include all days (0-6). ' +
+          'There must be at least one non-weekend day available for substitution.'
+      );
+    }
+
     const current = new Date(date);
     const increment = direction === 'forward' ? 1 : -1;
 
+    // Add iteration limit to prevent infinite loops (max 7 days to find a non-weekend)
+    let iterations = 0;
+    const maxIterations = 7;
+
     while (weekends.includes(current.getDay())) {
+      if (++iterations > maxIterations) {
+        throw new Error(
+          `Unable to find substitute date within ${maxIterations} days. ` +
+            'This indicates a configuration error in the observed rule.'
+        );
+      }
       current.setDate(current.getDate() + increment);
     }
 

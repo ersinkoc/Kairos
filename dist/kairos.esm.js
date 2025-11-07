@@ -4,8 +4,6 @@
  * Released under the MIT License
  * https://github.com/ersinkoc/kairos
  */
-import { EventEmitter } from 'events';
-
 class LRUCache {
     constructor(maxSize = 1000) {
         this.cache = new Map();
@@ -238,6 +236,26 @@ globalPoolManager.register('set', () => new Set(), {
     resetFn: (set) => set.clear(),
 });
 
+class EventEmitter {
+    constructor() {
+        this.events = new Map();
+    }
+    on(event, listener) {
+        if (!this.events.has(event)) {
+            this.events.set(event, []);
+        }
+        this.events.get(event).push(listener);
+        return this;
+    }
+    emit(event, ...args) {
+        const listeners = this.events.get(event);
+        if (!listeners || listeners.length === 0) {
+            return false;
+        }
+        listeners.forEach((listener) => listener(...args));
+        return true;
+    }
+}
 class MemoryMonitor extends EventEmitter {
     constructor(options) {
         super();
@@ -1481,7 +1499,7 @@ class KairosBaseError extends Error {
             this.context = context;
         }
         this.locale = locale;
-        if (Error.captureStackTrace) {
+        if (typeof Error.captureStackTrace === 'function') {
             Error.captureStackTrace(this, this.constructor);
         }
     }
@@ -1997,9 +2015,20 @@ class HolidayEngine {
     findSubstituteDate(date, observedRule) {
         const direction = observedRule.direction || 'forward';
         const weekends = observedRule.weekends || [0, 6];
+        const uniqueWeekends = new Set(weekends);
+        if (uniqueWeekends.size >= 7) {
+            throw new Error('Invalid observed rule configuration: weekends array cannot include all days (0-6). ' +
+                'There must be at least one non-weekend day available for substitution.');
+        }
         const current = new Date(date);
         const increment = direction === 'forward' ? 1 : -1;
+        let iterations = 0;
+        const maxIterations = 7;
         while (weekends.includes(current.getDay())) {
+            if (++iterations > maxIterations) {
+                throw new Error(`Unable to find substitute date within ${maxIterations} days. ` +
+                    'This indicates a configuration error in the observed rule.');
+            }
             current.setDate(current.getDate() + increment);
         }
         return current;
@@ -7941,14 +7970,16 @@ class AdvancedErrorHandler {
                     }
                 }
                 if (result === undefined && config.sanitizeFunction && context.input !== undefined) {
-                    config.sanitizeFunction(context.input);
+                    const sanitizedInput = config.sanitizeFunction(context.input);
+                    context.input = sanitizedInput;
                     if (originalFunction) {
                         result = await originalFunction();
                     }
                     strategy = 'sanitize';
                 }
                 if (result === undefined && config.transformFunction && context.input !== undefined) {
-                    config.transformFunction(context.input);
+                    const transformedInput = config.transformFunction(context.input);
+                    context.input = transformedInput;
                     if (originalFunction) {
                         result = await originalFunction();
                     }

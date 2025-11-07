@@ -72,6 +72,13 @@ export class Duration {
    */
   constructor(input: number | DurationObject | string) {
     if (typeof input === 'number') {
+      // Validate number input - reject NaN, Infinity, and -Infinity
+      if (!Number.isFinite(input)) {
+        throw new Error(
+          `Duration value must be a finite number. Received: ${input}. ` +
+            'NaN, Infinity, and -Infinity are not valid duration values.'
+        );
+      }
       this.ms = input;
       this._milliseconds = input;
     } else if (typeof input === 'string') {
@@ -273,6 +280,13 @@ export class Duration {
   }
 
   divide(divisor: number): Duration {
+    // Validate divisor to prevent division by zero and invalid operations
+    if (divisor === 0) {
+      throw new Error('Cannot divide duration by zero');
+    }
+    if (!Number.isFinite(divisor)) {
+      throw new Error(`Divisor must be a finite number. Received: ${divisor}`);
+    }
     return new Duration(this.ms / divisor);
   }
 

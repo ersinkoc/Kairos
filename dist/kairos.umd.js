@@ -5,10 +5,10 @@
  * https://github.com/ersinkoc/kairos
  */
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('events')) :
-    typeof define === 'function' && define.amd ? define(['exports', 'events'], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.kairos = {}, global.events));
-})(this, (function (exports, events) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+    typeof define === 'function' && define.amd ? define(['exports'], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.kairos = {}));
+})(this, (function (exports) { 'use strict';
 
     class LRUCache {
         constructor(maxSize = 1000) {
@@ -242,7 +242,27 @@
         resetFn: (set) => set.clear(),
     });
 
-    class MemoryMonitor extends events.EventEmitter {
+    class EventEmitter {
+        constructor() {
+            this.events = new Map();
+        }
+        on(event, listener) {
+            if (!this.events.has(event)) {
+                this.events.set(event, []);
+            }
+            this.events.get(event).push(listener);
+            return this;
+        }
+        emit(event, ...args) {
+            const listeners = this.events.get(event);
+            if (!listeners || listeners.length === 0) {
+                return false;
+            }
+            listeners.forEach((listener) => listener(...args));
+            return true;
+        }
+    }
+    class MemoryMonitor extends EventEmitter {
         constructor(options) {
             super();
             this.snapshots = [];
@@ -1485,7 +1505,7 @@
                 this.context = context;
             }
             this.locale = locale;
-            if (Error.captureStackTrace) {
+            if (typeof Error.captureStackTrace === 'function') {
                 Error.captureStackTrace(this, this.constructor);
             }
         }
@@ -2001,9 +2021,20 @@
         findSubstituteDate(date, observedRule) {
             const direction = observedRule.direction || 'forward';
             const weekends = observedRule.weekends || [0, 6];
+            const uniqueWeekends = new Set(weekends);
+            if (uniqueWeekends.size >= 7) {
+                throw new Error('Invalid observed rule configuration: weekends array cannot include all days (0-6). ' +
+                    'There must be at least one non-weekend day available for substitution.');
+            }
             const current = new Date(date);
             const increment = direction === 'forward' ? 1 : -1;
+            let iterations = 0;
+            const maxIterations = 7;
             while (weekends.includes(current.getDay())) {
+                if (++iterations > maxIterations) {
+                    throw new Error(`Unable to find substitute date within ${maxIterations} days. ` +
+                        'This indicates a configuration error in the observed rule.');
+                }
                 current.setDate(current.getDate() + increment);
             }
             return current;
@@ -7945,14 +7976,16 @@
                         }
                     }
                     if (result === undefined && config.sanitizeFunction && context.input !== undefined) {
-                        config.sanitizeFunction(context.input);
+                        const sanitizedInput = config.sanitizeFunction(context.input);
+                        context.input = sanitizedInput;
                         if (originalFunction) {
                             result = await originalFunction();
                         }
                         strategy = 'sanitize';
                     }
                     if (result === undefined && config.transformFunction && context.input !== undefined) {
-                        config.transformFunction(context.input);
+                        const transformedInput = config.transformFunction(context.input);
+                        context.input = transformedInput;
                         if (originalFunction) {
                             result = await originalFunction();
                         }

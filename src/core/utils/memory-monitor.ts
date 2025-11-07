@@ -3,7 +3,31 @@
  * Provides real-time memory usage tracking and alerting
  */
 
-import { EventEmitter } from 'events';
+// Simple EventEmitter implementation (Node.js-compatible)
+class EventEmitter {
+  private events: Map<string | symbol, Array<(...args: any[]) => void>> = new Map();
+
+  on(event: string | symbol, listener: (...args: any[]) => void): this {
+    if (!this.events.has(event)) {
+      this.events.set(event, []);
+    }
+    this.events.get(event)!.push(listener);
+    return this;
+  }
+
+  emit(event: string | symbol, ...args: any[]): boolean {
+    const listeners = this.events.get(event);
+    if (!listeners || listeners.length === 0) {
+      return false;
+    }
+    listeners.forEach((listener) => listener(...args));
+    return true;
+  }
+}
+
+// Type declarations for Node.js globals (only available in Node.js runtime)
+declare const process: any;
+declare const global: any;
 
 export interface MemorySnapshot {
   timestamp: number;
@@ -33,7 +57,7 @@ export class MemoryMonitor extends EventEmitter {
   private snapshots: MemorySnapshot[] = [];
   private maxSnapshots: number;
   private monitoring: boolean = false;
-  private interval: NodeJS.Timeout | null = null;
+  private interval: any | null = null; // NodeJS.Timeout type not available, use any
   private thresholds: MemoryThresholds;
   private lastHeapUsed: number = 0;
   private checkInterval: number;
