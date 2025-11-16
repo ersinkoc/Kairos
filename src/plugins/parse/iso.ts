@@ -50,6 +50,19 @@ export class ISOParser {
     const parsedSecond = parseInt(second, 10);
     const parsedMillisecond = parseInt(millisecond.padEnd(3, '0'), 10);
 
+    // BUG FIX (BUG-006): Validate all parsed integers
+    if (
+      isNaN(parsedYear) ||
+      isNaN(parsedMonth) ||
+      isNaN(parsedDay) ||
+      isNaN(parsedHour) ||
+      isNaN(parsedMinute) ||
+      isNaN(parsedSecond) ||
+      isNaN(parsedMillisecond)
+    ) {
+      return null;
+    }
+
     // Check if the input has a 'Z' suffix (UTC indicator)
     const hasZSuffix = fullMatch.endsWith('Z');
 
@@ -104,6 +117,12 @@ export class ISOParser {
       const sign = tzHour.startsWith('-') ? -1 : 1;
       const hours = Math.abs(parseInt(tzHour, 10));
       const minutes = parseInt(tzMinute, 10);
+
+      // BUG FIX (BUG-006): Validate timezone offset parsing
+      if (isNaN(hours) || isNaN(minutes)) {
+        return null;
+      }
+
       // Apply sign to the total offset
       const offsetMinutes = sign * (hours * 60 + minutes);
       date.setMinutes(date.getMinutes() - offsetMinutes);
@@ -118,6 +137,11 @@ export class ISOParser {
     const parsedYear = parseInt(year, 10);
     const parsedMonth = parseInt(month, 10);
     const parsedDay = parseInt(day, 10);
+
+    // BUG FIX (BUG-006): Validate parsed integers
+    if (isNaN(parsedYear) || isNaN(parsedMonth) || isNaN(parsedDay)) {
+      return null;
+    }
 
     const date = new Date(parsedYear, parsedMonth - 1, parsedDay);
 

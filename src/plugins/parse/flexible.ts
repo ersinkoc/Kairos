@@ -288,11 +288,8 @@ export class FlexibleParser {
             return date;
           }
         } catch (e) {
-          // BUG FIX (BUG-E01): Added debug logging for parse errors
-          // This helps with debugging parse failures in development
-          if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
-            console.debug(`Parse format failed for "${trimmed}":`, e);
-          }
+          // BUG FIX (BUG-003): Removed console.debug to keep production code clean
+          // Parse errors are expected during flexible parsing as we try multiple formats
           // Continue to next format
           continue;
         }

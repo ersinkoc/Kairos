@@ -8,10 +8,13 @@ class EventEmitter {
   private events: Map<string | symbol, Array<(...args: any[]) => void>> = new Map();
 
   on(event: string | symbol, listener: (...args: any[]) => void): this {
-    if (!this.events.has(event)) {
-      this.events.set(event, []);
+    // BUG FIX (BUG-002): Avoid non-null assertion by storing result
+    let listeners = this.events.get(event);
+    if (!listeners) {
+      listeners = [];
+      this.events.set(event, listeners);
     }
-    this.events.get(event)!.push(listener);
+    listeners.push(listener);
     return this;
   }
 
@@ -359,6 +362,11 @@ export class MemoryMonitor extends EventEmitter {
     const recent = this.snapshots.slice(-windowSize);
     const heapUsages = recent.map((s) => s.heapUsed);
 
+    // BUG FIX (BUG-001): Additional safety check for minimum data points
+    if (heapUsages.length < 2) {
+      return false;
+    }
+
     // Check if memory is consistently growing
     let growingCount = 0;
     for (let i = 1; i < heapUsages.length; i++) {
@@ -367,7 +375,8 @@ export class MemoryMonitor extends EventEmitter {
       }
     }
 
-    const growthRatio = growingCount / (heapUsages.length - 1);
+    // BUG FIX (BUG-001): Protect against division by zero
+    const growthRatio = growingCount / Math.max(heapUsages.length - 1, 1);
     const totalGrowth = heapUsages[heapUsages.length - 1] - heapUsages[0];
 
     const isLeaking = growthRatio > 0.7 && totalGrowth > threshold;
