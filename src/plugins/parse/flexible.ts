@@ -31,12 +31,19 @@ export class FlexibleParser {
       european: true,
     },
 
-    // Ambiguous format - DD-MM-YYYY or MM-DD-YYYY based on options
+    // BUG FIX (BUG-005): Clarified ambiguous date format handling
+    // IMPORTANT: The dash-delimited format (XX-XX-XXXX) is inherently ambiguous:
+    //   - DD-MM-YYYY (European) vs MM-DD-YYYY (US)
+    //   - Use options.european flag to specify format preference
+    //   - Default (no option): US format (MM-DD-YYYY)
+    //   - Recommended: Use unambiguous formats (ISO: YYYY-MM-DD, European: DD.MM.YYYY, US: MM/DD/YYYY)
+    // European format: DD-MM-YYYY (only used when options.european = true)
     {
       regex: /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
       parse: (m: RegExpMatchArray) => new Date(+m[3], +m[2] - 1, +m[1]), // European: DD-MM-YYYY
       european: true,
     },
+    // US format: MM-DD-YYYY (used when options.european = false or undefined)
     {
       regex: /^(\d{1,2})-(\d{1,2})-(\d{4})$/,
       parse: (m: RegExpMatchArray) => new Date(+m[3], +m[1] - 1, +m[2]), // US: MM-DD-YYYY
@@ -281,6 +288,11 @@ export class FlexibleParser {
             return date;
           }
         } catch (e) {
+          // BUG FIX (BUG-E01): Added debug logging for parse errors
+          // This helps with debugging parse failures in development
+          if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+            console.debug(`Parse format failed for "${trimmed}":`, e);
+          }
           // Continue to next format
           continue;
         }

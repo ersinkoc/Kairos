@@ -92,7 +92,19 @@ export class MemoryMonitor extends EventEmitter {
   }
 
   private takeSnapshot(): MemorySnapshot {
-    const memUsage = process.memoryUsage();
+    // BUG FIX (BUG-001): Check for Node.js environment before accessing process
+    // Browser environments don't have process.memoryUsage()
+    const memUsage =
+      typeof process !== 'undefined' && typeof process.memoryUsage === 'function'
+        ? process.memoryUsage()
+        : {
+            rss: 0,
+            heapTotal: 0,
+            heapUsed: 0,
+            external: 0,
+            arrayBuffers: 0,
+          };
+
     const snapshot: MemorySnapshot = {
       timestamp: Date.now(),
       rss: memUsage.rss / 1024 / 1024, // MB
@@ -281,6 +293,10 @@ export class MemoryMonitor extends EventEmitter {
     const heapUsages = this.snapshots.map((s) => s.heapUsed);
     const rssUsages = this.snapshots.map((s) => s.rss);
 
+    // BUG FIX (BUG-E07): Defensive check to prevent division by zero
+    // Although snapshots.length > 0 is checked above, this adds safety
+    const count = Math.max(heapUsages.length, 1);
+
     return {
       snapshotCount: this.snapshots.length,
       monitoring: this.monitoring,
@@ -294,14 +310,14 @@ export class MemoryMonitor extends EventEmitter {
         current: this.snapshots[this.snapshots.length - 1].heapUsed,
         min: Math.min(...heapUsages),
         max: Math.max(...heapUsages),
-        avg: heapUsages.reduce((sum, val) => sum + val, 0) / heapUsages.length,
+        avg: heapUsages.reduce((sum, val) => sum + val, 0) / count,
         growth: this.snapshots[this.snapshots.length - 1].heapUsed - this.snapshots[0].heapUsed,
       },
       rss: {
         current: this.snapshots[this.snapshots.length - 1].rss,
         min: Math.min(...rssUsages),
         max: Math.max(...rssUsages),
-        avg: rssUsages.reduce((sum, val) => sum + val, 0) / rssUsages.length,
+        avg: rssUsages.reduce((sum, val) => sum + val, 0) / count,
         growth: this.snapshots[this.snapshots.length - 1].rss - this.snapshots[0].rss,
       },
     };
@@ -324,7 +340,9 @@ export class MemoryMonitor extends EventEmitter {
 
   // Utility method to force garbage collection if available
   forceGC(): boolean {
-    if (global.gc) {
+    // BUG FIX (BUG-001): Check for both global object and gc function
+    // Browser environments may not have global or global.gc
+    if (typeof global !== 'undefined' && typeof global.gc === 'function') {
       global.gc();
       this.emit('gc-forced');
       return true;

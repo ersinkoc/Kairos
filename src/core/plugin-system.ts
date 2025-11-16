@@ -259,10 +259,10 @@ export class KairosCore {
       }
 
       // Quick invalid string check
+      // BUG FIX (BUG-002): Don't cache invalid dates to prevent cache pollution
+      // Invalid dates should not persist in cache as they provide no value
       if (input.length === 0 || input.toLowerCase() === 'invalid') {
-        const invalid = new Date(NaN);
-        parseCache.set(input, invalid);
-        return invalid;
+        return new Date(NaN);
       }
 
       // Try optimized parsing functions
@@ -295,7 +295,7 @@ export class KairosCore {
         if (KairosCore.config.strict) {
           throwError(`Invalid date string: ${input}`, 'INVALID_DATE');
         }
-        parseCache.set(input, new Date(NaN));
+        // BUG FIX (BUG-002): Don't cache invalid dates to prevent cache pollution
         return new Date(NaN);
       }
 

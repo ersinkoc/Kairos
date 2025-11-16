@@ -587,12 +587,32 @@ export class AdvancedValidator {
   }
 
   // String sanitization helper
+  // BUG FIX (BUG-004): Improved XSS sanitization with additional protection
+  // NOTE: This library is designed for date/time parsing, not HTML content.
+  // For comprehensive XSS protection, use a dedicated library like DOMPurify.
+  // This method provides basic protection against common XSS vectors.
   private sanitizeString(value: string): string {
-    return value
-      .trim()
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove scripts
-      .replace(/<[^>]*>/g, '') // Remove HTML tags
-      .replace(/[<>]/g, ''); // Remove remaining angle brackets
+    return (
+      value
+        .trim()
+        // Remove JavaScript event handlers (onclick, onerror, etc.)
+        .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+        .replace(/on\w+\s*=\s*[^\s>]*/gi, '')
+        // Remove JavaScript protocol
+        .replace(/javascript:/gi, '')
+        // Remove data URIs (can contain JavaScript)
+        .replace(/data:text\/html[^,]*,/gi, '')
+        // Remove script tags (with nested tag protection)
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        // Remove iframe, object, embed tags
+        .replace(/<(iframe|object|embed|link|style)\b[^<]*(?:(?!<\/\1>)<[^<]*)*<\/\1>/gi, '')
+        // Remove all remaining HTML tags
+        .replace(/<[^>]*>/g, '')
+        // Remove remaining angle brackets and backticks
+        .replace(/[<>`]/g, '')
+        // Remove null bytes
+        .replace(/\0/g, '')
+    );
   }
 
   // Generate cache key
