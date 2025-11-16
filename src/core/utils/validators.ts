@@ -120,3 +120,15 @@ export function throwError(message: string, code?: string): never {
   }
   throw error;
 }
+
+// BUG FIX (BUG-006): Safe parseInt that validates the result
+export function safeParseInt(value: string, radix: number = 10): number | null {
+  const parsed = parseInt(value, radix);
+  return isNaN(parsed) ? null : parsed;
+}
+
+// BUG FIX (BUG-006): Safe parseFloat that validates the result
+export function safeParseFloat(value: string): number | null {
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? null : parsed;
+}
