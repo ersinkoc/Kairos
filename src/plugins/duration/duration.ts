@@ -22,6 +22,19 @@ export interface DurationObject {
   milliseconds?: number;
 }
 
+// BUG FIX (BUG-L05, BUG-CQ01): Define duration conversion constants
+// NOTE: These are approximations for year and month calculations
+// - Average year: 365.25 days (accounts for leap years)
+// - Average month: 30.44 days (365.25 / 12)
+// For exact date arithmetic, use date manipulation methods instead
+const MS_PER_SECOND = 1000;
+const MS_PER_MINUTE = 60 * MS_PER_SECOND;
+const MS_PER_HOUR = 60 * MS_PER_MINUTE;
+const MS_PER_DAY = 24 * MS_PER_HOUR;
+const MS_PER_WEEK = 7 * MS_PER_DAY;
+const MS_PER_MONTH_AVG = 30.44 * MS_PER_DAY; // Approximation
+const MS_PER_YEAR_AVG = 365.25 * MS_PER_DAY; // Approximation
+
 /**
  * Duration class for representing and manipulating time spans.
  * Supports ISO 8601 duration format parsing and human-readable output.
@@ -151,13 +164,15 @@ export class Duration {
   private parseObject(obj: DurationObject): number {
     let milliseconds = 0;
 
-    if (obj.years) milliseconds += obj.years * 365.25 * 24 * 60 * 60 * 1000;
-    if (obj.months) milliseconds += obj.months * 30.44 * 24 * 60 * 60 * 1000;
-    if (obj.weeks) milliseconds += obj.weeks * 7 * 24 * 60 * 60 * 1000;
-    if (obj.days) milliseconds += obj.days * 24 * 60 * 60 * 1000;
-    if (obj.hours) milliseconds += obj.hours * 60 * 60 * 1000;
-    if (obj.minutes) milliseconds += obj.minutes * 60 * 1000;
-    if (obj.seconds) milliseconds += obj.seconds * 1000;
+    // BUG FIX (BUG-L05, BUG-CQ01): Use named constants instead of magic numbers
+    // Improved readability and maintainability
+    if (obj.years) milliseconds += obj.years * MS_PER_YEAR_AVG;
+    if (obj.months) milliseconds += obj.months * MS_PER_MONTH_AVG;
+    if (obj.weeks) milliseconds += obj.weeks * MS_PER_WEEK;
+    if (obj.days) milliseconds += obj.days * MS_PER_DAY;
+    if (obj.hours) milliseconds += obj.hours * MS_PER_HOUR;
+    if (obj.minutes) milliseconds += obj.minutes * MS_PER_MINUTE;
+    if (obj.seconds) milliseconds += obj.seconds * MS_PER_SECOND;
     if (obj.milliseconds) milliseconds += obj.milliseconds;
 
     // Round to avoid floating point precision errors
