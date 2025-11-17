@@ -615,14 +615,32 @@ export class AdvancedValidator {
     );
   }
 
-  // Generate cache key
+  // BUG FIX (BUG-CRIT-003): Stable JSON stringification to prevent cache key collisions
+  // JSON.stringify doesn't guarantee property order, which can cause different keys for equivalent objects
+  private stableStringify(obj: any): string {
+    if (obj === null) return 'null';
+    if (obj === undefined) return 'undefined';
+    if (typeof obj !== 'object') return JSON.stringify(obj);
+    if (obj instanceof Date) return `Date:${obj.toISOString()}`;
+    if (obj instanceof RegExp) return `RegExp:${obj.toString()}`;
+    if (Array.isArray(obj)) {
+      return `[${obj.map((item) => this.stableStringify(item)).join(',')}]`;
+    }
+
+    // For objects, sort keys to ensure consistent ordering
+    const keys = Object.keys(obj).sort();
+    const pairs = keys.map((key) => `"${key}":${this.stableStringify(obj[key])}`);
+    return `{${pairs.join(',')}}`;
+  }
+
+  // Generate cache key with stable serialization
   private generateCacheKey(
     schemaName: string,
     data: any,
     context: Partial<ValidationContext>
   ): string {
-    const dataHash = JSON.stringify(data);
-    const contextHash = JSON.stringify(context);
+    const dataHash = this.stableStringify(data);
+    const contextHash = this.stableStringify(context);
     return `${schemaName}:${dataHash}:${contextHash}`;
   }
 

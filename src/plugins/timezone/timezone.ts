@@ -89,12 +89,44 @@ export class TimezoneManager {
     });
 
     const parts = formatter.formatToParts(date);
-    const tzYear = parseInt(parts.find((p) => p.type === 'year')?.value || '0', 10);
-    const tzMonth = parseInt(parts.find((p) => p.type === 'month')?.value || '0', 10) - 1;
-    const tzDay = parseInt(parts.find((p) => p.type === 'day')?.value || '0', 10);
-    const tzHour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
-    const tzMinute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10);
-    const tzSecond = parseInt(parts.find((p) => p.type === 'second')?.value || '0', 10);
+
+    // BUG FIX (BUG-CRIT-002): Validate all parseInt results to prevent NaN values
+    const tzYearStr = parts.find((p) => p.type === 'year')?.value || '0';
+    const tzYear = parseInt(tzYearStr, 10);
+    if (isNaN(tzYear)) {
+      throw new Error(`Invalid timezone year value from Intl.DateTimeFormat: ${tzYearStr}`);
+    }
+
+    const tzMonthStr = parts.find((p) => p.type === 'month')?.value || '0';
+    const tzMonthParsed = parseInt(tzMonthStr, 10);
+    if (isNaN(tzMonthParsed)) {
+      throw new Error(`Invalid timezone month value from Intl.DateTimeFormat: ${tzMonthStr}`);
+    }
+    const tzMonth = tzMonthParsed - 1;
+
+    const tzDayStr = parts.find((p) => p.type === 'day')?.value || '0';
+    const tzDay = parseInt(tzDayStr, 10);
+    if (isNaN(tzDay)) {
+      throw new Error(`Invalid timezone day value from Intl.DateTimeFormat: ${tzDayStr}`);
+    }
+
+    const tzHourStr = parts.find((p) => p.type === 'hour')?.value || '0';
+    const tzHour = parseInt(tzHourStr, 10);
+    if (isNaN(tzHour)) {
+      throw new Error(`Invalid timezone hour value from Intl.DateTimeFormat: ${tzHourStr}`);
+    }
+
+    const tzMinuteStr = parts.find((p) => p.type === 'minute')?.value || '0';
+    const tzMinute = parseInt(tzMinuteStr, 10);
+    if (isNaN(tzMinute)) {
+      throw new Error(`Invalid timezone minute value from Intl.DateTimeFormat: ${tzMinuteStr}`);
+    }
+
+    const tzSecondStr = parts.find((p) => p.type === 'second')?.value || '0';
+    const tzSecond = parseInt(tzSecondStr, 10);
+    if (isNaN(tzSecond)) {
+      throw new Error(`Invalid timezone second value from Intl.DateTimeFormat: ${tzSecondStr}`);
+    }
 
     // Create a UTC timestamp for the timezone's local time
     const tzTime = Date.UTC(tzYear, tzMonth, tzDay, tzHour, tzMinute, tzSecond);
@@ -123,12 +155,44 @@ export class TimezoneManager {
     });
 
     const parts = formatter.formatToParts(date);
-    const year = parseInt(parts.find((p) => p.type === 'year')?.value || '0', 10);
-    const month = parseInt(parts.find((p) => p.type === 'month')?.value || '0', 10) - 1;
-    const day = parseInt(parts.find((p) => p.type === 'day')?.value || '0', 10);
-    const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
-    const minute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10);
-    const second = parseInt(parts.find((p) => p.type === 'second')?.value || '0', 10);
+
+    // BUG FIX (BUG-CRIT-002): Validate all parseInt results to prevent NaN values
+    const yearStr = parts.find((p) => p.type === 'year')?.value || '0';
+    const year = parseInt(yearStr, 10);
+    if (isNaN(year)) {
+      throw new Error(`Invalid year value from Intl.DateTimeFormat: ${yearStr}`);
+    }
+
+    const monthStr = parts.find((p) => p.type === 'month')?.value || '0';
+    const monthParsed = parseInt(monthStr, 10);
+    if (isNaN(monthParsed)) {
+      throw new Error(`Invalid month value from Intl.DateTimeFormat: ${monthStr}`);
+    }
+    const month = monthParsed - 1;
+
+    const dayStr = parts.find((p) => p.type === 'day')?.value || '0';
+    const day = parseInt(dayStr, 10);
+    if (isNaN(day)) {
+      throw new Error(`Invalid day value from Intl.DateTimeFormat: ${dayStr}`);
+    }
+
+    const hourStr = parts.find((p) => p.type === 'hour')?.value || '0';
+    const hour = parseInt(hourStr, 10);
+    if (isNaN(hour)) {
+      throw new Error(`Invalid hour value from Intl.DateTimeFormat: ${hourStr}`);
+    }
+
+    const minuteStr = parts.find((p) => p.type === 'minute')?.value || '0';
+    const minute = parseInt(minuteStr, 10);
+    if (isNaN(minute)) {
+      throw new Error(`Invalid minute value from Intl.DateTimeFormat: ${minuteStr}`);
+    }
+
+    const secondStr = parts.find((p) => p.type === 'second')?.value || '0';
+    const second = parseInt(secondStr, 10);
+    if (isNaN(second)) {
+      throw new Error(`Invalid second value from Intl.DateTimeFormat: ${secondStr}`);
+    }
 
     // Create a new local date with these components
     return new Date(year, month, day, hour, minute, second, date.getMilliseconds());

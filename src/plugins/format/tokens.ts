@@ -1,6 +1,9 @@
 import type { KairosPlugin } from '../../core/types/plugin.js';
 
 export class TokenFormatter {
+  // BUG FIX (BUG-MED-004): Cache compiled regex patterns to improve performance
+  private static regexCache = new Map<string, RegExp>();
+
   static readonly TOKENS: Record<string, (date: Date, locale?: any) => string> = {
     // Year
     YYYY: (date) => date.getFullYear().toString(),
@@ -126,13 +129,22 @@ export class TokenFormatter {
     let result = template;
 
     for (const token of tokenKeys) {
-      // Escape special regex characters and use global replace without word boundaries
-      const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(escapedToken, 'g');
+      // BUG FIX (BUG-MED-004): Use cached regex instead of creating new ones
+      const regex = TokenFormatter.getOrCreateRegex(token);
       result = result.replace(regex, TokenFormatter.TOKENS[token](date, locale));
     }
 
     return result;
+  }
+
+  // BUG FIX (BUG-MED-004): Get or create cached regex pattern
+  private static getOrCreateRegex(token: string): RegExp {
+    if (!TokenFormatter.regexCache.has(token)) {
+      // Escape special regex characters and use global replace without word boundaries
+      const escapedToken = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      TokenFormatter.regexCache.set(token, new RegExp(escapedToken, 'g'));
+    }
+    return TokenFormatter.regexCache.get(token)!;
   }
 
   private static getMonthName(month: number): string {
