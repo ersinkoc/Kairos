@@ -86,11 +86,19 @@ export class NthWeekdayCalculator implements HolidayCalculator {
   }
 
   private getWeekdayName(weekday: number): string {
+    // BUG FIX (BUG-HIGH-003): Validate weekday index to prevent confusing error messages
+    if (weekday < 0 || weekday > 6) {
+      throw new Error(`Invalid weekday: ${weekday}. Must be 0-6 (Sunday-Saturday).`);
+    }
     const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return names[weekday] || 'Unknown';
+    return names[weekday];
   }
 
   private getMonthName(month: number): string {
+    // BUG FIX (BUG-HIGH-003): Validate month index to prevent confusing error messages
+    if (month < 0 || month > 11) {
+      throw new Error(`Invalid month: ${month}. Must be 0-11 (January-December).`);
+    }
     const names = [
       'January',
       'February',
@@ -105,7 +113,7 @@ export class NthWeekdayCalculator implements HolidayCalculator {
       'November',
       'December',
     ];
-    return names[month] || 'Unknown';
+    return names[month];
   }
 }
 

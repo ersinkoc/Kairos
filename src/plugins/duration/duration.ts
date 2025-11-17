@@ -85,11 +85,19 @@ export class Duration {
    */
   constructor(input: number | DurationObject | string) {
     if (typeof input === 'number') {
-      // Validate number input - reject NaN, Infinity, and -Infinity
+      // BUG FIX (BUG-HIGH-002): Validate number input - reject NaN, Infinity, and values exceeding safe integer bounds
       if (!Number.isFinite(input)) {
         throw new Error(
           `Duration value must be a finite number. Received: ${input}. ` +
             'NaN, Infinity, and -Infinity are not valid duration values.'
+        );
+      }
+      // Check for integer overflow - durations exceeding MAX_SAFE_INTEGER may lose precision
+      if (Math.abs(input) > Number.MAX_SAFE_INTEGER) {
+        throw new Error(
+          `Duration value exceeds safe integer bounds. ` +
+            `Received: ${input}, Maximum allowed: ±${Number.MAX_SAFE_INTEGER} milliseconds. ` +
+            `This represents approximately ${Math.floor(Number.MAX_SAFE_INTEGER / (365.25 * 24 * 60 * 60 * 1000))} years.`
         );
       }
       this.ms = input;
@@ -176,7 +184,18 @@ export class Duration {
     if (obj.milliseconds) milliseconds += obj.milliseconds;
 
     // Round to avoid floating point precision errors
-    return Math.round(milliseconds);
+    const rounded = Math.round(milliseconds);
+
+    // BUG FIX (BUG-HIGH-002): Validate result doesn't exceed safe integer bounds
+    if (Math.abs(rounded) > Number.MAX_SAFE_INTEGER) {
+      throw new Error(
+        `Duration calculation exceeds safe integer bounds. ` +
+          `Calculated: ${rounded}, Maximum allowed: ±${Number.MAX_SAFE_INTEGER} milliseconds. ` +
+          `Consider using smaller duration values.`
+      );
+    }
+
+    return rounded;
   }
 
   private normalizeUnit(unit: string): string {

@@ -264,13 +264,34 @@ export class FlexibleParser {
               continue;
             }
 
-            // Reject dates that were clearly adjusted by Date constructor (invalid dates that rolled over)
+            // BUG FIX (BUG-HIGH-005): Reject dates that were clearly adjusted by Date constructor (invalid dates that rolled over)
             if (match.length >= 4 && /^\d{1,2}[/-]\d{1,2}[/-]\d{4}$/.test(trimmed)) {
               const parts = trimmed.split(/[/-]/).map((p) => parseInt(p, 10));
 
               // Check for obviously invalid month/day values that would cause rollover
               // Reject if any part is clearly invalid (> 31) OR both parts are > 12
               if (parts[0] > 31 || parts[1] > 31 || (parts[0] > 12 && parts[1] > 12)) {
+                continue;
+              }
+
+              // Additional validation: Check if the created date rolled over to a different month/day
+              // This catches invalid dates like Feb 30, Apr 31, etc.
+              let expectedDay: number;
+              let expectedMonth: number;
+
+              if (options?.european) {
+                // European format: DD-MM-YYYY
+                expectedDay = parts[0];
+                expectedMonth = parts[1] - 1;
+              } else {
+                // US format: MM-DD-YYYY
+                expectedMonth = parts[0] - 1;
+                expectedDay = parts[1];
+              }
+
+              // Verify the date components haven't changed due to rollover
+              if (date.getDate() !== expectedDay || date.getMonth() !== expectedMonth) {
+                // Date rolled over (e.g., Feb 30 became Mar 2), so it's invalid
                 continue;
               }
             }
